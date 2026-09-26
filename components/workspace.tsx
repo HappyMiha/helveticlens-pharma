@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Activity,
+  CalendarClock,
+  MessagesSquare,
   ArrowRight,
   ArrowUpRight,
   BookOpen,
@@ -62,6 +64,8 @@ import { api, date, text } from '@/lib/api';
 import { product } from '@/lib/product';
 import { Wizard } from './wizard';
 import { Dossier } from './dossier';
+import { Workbench } from './workbench';
+import { ResearchDesk } from './research-desk';
 
 export const ROOT = `/products/${product.id}/dossiers`;
 export const emptyConfig = (): ProfileConfig => ({
@@ -243,7 +247,10 @@ export default function Workspace() {
     [items, setItems] = useState<DossierRecord[]>([]),
     [total, setTotal] = useState(0),
     [packs, setPacks] = useState<SourcePack[]>([]),
-    [view, setView] = useState('dossiers'),
+    [view, setView] = useState('research'),
+    [questionId, setQuestionId] = useState<string | null>(null),
+    [refreshToken, setRefreshToken] = useState(0),
+    [creating, setCreating] = useState(false),
     [selected, setSelected] = useState<DossierRecord | null>(null),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
@@ -277,13 +284,22 @@ export default function Workspace() {
     setTotal(docs.total);
     setPacks(catalogue.items);
     setEmailAvailable(profiles.email_available);
+    setRefreshToken((n) => n + 1);
   }, []);
-  const openDossier = useCallback(async (id: string) => {
-    const d = await api<DossierRecord>(`${ROOT}/${id}`);
-    setSelected(d);
-    setView(d.profile.status === 'draft' ? 'wizard' : 'detail');
-    window.history.pushState({}, '', `/?dossier=${id}`);
-  }, []);
+  const openDossier = useCallback(
+    async (id: string, threadId?: string | null) => {
+      const d = await api<DossierRecord>(`${ROOT}/${id}`);
+      setSelected(d);
+      setQuestionId(threadId || null);
+      setView(d.profile.status === 'draft' ? 'wizard' : 'detail');
+      window.history.pushState(
+        {},
+        '',
+        `/?dossier=${id}${threadId ? `&question=${threadId}` : ''}`,
+      );
+    },
+    [],
+  );
   useEffect(() => {
     let disposed = false;
     async function boot() {
@@ -294,7 +310,23 @@ export default function Workspace() {
         if (session.authenticated) {
           await refresh();
           const id = new URLSearchParams(window.location.search).get('dossier');
-          if (id) await openDossier(id);
+          if (id)
+            await openDossier(
+              id,
+              new URLSearchParams(window.location.search).get('question'),
+            );
+          else {
+            const page = new URLSearchParams(window.location.search).get(
+              'view',
+            );
+            if (
+              page &&
+              ['research', 'today', 'dossiers', 'sources', 'team'].includes(
+                page,
+              )
+            )
+              setView(page);
+          }
         }
       } catch (e) {
         if (!disposed) setError((e as Error).message);
@@ -305,9 +337,19 @@ export default function Workspace() {
     void boot();
     const pop = () => {
       const id = new URLSearchParams(window.location.search).get('dossier');
-      if (id) void openDossier(id).catch((e) => setError((e as Error).message));
+      if (id)
+        void openDossier(
+          id,
+          new URLSearchParams(window.location.search).get('question'),
+        ).catch((e) => setError((e as Error).message));
       else {
-        setView('dossiers');
+        const page = new URLSearchParams(window.location.search).get('view');
+        setView(
+          page &&
+            ['research', 'today', 'dossiers', 'sources', 'team'].includes(page)
+            ? page
+            : 'research',
+        );
         setSelected(null);
       }
     };
@@ -325,10 +367,11 @@ export default function Workspace() {
     window.history.pushState(
       {},
       '',
-      next === 'dossiers' ? '/' : `/?view=${next}`,
+      next === 'research' ? '/' : `/?view=${next}`,
     );
   }
   function start(example?: Preset) {
+    setCreating(true);
     setSeed(example || null);
     if (!identity) {
       setLogin(true);
@@ -347,7 +390,7 @@ export default function Workspace() {
   const filtered = items.filter(
     (x) =>
       (filter === 'all' || x.profile.status === filter) &&
-      `${x.profile.config.name} ${x.profile.config.goal}`
+      `${x.profile.config.name} ${x.profile.config.goal} ${x.work?.context.subject || ''} ${x.work?.context.reference || ''}`
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
@@ -364,7 +407,9 @@ export default function Workspace() {
           <nav className="side-nav" aria-label="Workspace navigation">
             {(
               [
-                ['dossiers', 'My dossiers', FolderOpen],
+                ['research', 'Topics', MessagesSquare],
+                ['today', 'Review desk', CalendarClock],
+                ['dossiers', 'Dossier library', FolderOpen],
                 ['sources', 'Source library', Globe],
                 ['team', 'Team & access', Users],
               ] as NavigationItem[]
@@ -374,7 +419,7 @@ export default function Workspace() {
                 variant="ghost"
                 className={
                   view === id ||
-                  (id === 'dossiers' && ['wizard', 'detail'].includes(view))
+                  (id === 'research' && ['wizard', 'detail'].includes(view))
                     ? 'nav-active'
                     : ''
                 }
@@ -421,7 +466,7 @@ export default function Workspace() {
                   setTotal(0);
                   setPacks([]);
                   setSelected(null);
-                  go('dossiers');
+                  go('research');
                 })
               }
             >
@@ -429,7 +474,12 @@ export default function Workspace() {
               Sign out
             </Button>
           ) : (
-            <Button onClick={() => setLogin(true)}>
+            <Button
+              onClick={() => {
+                setCreating(false);
+                setLogin(true);
+              }}
+            >
               <LockKeyhole size={15} />
               Sign in
             </Button>
@@ -451,7 +501,11 @@ export default function Workspace() {
                     ? 'Source library'
                     : view === 'team'
                       ? 'Team & access'
-                      : 'Monitoring dossiers'}
+                      : view === 'today'
+                        ? 'Review desk'
+                        : view === 'research'
+                          ? 'Living topics'
+                          : 'Monitoring dossiers'}
             </b>
           </div>
           <div className="header-actions">
@@ -476,7 +530,13 @@ export default function Workspace() {
               </Button>
             )}
             {!identity && (
-              <Button variant="outline" onClick={() => setLogin(true)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreating(false);
+                  setLogin(true);
+                }}
+              >
                 Sign in
               </Button>
             )}
@@ -517,6 +577,40 @@ export default function Workspace() {
             </div>
           ) : (
             <>
+              {view === 'research' && (
+                <ResearchDesk
+                  identity={identity}
+                  items={items}
+                  total={total}
+                  busy={busy}
+                  run={run}
+                  onStart={start}
+                  onOpen={openDossier}
+                  onMore={async () => {
+                    const next = await api<DossiersPage>(
+                      `${ROOT}?offset=${items.length}`,
+                    );
+                    setItems((current) => [
+                      ...current,
+                      ...next.items.filter(
+                        (x) => !current.some((y) => y.id === x.id),
+                      ),
+                    ]);
+                    setTotal(next.total);
+                  }}
+                />
+              )}
+              {view === 'today' && (
+                <Workbench
+                  identity={identity}
+                  busy={busy}
+                  run={run}
+                  refreshToken={refreshToken}
+                  onStart={() => start()}
+                  onOpen={openDossier}
+                  onBrowse={() => go('dossiers')}
+                />
+              )}
               {view === 'dossiers' && (
                 <>
                   <div className="page-heading">
@@ -615,6 +709,18 @@ export default function Workspace() {
                               {d.profile.config.goal ||
                                 'Continue describing what you want to monitor.'}
                             </p>
+                            {d.work?.context.subject && (
+                              <div className="card-context">
+                                {d.work.context.subject}
+                                {d.work.context.reference &&
+                                  ` · ${d.work.context.reference}`}
+                              </div>
+                            )}
+                            {d.work?.review_due && (
+                              <span className="work-overdue">
+                                Review due · {d.work.next_review_on}
+                              </span>
+                            )}
                             <div className="dossier-meta">
                               <span>
                                 {
@@ -719,7 +825,7 @@ export default function Workspace() {
                   identity={identity}
                   busy={busy}
                   run={run}
-                  onCancel={() => go('dossiers')}
+                  onCancel={() => go('research')}
                   onSaved={async (d: DossierRecord) => {
                     setSelected(d);
                     await refresh();
@@ -735,11 +841,13 @@ export default function Workspace() {
               )}
               {view === 'detail' && selected && (
                 <Dossier
+                  key={selected.id}
+                  initialQuestionId={questionId}
                   dossier={selected}
                   canEdit={canEdit}
                   busy={busy}
                   run={run}
-                  onBack={() => go('dossiers')}
+                  onBack={() => go('research')}
                   reload={async () => {
                     setSelected(
                       await api<DossierRecord>(`${ROOT}/${selected.id}`),
@@ -768,7 +876,14 @@ export default function Workspace() {
                         Sign in to see live collection status and your
                         workspace’s source subscriptions.
                       </span>
-                      <Button onClick={() => setLogin(true)}>Sign in</Button>
+                      <Button
+                        onClick={() => {
+                          setCreating(false);
+                          setLogin(true);
+                        }}
+                      >
+                        Sign in
+                      </Button>
                     </div>
                   )}
                   <Sources packs={packs} />
@@ -787,7 +902,14 @@ export default function Workspace() {
                   <Empty title="A workspace for your team" icon={Users}>
                     Sign in to see your organization and collaborate on shared
                     dossiers.{' '}
-                    <Button onClick={() => setLogin(true)}>Sign in</Button>
+                    <Button
+                      onClick={() => {
+                        setCreating(false);
+                        setLogin(true);
+                      }}
+                    >
+                      Sign in
+                    </Button>
                   </Empty>
                 ))}
             </>
@@ -805,8 +927,17 @@ export default function Workspace() {
           await refresh();
           setLogin(false);
           const id = new URLSearchParams(window.location.search).get('dossier');
-          if (id) await openDossier(id);
-          else setView(s.role === 'organization_admin' ? 'wizard' : 'dossiers');
+          if (id)
+            await openDossier(
+              id,
+              new URLSearchParams(window.location.search).get('question'),
+            );
+          else
+            setView(
+              creating && s.role === 'organization_admin'
+                ? 'wizard'
+                : 'research',
+            );
         }}
       />
     </SidebarProvider>

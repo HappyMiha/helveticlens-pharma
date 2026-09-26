@@ -12,9 +12,9 @@ export async function proxy(
   if (
     !(
       allowed.test(route) ||
-      new RegExp(`^products/${product.id}/dossiers(?:/[a-zA-Z0-9_/-]+)?$`).test(
-        route,
-      )
+      new RegExp(
+        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|workbench|discover)$`,
+      ).test(route)
     )
   )
     return Response.json(
@@ -99,6 +99,8 @@ export async function proxy(
     for (const name of [
       'content-type',
       'content-disposition',
+      'content-security-policy',
+      'referrer-policy',
       'retry-after',
       'x-request-id',
     ]) {

@@ -76,6 +76,23 @@ export interface EntryData {
   topic_id?: string;
   revision?: number;
   suggestion?: number;
+  input_revision?: number;
+  findings?: {
+    claim: string;
+    citations: { source_id: string; quote: string }[];
+  }[];
+  unknowns?: string[];
+  search_queries?: string[];
+  sources?: {
+    id: string;
+    key: string;
+    kind: string;
+    title: string;
+    text: string;
+    url: string;
+    date: string;
+    sha256: string;
+  }[];
 }
 export interface Entry {
   id: string;
@@ -86,11 +103,18 @@ export interface Entry {
     | 'feedback'
     | 'proposal'
     | 'improvement'
-    | 'monitor';
+    | 'monitor'
+    | 'context'
+    | 'review'
+    | 'action'
+    | 'question'
+    | 'discussion'
+    | 'research';
   title: string;
   body: string;
   url: string;
   data: EntryData;
+  thread_id?: string | null;
   byte_size: number;
   sha256: string;
   author: string;
@@ -110,6 +134,9 @@ export interface DossierRecord {
   product: string;
   created_at: string;
   profile: Profile;
+  work: DossierWork;
+  discussion: { questions: number; open_questions: number };
+  activity_at: string;
   entries: Entry[];
   entry_count: number;
   documents: DocumentWatch[];
@@ -147,6 +174,7 @@ export interface Match {
   id: string;
   event_id: string;
   is_current: boolean;
+  evaluation_fingerprint: string | null;
   validity: string;
   matched_at: string;
   evidence: {
@@ -158,7 +186,12 @@ export interface Match {
     authority?: string;
     event_kind?: string;
   };
-  reasons: { matched_concepts?: string[] };
+  reasons: {
+    type: string;
+    value?: string;
+    values?: string[];
+    tokens?: string[];
+  }[];
 }
 export interface Preview {
   topics: {
@@ -184,6 +217,7 @@ export interface Preset {
   name: string;
   goal: string;
   sector: string;
+  source_requests?: SourceRequest[];
 }
 export type Run = (label: string, fn: () => Promise<void>) => Promise<void>;
 export type NavigationItem = [string, string, LucideIcon];
@@ -201,10 +235,113 @@ export interface WizardProps {
 }
 export interface DossierProps {
   dossier: DossierRecord;
+  initialQuestionId?: string | null;
   canEdit: boolean;
   busy: string;
   run: Run;
   onBack: () => void;
   reload: () => Promise<void>;
   notify: (message: string) => void;
+}
+
+export type Priority = 'normal' | 'high' | 'urgent';
+export type ActionStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
+export interface DossierContext {
+  subject: string;
+  reference: string;
+  jurisdictions: string;
+  category: string;
+}
+export interface Person {
+  id: string;
+  name: string;
+}
+export interface DossierWork {
+  revision: number;
+  context: DossierContext;
+  priority: Priority;
+  owner: Person | null;
+  next_review_on: string | null;
+  last_reviewed_at: string | null;
+  review_due: boolean;
+}
+export interface WorkAction {
+  id: string;
+  dossier_id: string;
+  revision: number;
+  title: string;
+  detail: string;
+  status: ActionStatus;
+  priority: Priority;
+  assignee: Person | null;
+  due_on: string | null;
+  overdue: boolean;
+  source_url: string;
+  evidence: {
+    match_id?: string;
+    evaluation_fingerprint?: string;
+    captured_at?: string;
+  };
+  outcome: string;
+  created_at: string;
+  updated_at: string;
+  dossier_name?: string;
+  subject?: string;
+}
+export interface ActionsPage {
+  items: WorkAction[];
+  total: number;
+}
+export interface WorkbenchPage extends ActionsPage {
+  today: string;
+  scope: 'all' | 'mine';
+  counts: {
+    open: number;
+    overdue: number;
+    unassigned: number;
+    completed_week: number;
+    reviews_due: number;
+  };
+  reviews: { id: string; name: string; work: DossierWork }[];
+}
+
+export interface ResearchThread {
+  id: string;
+  dossier_id: string;
+  revision: number;
+  title: string;
+  body: string;
+  author: string;
+  accepted_entry_id: string | null;
+  accepted_at: string | null;
+  reply_count: number;
+  created_at: string;
+  updated_at: string;
+}
+export interface ThreadPage {
+  items: ResearchThread[];
+  total: number;
+}
+export interface ThreadDetail extends ResearchThread {
+  answer_needs_review: boolean;
+  replies: Entry[];
+  accepted: Entry | null;
+}
+export interface SearchHit {
+  id: string;
+  kind: string;
+  provider: string;
+  title: string;
+  summary: string;
+  url: string;
+  date: string | null;
+  dossier_id?: string;
+  thread_id?: string | null;
+}
+export interface DiscoveryResult {
+  query: string;
+  provider: string;
+  items: SearchHit[];
+  checked_at: string;
+  coverage: string;
 }

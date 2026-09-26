@@ -153,3 +153,58 @@ test('upstream failure is visible and does not expose network details', async ()
   assert.equal(response.status, 503);
   assert.doesNotMatch(await response.text(), /private diagnostic/);
 });
+
+test('research, private discussion and brief preserve query, authorization and response boundaries', async () => {
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: new URL(url), init });
+    return new Response('private content', {
+      headers: {
+        'content-type': 'text/html',
+        'content-security-policy':
+          "default-src 'none'; style-src 'unsafe-inline'",
+        'referrer-policy': 'no-referrer',
+      },
+    });
+  };
+  for (const route of [
+    `products/${product.id}/discover`,
+    `products/${product.id}/workbench`,
+    `products/${product.id}/dossiers/topic/discussion/question`,
+    `products/${product.id}/dossiers/topic/brief`,
+  ]) {
+    const response = await proxy(
+      new Request(`https://product.test/api/${route}?q=source%20evidence`, {
+        headers: { cookie: 'helvetic_lens_session=test; unrelated=secret' },
+      }),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+    assert.match(
+      response.headers.get('content-security-policy'),
+      /default-src 'none'/,
+    );
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+  }
+  assert.equal(calls.length, 4);
+  for (const { url, init } of calls) {
+    assert.equal(url.origin, 'https://helveticlens.ch');
+    assert.equal(url.searchParams.get('q'), 'source evidence');
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=test');
+  }
+  for (const route of [
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/workbench`,
+  ])
+    assert.equal(
+      (
+        await proxy(
+          new Request(`https://product.test/api/${route}`),
+          context(route),
+        )
+      ).status,
+      404,
+    );
+  assert.equal(calls.length, 4);
+});

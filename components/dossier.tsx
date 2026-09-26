@@ -6,6 +6,8 @@ import {
   ArrowRight,
   ArrowUpRight,
   Bell,
+  ClipboardList,
+  Printer,
   Check,
   ExternalLink,
   FileText,
@@ -38,9 +40,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api, date, uid } from '@/lib/api';
 import { Empty, Field, ROOT, Status } from './workspace';
+import { Discussion } from './discussion';
+import { DossierWork } from './dossier-work';
+import { ActionDialog } from './action-dialog';
 
 export function Dossier({
   dossier: d,
+  initialQuestionId,
   canEdit,
   busy,
   run,
@@ -50,7 +56,8 @@ export function Dossier({
 }: DossierProps) {
   const p = d.profile,
     c = p.config;
-  const [tab, setTab] = useState('overview'),
+  const [tab, setTab] = useState('discussion'),
+    [actionEvidence, setActionEvidence] = useState<Match | null>(null),
     [note, setNote] = useState(''),
     [reference, setReference] = useState({ title: '', url: '', body: '' }),
     [matches, setMatches] = useState<Match[]>([]),
@@ -113,8 +120,17 @@ export function Dossier({
       <div className="detail-top">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={16} />
-          All dossiers
+          All topics
         </Button>
+        <a
+          className="download-link"
+          href={`/api${ROOT}/${d.id}/brief`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <Printer size={16} />
+          Topic brief
+        </a>
         <a className="download-link" href={`/api${ROOT}/${d.id}/export`}>
           <ArrowDownToLine size={16} />
           Export dossier
@@ -168,7 +184,9 @@ export function Dossier({
         <TabsList variant="line">
           {(
             [
-              ['overview', 'Overview', FolderOpen],
+              ['discussion', 'Questions & discussion', MessageSquare],
+              ['overview', 'Monitoring', FolderOpen],
+              ['work', 'Actions & reviews', ClipboardList],
               ['evidence', 'Evidence & sources', Globe],
               ['notes', `Notes · ${notes.length}`, MessageSquare],
               ['files', `Files · ${files.length}`, FileText],
@@ -181,6 +199,33 @@ export function Dossier({
             </TabsTrigger>
           ))}
         </TabsList>
+        <TabsContent value="discussion">
+          <Discussion
+            dossier={d}
+            initialQuestionId={initialQuestionId}
+            canEdit={canEdit}
+            busy={busy}
+            run={run}
+            reload={refreshed}
+            notify={notify}
+            onRefine={(question) => {
+              setRefinement(question);
+              setTab('learning');
+            }}
+          />
+        </TabsContent>
+        <TabsContent value="work">
+          <DossierWork
+            key={`${d.id}:${d.work.revision}`}
+            dossier={d}
+            entries={entries}
+            canEdit={canEdit}
+            busy={busy}
+            run={run}
+            reload={refreshed}
+            notify={notify}
+          />
+        </TabsContent>
         <TabsContent value="overview">
           <div className="detail-columns">
             <section>
@@ -230,7 +275,15 @@ export function Dossier({
               ) : matches.length ? (
                 <div className="evidence-list">
                   {matches.slice(0, 5).map((m) => (
-                    <Evidence key={m.id} item={m} />
+                    <Evidence
+                      key={m.id}
+                      item={m}
+                      onAction={
+                        canEdit && m.is_current
+                          ? () => setActionEvidence(m)
+                          : undefined
+                      }
+                    />
                   ))}
                 </div>
               ) : (
@@ -325,7 +378,14 @@ export function Dossier({
             <div className="evidence-list">
               {matches.map((m) => (
                 <div key={m.id}>
-                  <Evidence item={m} />
+                  <Evidence
+                    item={m}
+                    onAction={
+                      canEdit && m.is_current
+                        ? () => setActionEvidence(m)
+                        : undefined
+                    }
+                  />
                   {canEdit && (
                     <div className="evidence-feedback">
                       <Button
@@ -870,6 +930,20 @@ export function Dossier({
           ))}
         </TabsContent>
       </Tabs>
+      {actionEvidence && (
+        <ActionDialog
+          dossierId={d.id}
+          evidence={actionEvidence}
+          canEdit={canEdit}
+          busy={busy}
+          run={run}
+          onClose={() => setActionEvidence(null)}
+          onSaved={async () => {
+            await refreshed();
+            notify('Action saved with its evidence snapshot and source.');
+          }}
+        />
+      )}
       {d.entry_count > entries.length && (
         <div className="load-history">
           <p>
@@ -894,7 +968,13 @@ export function Dossier({
     </>
   );
 }
-function Evidence({ item: m }: { item: Match }) {
+function Evidence({
+  item: m,
+  onAction,
+}: {
+  item: Match;
+  onAction?: () => void;
+}) {
   const e = m.evidence || {},
     url = e.source_url;
   return (
@@ -915,12 +995,7 @@ function Evidence({ item: m }: { item: Match }) {
           {e.title || e.work_title || e.event_title || 'Saved regulatory event'}
         </h3>
         {e.summary && <p>{e.summary}</p>}
-        <p className="muted">
-          Matched {date(m.matched_at)}
-          {m.reasons?.matched_concepts?.length
-            ? ' · ' + m.reasons.matched_concepts.join(', ')
-            : ''}
-        </p>
+        <p className="muted">Matched {date(m.matched_at)}</p>
         {url && (
           <a
             className="source-link"
@@ -933,8 +1008,23 @@ function Evidence({ item: m }: { item: Match }) {
         )}
         <details>
           <summary>Why this appeared</summary>
-          <pre>{JSON.stringify(m.reasons, null, 2)}</pre>
+          <ul>
+            {m.reasons?.map((reason, i) => (
+              <li key={i}>
+                {reason.type.replaceAll('_', ' ')}
+                {reason.value ? `: ${reason.value}` : ''}
+                {reason.values?.length ? `: ${reason.values.join(', ')}` : ''}
+                {reason.tokens?.length ? `: ${reason.tokens.join(', ')}` : ''}
+              </li>
+            ))}
+          </ul>
         </details>
+        {onAction && (
+          <Button variant="outline" size="sm" onClick={onAction}>
+            <ClipboardList size={15} />
+            Create follow-up action
+          </Button>
+        )}
       </div>
     </article>
   );

@@ -6,6 +6,24 @@ export const product = {
   noun: 'product',
   description:
     'Regulatory intelligence for medicines, safety and market access.',
+  work: {
+    subject: 'Medicine / active substance',
+    reference: 'Programme / portfolio reference',
+    jurisdictions: 'Markets in scope',
+    category: 'Lifecycle stage',
+    categories: [
+      'Discovery',
+      'Clinical development',
+      'Authorisation',
+      'Marketed medicine',
+      'Post-market safety',
+    ],
+    heading: 'Regulatory review desk',
+    contextHint:
+      'Keep product, safety and market access decisions in one dossier.',
+    reviewPrompt:
+      'What did you review, what is the impact on this medicine or programme, and what happens next?',
+  },
   examples: [
     {
       name: 'Medicine safety',

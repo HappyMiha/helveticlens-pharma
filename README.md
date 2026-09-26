@@ -6,8 +6,14 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
+See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
+
 ## What works
 
+- Living professional topics with focused questions, attributed source-linked replies, team-accepted working answers and reopening.
+- Workspace discovery plus explicit Fedlex official title search and Europe PMC literature lookup. Search results seed a topic or become saved references.
+- Evidence-grounded AI research notes with exact quote checks, source snapshots, open gaps and manual acceptance.
+- Accountable follow-up actions, owners, deadlines, review rhythm, team/personal work queue and a private printable topic brief.
 - Existing HelveticLens sign-in and registration, organization permissions and server sessions.
 - Durable five-step drafts, real configured AI proposals, manual editing, source recommendations restricted to the real catalogue, saved-evidence previews and idempotent activation.
 - Organization- and product-scoped dossiers with original-source links, comments, files, relevance feedback, export and activity history.
@@ -18,7 +24,7 @@ Describe a monitoring question → review AI topics → select primary sources �
 
 ## Architecture
 
-This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py` and `product_models.py`; schema migration `f3c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
+This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f4c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
 
 No production records, credentials, provider keys or uploaded files are stored in this repository. The browser never chooses the upstream origin. The gateway forwards only HelveticLens session/CSRF cookies, preserves HttpOnly cookies, checks mutation origins, bounds streamed uploads and sends private responses with `no-store`.
 
@@ -49,7 +55,7 @@ Email choices change the current user's personal organization digest, not an ind
 
 ## Verification
 
-Production build, strict TypeScript and authored-source lint. Five gateway contract tests cover cookie filtering, session propagation, route/product restrictions, cross-origin writes, streamed upload bounds, private binary download and failure recovery. Native backend tests cover persistence, activation, tenant isolation, author-private drafts, viewer denial, CSRF, file ownership/integrity/retention, genuine scheduler admission, bounded AI catalogue recommendations and reviewed topic revisions.
+Production build, strict TypeScript and authored-source lint. Six gateway contract tests cover cookie filtering, session propagation, route/product restrictions, cross-origin writes, streamed upload bounds, private binary download, research/queue route isolation, brief security headers and failure recovery. Native backend tests cover persistence, activation, tenant isolation, author-private drafts, viewer denial, CSRF, file ownership/integrity/retention, genuine scheduler admission, bounded AI catalogue recommendations, reviewed topic revisions, collaborative questions, exact research citations, action ownership/outcomes, real pagination, migration preservation and retained team work after account erasure.
 
 Vendored UI primitives and the generated mobile hook retain their upstream source. Lint excludes those generated files; all authored product code remains under the strict project rules.
 
