@@ -344,6 +344,8 @@ export interface DiscoveryResult {
   items: SearchHit[];
   checked_at: string;
   coverage: string;
+  total?: number | null;
+  match_mode?: 'all' | 'phrase' | null;
 }
 export interface SearchAngle {
   label: string;

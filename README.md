@@ -12,6 +12,7 @@ See [the product model](PRODUCT.md) for the research loop, intended users, cover
 
 - Living professional topics with focused questions, attributed source-linked replies, team-accepted working answers and reopening.
 - Reviewed AI search plans turn a question into up to five source-specific queries and scope clarifications. Only the entered question reaches the configured AI; choosing a suggestion prepares an editable search without contacting a public source.
+- Team search matches all words across each record’s fields or an exact phrase, prioritizes title matches and shows real matching totals when the visible results are capped.
 - Workspace discovery plus explicit Fedlex official title search and Europe PMC literature lookup. Search results seed a topic or become saved references.
 - Evidence-grounded AI research notes with exact quote checks, source snapshots, open gaps and manual acceptance.
 - Accountable follow-up actions, owners, deadlines, review rhythm, team/personal work queue and a private printable topic brief.

@@ -66,6 +66,7 @@ export function Discovery({
 }) {
   const [query, setQuery] = useState(initialQuery),
     [provider, setProvider] = useState('workspace'),
+    [matchMode, setMatchMode] = useState('all'),
     [result, setResult] = useState<DiscoveryResult | null>(null),
     [plan, setPlan] = useState<SearchPlan | null>(null),
     [failure, setFailure] = useState(''),
@@ -80,7 +81,7 @@ export function Discovery({
     try {
       setResult(
         await api<DiscoveryResult>(
-          `/products/${product.id}/discover?provider=${provider}&q=${encodeURIComponent(query.trim())}`,
+          `/products/${product.id}/discover?provider=${provider}&q=${encodeURIComponent(query.trim())}${provider === 'workspace' ? `&mode=${matchMode}` : ''}`,
         ),
       );
     } catch (e) {
@@ -149,6 +150,17 @@ export function Discovery({
             Europe PMC · literature
           </NativeSelectOption>
         </NativeSelect>
+        {provider === 'workspace' && (
+          <NativeSelect
+            aria-label="How to match team knowledge"
+            value={matchMode}
+            onChange={(e) => setMatchMode(e.target.value)}
+            disabled={!!busy}
+          >
+            <NativeSelectOption value="all">All words</NativeSelectOption>
+            <NativeSelectOption value="phrase">Exact phrase</NativeSelectOption>
+          </NativeSelect>
+        )}
         <Button type="submit" disabled={!!busy || query.trim().length < 2}>
           {busy === 'search' ? (
             <LoaderCircle size={17} className="spin" />
@@ -160,7 +172,7 @@ export function Discovery({
       </form>
       <p className="search-scope">
         {provider === 'workspace'
-          ? 'Search saved topics, questions and contributions visible to you.'
+          ? `Search saved topics, questions and contributions visible to you. ${matchMode === 'all' ? 'All words must appear in the same record, in any order or field (up to 12 distinct words).' : 'Find the complete phrase within one field.'}`
           : `Only the search phrase above is sent to ${provider === 'fedlex' ? 'Fedlex' : 'Europe PMC'}. Open results to check their scope and status.`}
       </p>
       {canPlan && (
@@ -196,6 +208,7 @@ export function Discovery({
           onSelect={(angle) => {
             setQuery(angle.query);
             setProvider(angle.provider);
+            setMatchMode('all');
             setResult(null);
             setFailure('');
             searchInput.current?.focus();
@@ -210,15 +223,30 @@ export function Discovery({
         <>
           <div className="search-result-heading">
             <span>
-              <b>{result.items.length}</b> results for “{result.query}” ·{' '}
+              <b>
+                {result.items.length}
+                {result.total != null && result.total > result.items.length
+                  ? ` of ${result.total}`
+                  : ''}
+              </b>{' '}
+              results for “{result.query}” ·{' '}
               {result.provider === 'workspace'
                 ? 'Team knowledge'
                 : result.provider === 'fedlex'
                   ? 'Fedlex'
                   : 'Europe PMC'}
+              {result.match_mode &&
+                ` · ${result.match_mode === 'all' ? 'All words' : 'Exact phrase'}`}
             </span>
             <span>{date(result.checked_at)}</span>
           </div>
+          {result.total != null && result.total > result.items.length && (
+            <output className="search-scope block">
+              Showing up to 20 topics, 20 questions and 20 contributions. Add
+              another word or choose Exact phrase to narrow these {result.total}{' '}
+              matches.
+            </output>
+          )}
           <div className="discovery-results">
             {result.items.map((hit) => (
               <article className="discovery-hit" key={`${hit.kind}:${hit.id}`}>
