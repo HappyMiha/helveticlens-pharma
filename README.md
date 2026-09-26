@@ -15,7 +15,8 @@ See [the product model](PRODUCT.md) for the research loop, intended users, cover
 - Team search matches all words across each record’s fields or an exact phrase, prioritizes title matches and shows real matching totals when the visible results are capped.
 - Workspace discovery plus explicit Fedlex official title search and Europe PMC literature lookup. Search results seed a topic or become saved references.
 - Evidence-grounded AI research notes with exact quote checks, source snapshots, open gaps and manual acceptance.
-- Accountable follow-up actions, owners, deadlines, review rhythm, team/personal work queue and a private printable topic brief.
+- Accountable actions created directly from questions or specific AI evidence gaps, with an immutable research origin, owners, deadlines and outcomes visible beside the question.
+- Review rhythm, team/personal work queue, links back to the originating question and a private printable topic brief.
 - Existing HelveticLens sign-in and registration, organization permissions and server sessions.
 - Durable five-step drafts, real configured AI proposals, manual editing, source recommendations restricted to the real catalogue, saved-evidence previews and idempotent activation.
 - Organization- and product-scoped dossiers with original-source links, comments, files, relevance feedback, export and activity history.
@@ -57,7 +58,7 @@ Email choices change the current user's personal organization digest, not an ind
 
 ## Verification
 
-Production build, strict TypeScript and authored-source lint. Seven gateway contract tests cover cookie filtering, session propagation, route/product restrictions, cross-origin writes, streamed upload bounds, private binary download, research/queue route isolation, brief security headers, explicit AI-plan bodies/CSRF, strict planning-route isolation and failure recovery. Native backend tests cover persistence, activation, tenant isolation, author-private drafts, viewer denial, CSRF, file ownership/integrity/retention, genuine scheduler admission, bounded AI catalogue recommendations, reviewed topic revisions, collaborative questions, exact research citations, action ownership/outcomes, real pagination, migration preservation and retained team work after account erasure.
+Production build, strict TypeScript and authored-source lint. Seven gateway contract tests cover cookie filtering, session propagation, route/product restrictions, cross-origin writes, streamed upload bounds, private binary download, research/queue route isolation, brief security headers, explicit AI-plan bodies/CSRF, strict planning-route isolation and failure recovery. Native backend tests cover persistence, activation, tenant isolation, author-private drafts, viewer denial, CSRF, file ownership/integrity/retention, genuine scheduler admission, bounded AI catalogue recommendations, reviewed topic revisions, collaborative questions, exact research citations, action ownership/outcomes, server-verified question/gap origins, filtered follow-up pagination, legacy action retries, real pagination, migration preservation and retained team work after account erasure.
 
 Vendored UI primitives and the generated mobile hook retain their upstream source. Lint excludes those generated files; all authored product code remains under the strict project rules.
 

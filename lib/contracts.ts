@@ -265,6 +265,22 @@ export interface DossierWork {
   last_reviewed_at: string | null;
   review_due: boolean;
 }
+export interface ResearchOriginRef {
+  thread_id: string;
+  entry_id?: string;
+  gap_index?: number;
+}
+export interface ResearchActionSeed {
+  origin: ResearchOriginRef;
+  question: string;
+  context: string;
+  gap?: string;
+}
+export interface ResearchOriginSnapshot extends ResearchOriginRef {
+  question: string;
+  captured_at: string;
+  gap?: string;
+}
 export interface WorkAction {
   id: string;
   dossier_id: string;
@@ -281,6 +297,7 @@ export interface WorkAction {
     match_id?: string;
     evaluation_fingerprint?: string;
     captured_at?: string;
+    research?: ResearchOriginSnapshot;
   };
   outcome: string;
   created_at: string;

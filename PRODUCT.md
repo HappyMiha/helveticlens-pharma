@@ -15,16 +15,16 @@ The main unit is a **living topic**: a monitoring dossier with a shared goal, fo
 3. **Develop it together.** Open focused questions. Contributors attach source links to replies, compare interpretations, add private files and preserve provenance. Administrators contribute under the platform's existing role model; viewers read.
 4. **Research with evidence.** AI drafts a note using bounded snapshots from the topic: team contributions, saved page extracts and event metadata. Every finding includes a known source and an exact quote, checked before saving. The note also shows unknowns and suggested search phrases. Source relevance and professional interpretation still need review.
 5. **Accept a working answer.** A person selects an answer; AI cannot accept itself. The answer stays linked to its evidence and can be reopened as information changes. New saved material prompts a review of an accepted answer.
-6. **Act and improve.** Assign follow-up work, set a team deadline, record an outcome and schedule reviews. Research gaps can be carried into a monitoring improvement proposal; a reviewed change creates a native topic revision. Monitoring continues and provides the next evidence.
+6. **Act and improve.** Create follow-up directly from the question or a specific AI evidence gap. Review the draft, assign responsibility and a team deadline, then record an outcome. The server preserves the originating question and exact saved gap; the question shows its own paginated actions and outcomes. Completing an action leaves answer acceptance to the team. Schedule topic reviews. Research gaps can be carried into a monitoring improvement proposal; a reviewed change creates a native topic revision. Monitoring continues and provides the next evidence.
 
 ## Product surfaces
 
 - **Topics:** collective research homepage, visible topic activity, unanswered-question counts, workspace and external discovery.
-- **Questions & discussion:** attributed threaded contributions, AI research notes, accepted answers, unresolved gaps and next searches.
+- **Questions & discussion:** attributed threaded contributions, AI research notes, accepted answers, unresolved gaps, next searches and accountable follow-up with recorded outcomes.
 - **Monitoring / evidence:** saved native events, match explanations and validity, page-watch results, original sources and collection coverage.
 - **Actions & reviews:** medicine/programme/market/lifecycle context, responsibility, priority, next review and outcomes.
 - **Review desk:** paginated team or personal queue; overdue work, unassigned actions and due reviews are calculated from persisted records.
-- **Topic brief:** private printable snapshot of questions, working answers, citations, unknowns, actions, decisions and references. JSON export includes structured questions, replies and actions; attachments remain separate downloads.
+- **Topic brief:** private printable snapshot of questions, working answers, citations, unknowns, actions, decisions and references. JSON export includes structured questions, replies, actions and their research origins; attachments remain separate downloads.
 
 ## Trust and actual boundaries
 

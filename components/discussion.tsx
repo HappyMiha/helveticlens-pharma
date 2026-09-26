@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Check,
   CircleHelp,
+  ClipboardList,
   MessageSquare,
   Plus,
   RefreshCw,
@@ -27,16 +28,19 @@ import {
 import type {
   DossierRecord,
   Entry,
+  ResearchActionSeed,
   Run,
   SearchHit,
   ThreadDetail,
   ThreadPage,
+  WorkAction,
 } from '@/lib/contracts';
 import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
-import { WorkField } from './action-dialog';
+import { ActionDialog, WorkField } from './action-dialog';
 import { Discovery } from './discovery';
+import { ResearchFollowups } from './research-followups';
 
 function safeSource(url: string) {
   try {
@@ -49,9 +53,13 @@ function safeSource(url: string) {
 export function ResearchPost({
   post,
   onSearch,
+  onFollowup,
+  busy = false,
 }: {
   post: Entry;
   onSearch: (query: string) => void;
+  onFollowup?: (post: Entry, gapIndex: number) => void;
+  busy?: boolean;
 }) {
   if (post.kind !== 'research')
     return (
@@ -113,7 +121,19 @@ export function ResearchPost({
         </h4>
         <ul>
           {post.data.unknowns?.map((gap, i) => (
-            <li key={i}>{gap}</li>
+            <li key={i}>
+              <span>{gap}</span>
+              {onFollowup && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => onFollowup(post, i)}
+                >
+                  <ClipboardList size={14} /> Create follow-up
+                </Button>
+              )}
+            </li>
           ))}
         </ul>
       </div>
@@ -181,7 +201,10 @@ export function Discussion({
     [reply, setReply] = useState(''),
     [source, setSource] = useState(''),
     [replyKey, setReplyKey] = useState(uid),
-    [discoveryQuery, setDiscoveryQuery] = useState<string | null>(null);
+    [discoveryQuery, setDiscoveryQuery] = useState<string | null>(null),
+    [actionSeed, setActionSeed] = useState<ResearchActionSeed | null>(null),
+    [editingAction, setEditingAction] = useState<WorkAction | null>(null),
+    [actionsRefresh, setActionsRefresh] = useState(0);
   const sourceKeys = useRef(new Map<string, string>());
   const researchKeys = useRef(new Map<string, string>());
   const root = `/products/${product.id}/dossiers/${dossier.id}`;
@@ -232,6 +255,22 @@ export function Discussion({
     await open(id, postOffset);
     await load();
     await reload();
+  }
+  function prepareFollowup(post?: Entry, gapIndex?: number) {
+    if (!selected || !canEdit || busy) return;
+    setActionSeed({
+      origin: {
+        thread_id: selected.id,
+        ...(post && gapIndex !== undefined
+          ? { entry_id: post.id, gap_index: gapIndex }
+          : {}),
+      },
+      question: selected.title,
+      context: selected.body,
+      ...(post && gapIndex !== undefined
+        ? { gap: post.data.unknowns?.[gapIndex] }
+        : {}),
+    });
   }
   async function saveSource(hit: SearchHit) {
     let key = sourceKeys.current.get(hit.id);
@@ -466,6 +505,13 @@ export function Discussion({
                 <Sparkles size={16} />
                 Research with AI
               </Button>
+              <Button
+                variant="outline"
+                disabled={!canEdit || !!busy}
+                onClick={() => prepareFollowup()}
+              >
+                <ClipboardList size={16} /> Create follow-up
+              </Button>
               <Button variant="outline" onClick={() => setDiscoveryQuery('')}>
                 <Search size={16} />
                 Find sources
@@ -560,9 +606,19 @@ export function Discussion({
               <ResearchPost
                 post={selected.accepted}
                 onSearch={setDiscoveryQuery}
+                onFollowup={canEdit ? prepareFollowup : undefined}
+                busy={!!busy}
               />
             </section>
           )}
+          <ResearchFollowups
+            key={selected.id}
+            dossierId={dossier.id}
+            threadId={selected.id}
+            refreshToken={actionsRefresh}
+            busy={!!busy}
+            onEdit={setEditingAction}
+          />
           <div className="thread-contributions">
             <div className="section-header">
               <h3>{selected.reply_count} contributions</h3>
@@ -583,7 +639,12 @@ export function Discussion({
                     </span>
                   )}
                 </div>
-                <ResearchPost post={post} onSearch={setDiscoveryQuery} />
+                <ResearchPost
+                  post={post}
+                  onSearch={setDiscoveryQuery}
+                  onFollowup={canEdit ? prepareFollowup : undefined}
+                  busy={!!busy}
+                />
                 {canEdit && post.id !== selected.accepted_entry_id && (
                   <div className="post-actions">
                     <Button
@@ -765,6 +826,31 @@ export function Discussion({
           </form>
         </DialogContent>
       </Dialog>
+      {(actionSeed || editingAction) && (
+        <ActionDialog
+          key={
+            editingAction?.id ||
+            `${actionSeed?.origin.thread_id}:${actionSeed?.origin.entry_id || ''}:${actionSeed?.origin.gap_index ?? ''}`
+          }
+          dossierId={dossier.id}
+          action={editingAction || undefined}
+          research={actionSeed || undefined}
+          canEdit={canEdit}
+          busy={busy}
+          run={run}
+          onClose={() => {
+            setActionSeed(null);
+            setEditingAction(null);
+          }}
+          onSaved={async () => {
+            setActionsRefresh((value) => value + 1);
+            await reload();
+            notify(
+              'Follow-up saved. Its question, responsibility and outcome remain connected.',
+            );
+          }}
+        />
+      )}
       <Dialog
         open={discoveryQuery !== null}
         onOpenChange={(v) => {

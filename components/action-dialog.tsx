@@ -21,6 +21,7 @@ import type {
   Match,
   Member,
   Priority,
+  ResearchActionSeed,
   Run,
   WorkAction,
 } from '@/lib/contracts';
@@ -82,6 +83,7 @@ export function ActionDialog({
   dossierId,
   action,
   evidence,
+  research,
   canEdit,
   busy,
   run,
@@ -91,6 +93,7 @@ export function ActionDialog({
   dossierId: string;
   action?: WorkAction;
   evidence?: Match;
+  research?: ResearchActionSeed;
   canEdit: boolean;
   busy: string;
   run: Run;
@@ -103,13 +106,22 @@ export function ActionDialog({
     [form, setForm] = useState({
       title:
         action?.title ||
-        (evidence
-          ? `Review: ${evidence.evidence.title || evidence.evidence.work_title || 'source development'}`.slice(
+        (research
+          ? `Investigate: ${research.gap || research.question}`.slice(0, 240)
+          : evidence
+            ? `Review: ${evidence.evidence.title || evidence.evidence.work_title || 'source development'}`.slice(
+                0,
+                240,
+              )
+            : ''),
+      detail:
+        action?.detail ||
+        (research
+          ? `Research question: ${research.question}\n${research.context}${research.gap ? `\nGap to establish: ${research.gap}` : ''}`.slice(
               0,
-              240,
+              4000,
             )
           : ''),
-      detail: action?.detail || '',
       priority: action?.priority || ('normal' as Priority),
       status: action?.status || ('open' as ActionStatus),
       assignee: action?.assignee?.id || '',
@@ -156,6 +168,7 @@ export function ActionDialog({
         source_url: form.source,
         match_id: evidence?.id || null,
         evaluation_fingerprint: evidence?.evaluation_fingerprint || '',
+        ...(research ? { research_origin: research.origin } : {}),
       });
     await onSaved();
     onClose();
@@ -173,11 +186,33 @@ export function ActionDialog({
             {action ? 'Action and decision' : 'Create an action'}
           </DialogTitle>
           <DialogDescription>
-            {evidence
-              ? 'The current evidence and its original source will be linked to this action.'
-              : 'Give the next step an owner, a team deadline and a recorded outcome.'}
+            {research
+              ? 'Review the next step, choose an owner and save. Its research question and saved gap will stay attached.'
+              : evidence
+                ? 'The current evidence and its original source will be linked to this action.'
+                : 'Give the next step an owner, a team deadline and a recorded outcome.'}
           </DialogDescription>
         </DialogHeader>
+        {(action?.evidence.research || research) && (
+          <aside className="action-research-origin">
+            <b>From a research question</b>
+            <p>{action?.evidence.research?.question || research?.question}</p>
+            {(action?.evidence.research?.gap || research?.gap) && (
+              <p>
+                <b>Gap to establish:</b>{' '}
+                {action?.evidence.research?.gap || research?.gap}
+              </p>
+            )}
+            {action?.evidence.research && (
+              <a
+                className="source-link"
+                href={`/?dossier=${dossierId}&question=${action.evidence.research.thread_id}`}
+              >
+                Open research question <ArrowUpRight size={14} />
+              </a>
+            )}
+          </aside>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();

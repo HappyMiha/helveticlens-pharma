@@ -52,6 +52,15 @@ export function ActionRow({
             <ArrowRight size={13} />
           </button>
         )}
+        {action.evidence.research && (
+          <a
+            className="work-parent"
+            href={`/?dossier=${action.dossier_id}&question=${action.evidence.research.thread_id}`}
+          >
+            Research: {action.evidence.research.question}{' '}
+            <ArrowRight size={13} />
+          </a>
+        )}
         <div className="work-row-meta">
           <span>
             <UserRound size={14} />

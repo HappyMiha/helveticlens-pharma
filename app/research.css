@@ -4,6 +4,71 @@
   letter-spacing: -0.045em;
   line-height: 1.1;
 }
+.research-followups {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  margin: 1.25rem 0;
+}
+.research-followups h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+.research-followup {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+.research-followup .work-row {
+  border: 0;
+  margin: 0;
+}
+.followup-gap,
+.followup-outcome {
+  margin: 0 1.2rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.followup-gap,
+.followup-empty {
+  color: var(--muted-foreground);
+}
+.followup-empty {
+  font-size: 0.875rem;
+  line-height: 1.8;
+  margin-top: 1rem;
+}
+.followup-outcome {
+  padding: 0.7rem 1rem;
+  background: var(--secondary);
+  border-radius: 6px;
+}
+.followup-outcome p {
+  white-space: pre-wrap;
+}
+.research-gaps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem 1rem;
+  margin: 0.8rem 0;
+}
+.research-gaps li > span {
+  flex: 1 1 240px;
+}
+.action-research-origin {
+  border-left: 2px solid var(--primary);
+  padding: 0.75rem 1rem;
+  background: var(--secondary);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.action-research-origin p {
+  margin: 0.4rem 0;
+}
 .research-heading p {
   max-width: 620px;
 }
