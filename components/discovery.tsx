@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Plus,
   Search,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +17,15 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from '@/components/ui/native-select';
-import type { DiscoveryResult, Preset, SearchHit } from '@/lib/contracts';
+import type {
+  DiscoveryResult,
+  Preset,
+  SearchHit,
+  SearchPlan,
+} from '@/lib/contracts';
 import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
+import { SearchPlanView } from './search-plan';
 
 export function monitoringSeed(query: string, hit?: SearchHit): Preset {
   return {
@@ -49,21 +56,27 @@ export function Discovery({
   onOpen,
   onCreate,
   onSave,
+  canPlan = false,
 }: {
   initialQuery?: string;
   onOpen: (id: string, threadId?: string | null) => void;
   onCreate?: (seed: Preset) => void;
   onSave?: (hit: SearchHit) => Promise<void>;
+  canPlan?: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery),
     [provider, setProvider] = useState('workspace'),
     [result, setResult] = useState<DiscoveryResult | null>(null),
+    [plan, setPlan] = useState<SearchPlan | null>(null),
     [failure, setFailure] = useState(''),
-    [busy, setBusy] = useState(false),
+    [busy, setBusy] = useState(''),
     [saved, setSaved] = useState<string[]>([]);
+  const searchInput = useRef<HTMLInputElement>(null);
   async function search() {
-    setBusy(true);
+    if (busy || query.trim().length < 2) return;
+    setBusy('search');
     setFailure('');
+    setResult(null);
     try {
       setResult(
         await api<DiscoveryResult>(
@@ -73,7 +86,24 @@ export function Discovery({
     } catch (e) {
       setFailure((e as Error).message);
     } finally {
-      setBusy(false);
+      setBusy('');
+    }
+  }
+  async function planSearch() {
+    if (busy || !canPlan || query.trim().length < 5) return;
+    setBusy('plan');
+    setFailure('');
+    setPlan(null);
+    try {
+      setPlan(
+        await api<SearchPlan>(`/products/${product.id}/discover/plan`, {
+          question: query.trim(),
+        }),
+      );
+    } catch (e) {
+      setFailure((e as Error).message);
+    } finally {
+      setBusy('');
     }
   }
   return (
@@ -88,6 +118,7 @@ export function Discovery({
         <div className="discovery-input">
           <Search size={21} />
           <Input
+            ref={searchInput}
             aria-label="Search phrase"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -99,14 +130,14 @@ export function Discovery({
             minLength={2}
             maxLength={300}
             required
-            disabled={busy}
+            disabled={!!busy}
           />
         </div>
         <NativeSelect
           aria-label="Where to search"
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
-          disabled={busy}
+          disabled={!!busy}
         >
           <NativeSelectOption value="workspace">
             Team knowledge
@@ -118,8 +149,8 @@ export function Discovery({
             Europe PMC · literature
           </NativeSelectOption>
         </NativeSelect>
-        <Button type="submit" disabled={busy}>
-          {busy ? (
+        <Button type="submit" disabled={!!busy || query.trim().length < 2}>
+          {busy === 'search' ? (
             <LoaderCircle size={17} className="spin" />
           ) : (
             <Search size={17} />
@@ -132,16 +163,54 @@ export function Discovery({
           ? 'Search saved topics, questions and contributions visible to you.'
           : `Only the search phrase above is sent to ${provider === 'fedlex' ? 'Fedlex' : 'Europe PMC'}. Open results to check their scope and status.`}
       </p>
+      {canPlan && (
+        <div className="discovery-plan-action">
+          <Button
+            variant="outline"
+            disabled={!!busy || query.trim().length < 5}
+            onClick={() => void planSearch()}
+          >
+            {busy === 'plan' ? (
+              <LoaderCircle size={16} className="spin" />
+            ) : (
+              <Sparkles size={16} />
+            )}
+            {busy === 'plan' ? 'Planning your search…' : 'Plan with AI'}
+          </Button>
+          <span>
+            Only the text in the search field goes to your configured AI. Get
+            suggested queries and sources to review.
+          </span>
+        </div>
+      )}
       {failure && (
         <div role="alert" className="banner error">
           {failure}
         </div>
       )}
+      {plan && (
+        <SearchPlanView
+          plan={plan}
+          disabled={!!busy}
+          onDismiss={() => setPlan(null)}
+          onSelect={(angle) => {
+            setQuery(angle.query);
+            setProvider(angle.provider);
+            setResult(null);
+            setFailure('');
+            searchInput.current?.focus();
+            searchInput.current?.scrollIntoView({
+              block: 'nearest',
+              behavior: 'smooth',
+            });
+          }}
+        />
+      )}
       {result && !failure && (
         <>
           <div className="search-result-heading">
             <span>
-              <b>{result.items.length}</b> results ·{' '}
+              <b>{result.items.length}</b> results for “{result.query}” ·{' '}
               {result.provider === 'workspace'
                 ? 'Team knowledge'
                 : result.provider === 'fedlex'
@@ -190,9 +259,9 @@ export function Discovery({
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={busy || saved.includes(hit.id)}
+                        disabled={!!busy || saved.includes(hit.id)}
                         onClick={async () => {
-                          setBusy(true);
+                          setBusy('save');
                           setFailure('');
                           try {
                             await onSave(hit);
@@ -200,7 +269,7 @@ export function Discovery({
                           } catch (e) {
                             setFailure((e as Error).message);
                           } finally {
-                            setBusy(false);
+                            setBusy('');
                           }
                         }}
                       >

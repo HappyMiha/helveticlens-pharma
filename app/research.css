@@ -64,6 +64,101 @@
   color: var(--muted-foreground);
   margin: 0.85rem 0 0.2rem;
 }
+.discovery-plan-action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+.discovery-plan-action > span {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  max-width: 480px;
+}
+.search-plan {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  margin: 1.3rem 0;
+}
+.search-plan-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.search-plan .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.search-plan h3 {
+  margin: 0.5rem 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.search-plan p {
+  color: var(--muted-foreground);
+  line-height: 1.7;
+  font-size: 0.875rem;
+}
+.search-plan-angles {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.3rem 0;
+}
+.search-plan-angles > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.search-plan-angles > li > div:last-child {
+  min-width: 0;
+  flex: 1;
+}
+.search-plan h4 {
+  font-weight: 650;
+  margin: 0.3rem 0;
+}
+.search-plan-step {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--primary);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.search-plan-query {
+  background: var(--secondary);
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin: 0.65rem 0;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.search-plan-clarifications {
+  padding: 0.7rem 1rem;
+  border-left: 2px solid var(--primary);
+  margin: 1.2rem 0;
+}
+.search-plan-clarifications ul {
+  list-style: disc;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--muted-foreground);
+}
 .search-result-heading {
   display: flex;
   justify-content: space-between;

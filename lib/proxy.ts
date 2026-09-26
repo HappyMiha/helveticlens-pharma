@@ -13,7 +13,7 @@ export async function proxy(
     !(
       allowed.test(route) ||
       new RegExp(
-        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|workbench|discover)$`,
+        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|workbench|discover(?:/plan)?)$`,
       ).test(route)
     )
   )

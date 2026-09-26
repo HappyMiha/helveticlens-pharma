@@ -781,6 +781,7 @@ export function Discussion({
           </DialogHeader>
           {discoveryQuery !== null && (
             <Discovery
+              canPlan={canEdit}
               key={discoveryQuery}
               initialQuery={discoveryQuery}
               onOpen={(id, thread) => {

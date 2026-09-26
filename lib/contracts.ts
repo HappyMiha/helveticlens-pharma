@@ -345,3 +345,17 @@ export interface DiscoveryResult {
   checked_at: string;
   coverage: string;
 }
+export interface SearchAngle {
+  label: string;
+  reason: string;
+  provider: 'workspace' | 'fedlex' | 'europepmc';
+  query: string;
+}
+export interface SearchPlan {
+  question: string;
+  angles: SearchAngle[];
+  clarifications: string[];
+  generated_at: string;
+  model_provider: string;
+  model: string;
+}

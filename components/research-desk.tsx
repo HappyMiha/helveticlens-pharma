@@ -68,6 +68,7 @@ export function ResearchDesk({
         </div>
         {identity ? (
           <Discovery
+            canPlan={identity.role === 'organization_admin'}
             onOpen={(id, thread) =>
               void run('Opening topic', () => onOpen(id, thread))
             }

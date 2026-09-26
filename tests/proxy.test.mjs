@@ -154,6 +154,43 @@ test('upstream failure is visible and does not expose network details', async ()
   assert.doesNotMatch(await response.text(), /private diagnostic/);
 });
 
+test('AI planning forwards only the explicit same-product request with CSRF', async () => {
+  let calls = 0;
+  const body = JSON.stringify({ question: 'What medicine evidence changed?' });
+  const route = `products/${product.id}/discover/plan`;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(new URL(url).pathname, `/api/${route}`);
+    assert.equal(init.method, 'POST');
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(new TextDecoder().decode(init.body), body);
+    return Response.json({
+      angles: [],
+      question: 'What medicine evidence changed?',
+    });
+  };
+  const request = () =>
+    new Request(`https://product.test/api/${route}`, {
+      method: 'POST',
+      body,
+      headers: {
+        origin: 'https://product.test',
+        'content-type': 'application/json',
+        'x-csrf-token': 'csrf',
+      },
+    });
+  const result = await proxy(request(), context(route));
+  assert.equal(result.status, 200);
+  assert.equal(result.headers.get('cache-control'), 'private, no-store');
+  for (const forbidden of [
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/plan`,
+    `products/${product.id}/discover/unrestricted`,
+    `${route}/extra`,
+  ])
+    assert.equal((await proxy(request(), context(forbidden))).status, 404);
+  assert.equal(calls, 1);
+});
+
 test('research, private discussion and brief preserve query, authorization and response boundaries', async () => {
   const calls = [];
   globalThis.fetch = async (url, init) => {
