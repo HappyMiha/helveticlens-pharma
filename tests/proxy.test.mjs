@@ -209,6 +209,7 @@ test('research, private discussion and brief preserve query, authorization and r
     `products/${product.id}/workbench`,
     `products/${product.id}/dossiers/topic/discussion/question`,
     `products/${product.id}/dossiers/topic/brief`,
+    `products/${product.id}/dossiers/topic/searches`,
   ]) {
     const response = await proxy(
       new Request(`https://product.test/api/${route}?q=source%20evidence`, {
@@ -224,7 +225,7 @@ test('research, private discussion and brief preserve query, authorization and r
     );
     assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
   }
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 5);
   for (const { url, init } of calls) {
     assert.equal(url.origin, 'https://helveticlens.ch');
     assert.equal(url.searchParams.get('q'), 'source evidence');
@@ -233,6 +234,7 @@ test('research, private discussion and brief preserve query, authorization and r
   for (const route of [
     `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover`,
     `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/workbench`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/topic/searches`,
   ])
     assert.equal(
       (
@@ -243,5 +245,5 @@ test('research, private discussion and brief preserve query, authorization and r
       ).status,
       404,
     );
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 5);
 });

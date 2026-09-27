@@ -109,7 +109,8 @@ export interface Entry {
     | 'action'
     | 'question'
     | 'discussion'
-    | 'research';
+    | 'research'
+    | 'saved_search';
   title: string;
   body: string;
   url: string;
@@ -370,14 +371,27 @@ export interface SearchHit {
   dossier_id?: string;
   thread_id?: string | null;
 }
-export interface DiscoveryResult {
+export interface SearchRecipe {
   query: string;
-  provider: string;
+  provider: 'workspace' | 'fedlex' | 'europepmc';
+  match_mode?: 'all' | 'phrase' | null;
+}
+export interface SavedSearch {
+  id: string;
+  body: string;
+  author: string;
+  created_at: string;
+  data: SearchRecipe;
+}
+export interface SavedSearchInput extends SearchRecipe {
+  request_key: string;
+  purpose: string;
+}
+export interface DiscoveryResult extends SearchRecipe {
   items: SearchHit[];
   checked_at: string;
   coverage: string;
   total?: number | null;
-  match_mode?: 'all' | 'phrase' | null;
 }
 export interface SearchAngle {
   label: string;

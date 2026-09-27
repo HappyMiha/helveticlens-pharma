@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  Bookmark,
   Check,
   CircleHelp,
   ClipboardList,
@@ -31,6 +32,8 @@ import type {
   ResearchActionSeed,
   Run,
   SearchHit,
+  SearchRecipe,
+  SavedSearchInput,
   ThreadDetail,
   ThreadPage,
   WorkAction,
@@ -41,6 +44,7 @@ import { useResource } from '@/lib/use-resource';
 import { ActionDialog, WorkField } from './action-dialog';
 import { Discovery } from './discovery';
 import { ResearchFollowups } from './research-followups';
+import { SavedSearches } from './saved-searches';
 
 function safeSource(url: string) {
   try {
@@ -202,6 +206,8 @@ export function Discussion({
     [source, setSource] = useState(''),
     [replyKey, setReplyKey] = useState(uid),
     [discoveryQuery, setDiscoveryQuery] = useState<string | null>(null),
+    [discoveryRecipe, setDiscoveryRecipe] = useState<SearchRecipe | null>(null),
+    [savedSearchesOpen, setSavedSearchesOpen] = useState(false),
     [actionSeed, setActionSeed] = useState<ResearchActionSeed | null>(null),
     [editingAction, setEditingAction] = useState<WorkAction | null>(null),
     [actionsRefresh, setActionsRefresh] = useState(0);
@@ -293,6 +299,18 @@ export function Discussion({
       'Source saved to the topic. Open Evidence & sources to connect a page watch.',
     );
   }
+  function openDiscovery(query: string, recipe?: SearchRecipe) {
+    setSavedSearchesOpen(false);
+    setDiscoveryRecipe(recipe || null);
+    setDiscoveryQuery(query);
+  }
+  async function saveSearch(recipe: SavedSearchInput) {
+    await api(`${root}/searches`, recipe);
+    await reload();
+    notify(
+      'Search saved for your team. Open Saved searches to review and reuse it.',
+    );
+  }
   return (
     <>
       {(failure || listFailure) && (
@@ -315,9 +333,16 @@ export function Discussion({
               </p>
             </div>
             <div className="discussion-intro-actions">
-              <Button variant="outline" onClick={() => setDiscoveryQuery('')}>
+              <Button variant="outline" onClick={() => openDiscovery('')}>
                 <Search size={16} />
                 Find sources
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSavedSearchesOpen(true)}
+              >
+                <Bookmark size={16} />
+                Saved searches
               </Button>
               <Button
                 disabled={!canEdit || !!busy}
@@ -512,9 +537,16 @@ export function Discussion({
               >
                 <ClipboardList size={16} /> Create follow-up
               </Button>
-              <Button variant="outline" onClick={() => setDiscoveryQuery('')}>
+              <Button variant="outline" onClick={() => openDiscovery('')}>
                 <Search size={16} />
                 Find sources
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSavedSearchesOpen(true)}
+              >
+                <Bookmark size={16} />
+                Saved searches
               </Button>
               <Button
                 variant="ghost"
@@ -605,7 +637,7 @@ export function Discussion({
               </p>
               <ResearchPost
                 post={selected.accepted}
-                onSearch={setDiscoveryQuery}
+                onSearch={openDiscovery}
                 onFollowup={canEdit ? prepareFollowup : undefined}
                 busy={!!busy}
               />
@@ -641,7 +673,7 @@ export function Discussion({
                 </div>
                 <ResearchPost
                   post={post}
-                  onSearch={setDiscoveryQuery}
+                  onSearch={openDiscovery}
                   onFollowup={canEdit ? prepareFollowup : undefined}
                   busy={!!busy}
                 />
@@ -851,6 +883,26 @@ export function Discussion({
           }}
         />
       )}
+      <Dialog open={savedSearchesOpen} onOpenChange={setSavedSearchesOpen}>
+        <DialogContent className="discovery-dialog">
+          <DialogHeader>
+            <DialogTitle>Saved searches for this topic</DialogTitle>
+            <DialogDescription>
+              Queries and their purpose, shared with your team. Review and edit
+              before running a fresh search. These queries are not scheduled
+              monitors.
+            </DialogDescription>
+          </DialogHeader>
+          {savedSearchesOpen && (
+            <SavedSearches
+              dossierId={dossier.id}
+              onReview={(search) =>
+                openDiscovery(search.data.query, search.data)
+              }
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={discoveryQuery !== null}
         onOpenChange={(v) => {
@@ -870,6 +922,7 @@ export function Discussion({
               canPlan={canEdit}
               key={discoveryQuery}
               initialQuery={discoveryQuery}
+              initialRecipe={discoveryRecipe}
               onOpen={(id, thread) => {
                 if (id === dossier.id && thread) {
                   setDiscoveryQuery(null);
@@ -880,6 +933,7 @@ export function Discussion({
                   );
               }}
               onSave={canEdit ? saveSource : undefined}
+              onSaveSearch={canEdit ? saveSearch : undefined}
             />
           )}
         </DialogContent>

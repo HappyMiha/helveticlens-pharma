@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
+  Bookmark,
   Globe,
   LoaderCircle,
   Plus,
@@ -22,10 +23,13 @@ import type {
   Preset,
   SearchHit,
   SearchPlan,
+  SearchRecipe,
+  SavedSearchInput,
 } from '@/lib/contracts';
 import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { SearchPlanView } from './search-plan';
+import { recipeFromResult } from '@/lib/search-recipes';
 
 export function monitoringSeed(query: string, hit?: SearchHit): Preset {
   return {
@@ -53,26 +57,64 @@ export function monitoringSeed(query: string, hit?: SearchHit): Preset {
 
 export function Discovery({
   initialQuery = '',
+  initialRecipe,
   onOpen,
   onCreate,
   onSave,
+  onSaveSearch,
   canPlan = false,
 }: {
   initialQuery?: string;
+  initialRecipe?: SearchRecipe | null;
   onOpen: (id: string, threadId?: string | null) => void;
   onCreate?: (seed: Preset) => void;
   onSave?: (hit: SearchHit) => Promise<void>;
+  onSaveSearch?: (recipe: SavedSearchInput) => Promise<void>;
   canPlan?: boolean;
 }) {
-  const [query, setQuery] = useState(initialQuery),
-    [provider, setProvider] = useState('workspace'),
-    [matchMode, setMatchMode] = useState('all'),
+  const [query, setQuery] = useState(initialRecipe?.query || initialQuery),
+    [provider, setProvider] = useState<string>(
+      initialRecipe?.provider || 'workspace',
+    ),
+    [matchMode, setMatchMode] = useState<string>(
+      initialRecipe?.match_mode || 'all',
+    ),
     [result, setResult] = useState<DiscoveryResult | null>(null),
     [plan, setPlan] = useState<SearchPlan | null>(null),
     [failure, setFailure] = useState(''),
     [busy, setBusy] = useState(''),
-    [saved, setSaved] = useState<string[]>([]);
+    [saved, setSaved] = useState<string[]>([]),
+    [purpose, setPurpose] = useState(''),
+    [savedRecipes, setSavedRecipes] = useState<string[]>([]);
   const searchInput = useRef<HTMLInputElement>(null);
+  const purposeId = useId();
+  const recipeKeys = useRef(new Map<string, string>());
+  const recipe = result ? recipeFromResult(result) : null;
+  const recipeFingerprint = recipe
+    ? JSON.stringify({ ...recipe, purpose: purpose.trim() })
+    : '';
+  async function saveRecipe() {
+    if (busy || !recipe || !onSaveSearch) return;
+    setBusy('save-search');
+    setFailure('');
+    let key = recipeKeys.current.get(recipeFingerprint);
+    if (!key) {
+      key = uid();
+      recipeKeys.current.set(recipeFingerprint, key);
+    }
+    try {
+      await onSaveSearch({
+        ...recipe,
+        purpose: purpose.trim(),
+        request_key: key,
+      });
+      setSavedRecipes((values) => [...values, recipeFingerprint]);
+    } catch (error) {
+      setFailure((error as Error).message);
+    } finally {
+      setBusy('');
+    }
+  }
   async function search() {
     if (busy || query.trim().length < 2) return;
     setBusy('search');
@@ -219,7 +261,7 @@ export function Discovery({
           }}
         />
       )}
-      {result && !failure && (
+      {result && (
         <>
           <div className="search-result-heading">
             <span>
@@ -240,6 +282,43 @@ export function Discovery({
             </span>
             <span>{date(result.checked_at)}</span>
           </div>
+          {onSaveSearch && (
+            <form
+              className="save-search-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void saveRecipe();
+              }}
+            >
+              <label htmlFor={purposeId}>
+                <span>
+                  Why keep this search? <span className="muted">Optional</span>
+                </span>
+                <Input
+                  id={purposeId}
+                  value={purpose}
+                  onChange={(event) => setPurpose(event.target.value)}
+                  disabled={!!busy}
+                  maxLength={2000}
+                  placeholder="What should your team look for?"
+                />
+              </label>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={!!busy || savedRecipes.includes(recipeFingerprint)}
+              >
+                <Bookmark size={16} />
+                {savedRecipes.includes(recipeFingerprint)
+                  ? 'Search saved'
+                  : 'Save search for team'}
+              </Button>
+              <p>
+                Saves the query shown with these results. Teammates review it
+                before searching again; automatic checks stay separate.
+              </p>
+            </form>
+          )}
           {result.total != null && result.total > result.items.length && (
             <output className="search-scope block">
               Showing up to 20 topics, 20 questions and 20 contributions. Add
