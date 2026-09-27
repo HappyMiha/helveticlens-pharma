@@ -3,13 +3,14 @@ export type DossierAccess = {
   managed: boolean;
   revision: number;
   role: DossierRole | null;
-  audience: 'author' | 'invited_team' | 'workspace';
+  audience: 'author' | 'invited_team' | 'team' | 'workspace';
   can_contribute: boolean;
   can_edit: boolean;
   can_manage: boolean;
   can_enable: boolean;
   can_publish: boolean;
   can_monitor: boolean;
+  can_watch_pages: boolean;
   can_activate: boolean;
 };
 export type TeamMember = {
@@ -42,7 +43,9 @@ export const ROLES: Record<DossierRole, string> = {
 export function audienceDescription(audience: DossierAccess['audience']) {
   return audience === 'workspace'
     ? 'Everyone in this workspace can read this dossier. Workspace administrators inherit editing rights unless assigned a different dossier role.'
-    : audience === 'invited_team'
-      ? 'Only the accepted dossier team can read this draft. Activating monitoring shares the dossier with the whole workspace.'
-      : 'Only the creator can read this draft. Enable team management to invite workspace colleagues.';
+    : audience === 'team'
+      ? 'Only accepted dossier members can read this dossier, its monitoring topics and matched evidence. Removing a role removes future access.'
+      : audience === 'invited_team'
+        ? 'Only the accepted dossier team can read this draft. At activation, choose team-only monitoring or explicitly share with the workspace.'
+        : 'Only the creator can read this draft. Enable team management to invite workspace colleagues.';
 }

@@ -68,6 +68,9 @@ export function Wizard({
     [sourceName, setSourceName] = useState(''),
     [sourceAdvice, setSourceAdvice] = useState<SourceAdvice | null>(null);
   const [shareConfirmed, setShareConfirmed] = useState(false);
+  const [monitoringAudience, setMonitoringAudience] = useState<
+    'team' | 'workspace'
+  >(initial?.access?.audience === 'workspace' ? 'workspace' : 'team');
   useEffect(() => {
     const before = (e: BeforeUnloadEvent) => {
       if (dirty) {
@@ -189,11 +192,25 @@ export function Wizard({
   }
   async function activate() {
     const d = await save(4);
+    if (
+      monitoringAudience === 'team' &&
+      typeof d.access?.can_watch_pages !== 'boolean'
+    ) {
+      throw new Error(
+        'Private monitoring needs a platform update. Refresh and try again.',
+      );
+    }
+    if (monitoringAudience === 'team' && !d.access?.managed) {
+      await api(`${ROOT}/${d.id}/team/enable`, {
+        expected_revision: d.access?.revision ?? 1,
+      });
+    }
     const p = await api<Profile>(
       `/monitoring-profiles/${d.profile.id}/activate`,
       {
         expected_revision: d.profile.revision,
         share_with_workspace_confirmed: shareConfirmed,
+        monitoring_audience: monitoringAudience,
       },
     );
     setDoc({ ...d, profile: p });
@@ -202,9 +219,13 @@ export function Wizard({
         request_key: source.id,
         kind: 'reference',
         title: source.label,
-        body: 'Selected during monitoring setup. Individual page watch; website-wide coverage is not implied.',
+        body:
+          monitoringAudience === 'team'
+            ? 'Selected during monitoring setup. Source reference retained for private dossier research.'
+            : 'Selected during monitoring setup. Individual page watch; website-wide coverage is not implied.',
         url: source.url,
       });
+      if (monitoringAudience === 'team') continue;
       try {
         await api(`${ROOT}/${d.id}/sources/${entry.id}/monitor`, {});
       } catch (e) {
@@ -278,7 +299,7 @@ export function Wizard({
                 'Accept AI suggestions or write your own. Every topic stays editable.',
                 'Scheduled Swiss collections and individual primary-source page watches.',
                 'In-app results are always available. Email uses your verified account and existing organization digest.',
-                'Review the exact scope. Start creates native monitoring topics and your shared dossier.',
+                'Review the sources, delivery and audience. Start monitoring with the access you choose.',
               ][step]
             }
           </p>
@@ -568,7 +589,7 @@ export function Wizard({
                 onExtraToggle={chooseExtra}
               />
               <div className="surface custom-source">
-                <h3>Add a specific primary-source page</h3>
+                <h3>Add a source page</h3>
                 <div className="field-pair">
                   <Field label="Source label">
                     <Input
@@ -612,7 +633,7 @@ export function Wizard({
                   }}
                 >
                   <Plus size={16} />
-                  Add page watch
+                  Add source page
                 </Button>
               </div>
               {config.source_requests.length > 0 && (
@@ -768,8 +789,10 @@ export function Wizard({
                     <b>{config.source_pack_ids.length}</b>Swiss collections
                   </div>
                   <div>
-                    <b>{config.source_requests.length}</b>Page watches to
-                    connect
+                    <b>{config.source_requests.length}</b>
+                    {monitoringAudience === 'team'
+                      ? 'Research references'
+                      : 'Page watches to connect'}
                   </div>
                 </div>
               </div>
@@ -787,10 +810,10 @@ export function Wizard({
                   ))}
               </div>
               <p className="muted">
-                Starting shares this dossier with your organization. AI
-                proposals and comments remain distinct from primary-source
-                evidence. Individual page watches are verified during
-                connection; failures stay visible for retry.
+                AI proposals and comments remain distinct from primary-source
+                evidence. Monitoring follows your selected source feeds and
+                topic rules. The audience below controls who can read those
+                results.
               </p>
               <Button
                 variant="outline"
@@ -839,21 +862,56 @@ export function Wizard({
           )}
           {step === 4 && (
             <div className="team-activation">
-              <label htmlFor="share-dossier-workspace">
-                <Checkbox
-                  id="share-dossier-workspace"
-                  checked={shareConfirmed}
-                  onCheckedChange={(checked) =>
-                    setShareConfirmed(checked === true)
-                  }
-                />
-                Make this dossier and its monitoring visible to everyone in this
-                workspace.
-              </label>
+              <h3>Who can read this monitoring?</h3>
+              {monitoringAudience === 'team' &&
+                typeof doc?.access?.can_watch_pages !== 'boolean' && (
+                  <p role="alert">
+                    Private monitoring needs a platform update. Refresh and try
+                    again, or explicitly choose workspace sharing.
+                  </p>
+                )}
+              <RadioGroup
+                aria-label="Monitoring audience"
+                disabled={!!busy || (!!doc && doc.profile.status !== 'draft')}
+                value={monitoringAudience}
+                onValueChange={(value) => {
+                  setMonitoringAudience(value as 'team' | 'workspace');
+                  setShareConfirmed(false);
+                }}
+              >
+                <label htmlFor="monitoring-team">
+                  <RadioGroupItem id="monitoring-team" value="team" />
+                  Only my invited team
+                </label>
+                <label htmlFor="monitoring-workspace">
+                  <RadioGroupItem id="monitoring-workspace" value="workspace" />
+                  Everyone in this workspace
+                </label>
+              </RadioGroup>
+              {monitoringAudience === 'workspace' ? (
+                <label htmlFor="share-dossier-workspace">
+                  <Checkbox
+                    id="share-dossier-workspace"
+                    checked={shareConfirmed}
+                    onCheckedChange={(checked) =>
+                      setShareConfirmed(checked === true)
+                    }
+                  />
+                  Make this dossier and its monitoring visible to everyone in
+                  this workspace.
+                </label>
+              ) : (
+                <p className="source-meta">
+                  Your dossier, topic matches and research stay private to
+                  accepted members. Invite colleagues from Dossier team.
+                  Selected page URLs are saved as private research references;
+                  workspace page watches are unavailable in this mode.
+                </p>
+              )}
               <p className="source-meta">
-                A draft can stay private for research and invited collaboration.
-                Starting shared monitoring requires the dossier owner and
-                workspace administrator rights.
+                Starting monitoring requires the dossier owner and workspace
+                administrator rights. The activation audience stays fixed;
+                publishing a public snapshot is a separate owner action.
               </p>
             </div>
           )}
@@ -892,16 +950,15 @@ export function Wizard({
                 className="primary-cta"
                 disabled={
                   !!busy ||
-                  !shareConfirmed ||
+                  (monitoringAudience === 'workspace' && !shareConfirmed) ||
+                  (monitoringAudience === 'team' &&
+                    typeof doc?.access?.can_watch_pages !== 'boolean') ||
                   (doc?.access
                     ? !doc.access.can_activate
                     : identity.role !== 'organization_admin')
                 }
                 onClick={() =>
-                  run(
-                    'Activating monitoring and checking selected pages',
-                    activate,
-                  )
+                  run('Starting monitoring for the selected audience', activate)
                 }
               >
                 Start monitoring

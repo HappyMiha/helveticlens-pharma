@@ -200,7 +200,9 @@ export function Dossier({
             ? d.access?.audience === 'invited_team'
               ? 'Private draft · invited dossier team'
               : 'Private draft · creator only'
-            : 'Shared with your organization'}
+            : d.access?.audience === 'team'
+              ? 'Private monitoring · invited dossier team'
+              : 'Shared with your organization'}
         </span>
         <span>
           <Globe size={14} />
@@ -519,10 +521,21 @@ export function Dossier({
                 ))}
               </div>
             )}
+            {d.access?.audience === 'team' && (
+              <p className="source-meta">
+                Monitoring topics and research remain private to your team. Page
+                watches use the shared workspace library and cannot be added
+                from this private dossier. Source references stay available for
+                research.
+              </p>
+            )}
             <PageWatches
               dossierId={d.id}
               documents={d.documents}
-              canEdit={canMonitor}
+              canEdit={
+                d.access?.can_watch_pages ??
+                (d.access?.audience !== 'team' && canMonitor)
+              }
               busy={busy}
               run={run}
               reload={refreshed}
@@ -579,8 +592,9 @@ export function Dossier({
                   Save reference
                 </Button>
                 <p className="muted">
-                  Saving a reference adds context. Connect its page watch
-                  separately to start automatic checks.
+                  {d.access?.audience === 'team'
+                    ? 'Saving a reference adds private context for dossier research.'
+                    : 'Saving a reference adds context. Connect its page watch separately to start automatic checks.'}
                 </p>
               </form>
             )}

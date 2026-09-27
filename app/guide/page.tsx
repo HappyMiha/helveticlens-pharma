@@ -277,15 +277,17 @@ export default function Guide() {
                 Use the five-step setup to describe the goal, review AI topic
                 suggestions, choose available source collections, preview saved
                 evidence and choose delivery before activation. Draft monitoring
-                stays private to its author. Activating shares the topic inside
-                the current organisation.
+                stays private to its author or invited dossier team. At
+                activation, choose team-only monitoring or explicitly share it
+                with the workspace.
               </p>
               <p>
-                In <strong>Evidence &amp; sources</strong>, a saved reference
-                can become a watch of that specific page when collection is
-                supported. Review the last attempt, last successful check,
-                saved-version time, failures and schedule. Pause, retry or
-                enable daily checks explicitly where the controls are available.
+                In <strong>Evidence &amp; sources</strong>, a saved reference in
+                a workspace-visible dossier can become a watch of that specific
+                page when collection is supported. Review the last attempt, last
+                successful check, saved-version time, failures and schedule.
+                Pause, retry or enable daily checks explicitly where the
+                controls are available.
               </p>
               <aside>
                 The displayed catalogue defines scheduled coverage. A country
@@ -317,21 +319,34 @@ export default function Guide() {
                 reducing their own role.
               </p>
               <p>
-                Invited team drafts are private to their accepted members.
-                Activation explicitly shares the dossier with the whole
-                workspace and still requires workspace administrator rights.
-                Active dossiers keep that workspace audience: removing a dossier
-                role restores inherited workspace access. Members-only active
-                monitoring and invitations outside the workspace are not
+                Invited team drafts are private to their accepted members. At
+                activation, choose Only my invited team to keep monitoring
+                private, or explicitly confirm sharing with everyone in the
+                workspace. Private topics, matches, research and digest previews
+                follow current membership. Removing a role closes future access,
+                including retained digest history in the product. In a workspace
+                dossier, inherited workspace access remains. Existing dossiers
+                keep their audience; invitations outside the workspace are not
                 available yet.
               </p>
               <p>
                 Revoke a pending invitation or change an accepted member’s role
                 in Dossier team. Server checks apply to saved sources, exports,
-                native setup and every research step. Removing draft access
+                native setup and every research step. Removing private access
                 closes future reads and analysis; it cannot erase a copy someone
-                already downloaded.
+                already downloaded or an email already delivered.
               </p>
+              <aside className="guide-boundary">
+                Members-only monitoring uses the selected approved source feeds.
+                New page watches use the shared workspace library, so they are
+                unavailable inside a private dossier; submitted URLs remain
+                private research references. Shared AI briefs use workspace
+                interests only. Use Ask / Investigate for research that includes
+                your private evidence. Monitoring activation still requires
+                workspace administrator rights and fixes the audience for that
+                monitor. Public publication remains a separate, explicit owner
+                action.
+              </aside>
             </section>
             <section id="collaborate" aria-labelledby="collaborate-title">
               <span className="guide-step">04 / COLLABORATION</span>

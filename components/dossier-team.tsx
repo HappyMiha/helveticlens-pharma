@@ -301,8 +301,8 @@ export function DossierTeamPanel({
               <p className="source-meta">
                 To transfer ownership, make an accepted colleague an owner, then
                 change your own role. The last active owner cannot be removed.
-                Removing a role from an active dossier restores that colleague’s
-                workspace access.
+                In a private dossier, removing a role removes future access. In
+                a workspace dossier, inherited workspace access remains.
               </p>
               <form className="team-invite" onSubmit={invite}>
                 <div>
@@ -426,7 +426,7 @@ type InboxInvitation = DossierInvitation & {
   dossier_id: string;
   title: string;
   invited_by: string;
-  audience: 'invited_team' | 'workspace';
+  audience: 'invited_team' | 'team' | 'workspace';
 };
 
 export function DossierInvitationInbox({
@@ -541,7 +541,9 @@ export function DossierInvitationInbox({
                 <p className="source-meta">
                   {item.audience === 'invited_team'
                     ? 'Private team draft'
-                    : 'Shared workspace dossier'}{' '}
+                    : item.audience === 'team'
+                      ? 'Private team monitoring'
+                      : 'Shared workspace dossier'}{' '}
                   · expires {date(item.expires_at)}
                 </p>
               </div>

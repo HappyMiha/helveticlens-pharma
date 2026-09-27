@@ -739,7 +739,7 @@ test('original contributions preserve literal text, authorship and scoped downlo
   assert.doesNotMatch(render('../another-dossier'), /href=/);
 });
 
-test('dossier audiences distinguish invited drafts from shared active monitoring', () => {
+test('dossier audiences distinguish invited drafts, private monitoring and shared monitoring', () => {
   const { TeamAudience, TeamRoles } = require('../components/dossier-team.tsx');
   const { audienceDescription } = require('../lib/dossier-team.ts');
   const privateDraft = renderToStaticMarkup(
@@ -748,8 +748,19 @@ test('dossier audiences distinguish invited drafts from shared active monitoring
     }),
   );
   assert.match(privateDraft, /Only the accepted dossier team/);
-  assert.match(privateDraft, /Activating monitoring shares/);
+  assert.match(privateDraft, /choose team-only monitoring/);
   assert.match(privateDraft, /Contributor/);
+  const activePrivate = renderToStaticMarkup(
+    React.createElement(TeamAudience, {
+      access: { audience: 'team', role: 'VIEWER' },
+    }),
+  );
+  assert.match(activePrivate, /Only accepted dossier members/);
+  assert.match(activePrivate, /Removing a role removes future access/);
+  assert.doesNotMatch(
+    activePrivate,
+    /Everyone in this workspace|shares.*workspace/,
+  );
   assert.match(audienceDescription('workspace'), /Everyone in this workspace/);
   assert.match(
     audienceDescription('workspace'),
@@ -774,4 +785,63 @@ test('closed team panel never renders an editable roster or invitation form befo
   assert.match(html, /Dossier team/);
   assert.match(html, /Viewer/);
   assert.doesNotMatch(html, /<form|<select|Make owner|Create invitation/);
+});
+
+test('activation review defaults to private monitoring and preserves existing workspace audience', () => {
+  const { Wizard } = require('../components/wizard.tsx');
+  const { emptyConfig } = require('../components/workspace.tsx');
+  const render = (audience, status = 'draft', privateReady = true) =>
+    renderToStaticMarkup(
+      React.createElement(Wizard, {
+        initial: {
+          id: '11111111-1111-4111-8111-111111111111',
+          profile: {
+            id: 'p',
+            status,
+            step: 4,
+            revision: 1,
+            config: emptyConfig(),
+          },
+          access: {
+            audience,
+            can_activate: true,
+            ...(privateReady ? { can_watch_pages: false } : {}),
+          },
+        },
+        packs: [],
+        identity: {
+          role: 'organization_admin',
+          user: { email_verified: true },
+        },
+        emailAvailable: false,
+        busy: '',
+      }),
+    );
+  const draft = render('author');
+  assert.match(draft, /Only my invited team/);
+  assert.match(draft, /Research references/);
+  assert.match(draft, /workspace page watches are unavailable in this mode/);
+  assert.match(
+    draft,
+    /publishing a public snapshot is a separate owner action/,
+  );
+  assert.doesNotMatch(
+    draft,
+    /id="share-dossier-workspace"|Page watches to connect/,
+  );
+  assert.doesNotMatch(draft, /Private monitoring needs a platform update/);
+  const legacy = render('author', 'draft', false);
+  assert.match(legacy, /Private monitoring needs a platform update/);
+  assert.match(legacy, /<button[^>]*disabled=""[^>]*>Start monitoring/);
+  const shared = render('workspace', 'active');
+  assert.match(shared, /id="share-dossier-workspace"/);
+  assert.match(shared, /Page watches to connect/);
+  assert.match(
+    shared,
+    /Make this dossier and its monitoring visible to everyone/,
+  );
+  assert.match(
+    shared,
+    /<[^>]+(?=[^>]*aria-label="Monitoring audience")(?=[^>]*data-disabled)[^>]*>/,
+  );
 });

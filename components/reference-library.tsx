@@ -61,6 +61,9 @@ export function ReferenceLibrary({
   | 'reload'
   | 'notify'
 >) {
+  const canWatch =
+    dossier.access?.can_watch_pages ??
+    (dossier.access?.audience !== 'team' && canEdit);
   const [draft, setDraft] = useState({
     query: '',
     decision: 'all' as ReferenceDecision,
@@ -157,7 +160,7 @@ export function ReferenceLibrary({
           <Button
             variant="outline"
             disabled={
-              !canEdit || waiting || dossier.profile.status !== 'active'
+              !canWatch || waiting || dossier.profile.status !== 'active'
             }
             onClick={() =>
               void run('Connecting primary-source page', async () => {
@@ -172,7 +175,9 @@ export function ReferenceLibrary({
               })
             }
           >
-            Connect page watch
+            {dossier.access?.audience === 'team'
+              ? 'Private research reference'
+              : 'Connect page watch'}
           </Button>
         )}
       </article>

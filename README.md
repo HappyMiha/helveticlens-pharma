@@ -6,9 +6,21 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.9.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.12.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
+
+## Private team monitoring
+
+New monitoring defaults to accepted dossier members only. During activation, the
+owner can explicitly choose the whole workspace instead. Existing active dossiers
+keep their audience. Native topics, research, matched evidence, feeds and consented
+digests follow current membership, including redaction on later web reads of saved
+digests after access is revoked. Already delivered email remains with its recipient.
+Private source URLs are research references; individual workspace page watches
+are unavailable for private dossiers. Shared AI briefs exclude private topics.
+Activation still requires dossier ownership and native workspace administrator
+rights. Audience is fixed at activation; public publication is a separate action.
 
 ## Private contribution reviews
 
@@ -53,7 +65,7 @@ roles and legacy save-only tools remain in force.
 - Shared saved searches with query, provider, match mode, purpose and author; teammates review and edit before explicitly searching again. Recipes remain private and are included in the topic brief and export.
 - Native scheduled Swiss source collections and individual-page watches with real fetching, retained evidence, separate attempt/success times, queue/schedule status, visible failures and explicit retry, pause/resume and daily-check controls.
 - In-app evidence and the existing verified-email daily/weekly personal organization digest.
-- Team invitations and viewer/administrator roles. Drafts remain author-private; activated dossiers are shared within the current organization.
+- Team roles and existing-workspace invitations. Drafts remain author-private until team management is enabled; activation offers team-only or workspace visibility.
 - AI improvements based on bounded saved feedback. Applying a reviewed suggestion creates a native topic revision; stale proposals cannot overwrite current monitoring.
 
 ## Personal following and private reuse

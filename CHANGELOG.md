@@ -1,5 +1,11 @@
 # Changes
 
+## 1.12.0 — private team monitoring
+
+Choose the monitoring audience when starting a dossier: accepted team members or everyone in the workspace. New setup defaults to the invited team; existing activated dossiers keep their audience. Private monitoring covers native topics, matching evidence, dossier research, current-recipient feeds and consented digests. Removing a member closes future access and redacts private topic content from previously saved digest views in the product. Already delivered email cannot be recalled.
+
+Private source URLs remain dossier research references. Workspace page watches are unavailable in this mode; approved-feed topic monitoring continues. Shared workspace AI briefs exclude private monitoring context. Dossier Owner plus native workspace administrator rights are still required to activate monitoring. Public publication remains an explicit, separate owner action. Invitations outside the workspace and living public research remain later stages.
+
 ## 1.11.0 — dossier teams and accountable invitations
 
 The original creator can enable Owner, Editor, Contributor and Viewer roles, invite existing workspace colleagues, revoke invitations and hand over ownership. Account-bound invitations expire in seven days and appear in an in-app inbox; no email is sent. Saved drafts open as research dossiers before monitoring activation. Contribution controls use dossier roles, and activation explicitly discloses sharing with the entire workspace. Active monitoring keeps its existing workspace audience. Members-only active monitoring and invitations outside the workspace remain future work.
