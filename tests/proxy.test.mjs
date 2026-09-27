@@ -251,3 +251,42 @@ test('research, private discussion and brief preserve query, authorization and r
     );
   assert.equal(calls.length, 5);
 });
+
+test('discovery imports preserve the exact signed body and CSRF only within this product', async () => {
+  const body = JSON.stringify({
+    request_key: 'stable-retry',
+    receipt: 'signed+source/==',
+  });
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(
+      new URL(url).pathname,
+      `/api/products/${product.id}/dossiers/topic/discovery-references`,
+    );
+    assert.equal(init.method, 'POST');
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(await new Response(init.body).text(), body);
+    return Response.json({ id: 'reference' }, { status: 201 });
+  };
+  for (const candidate of [
+    product.id,
+    product.id === 'pharma' ? 'loyer' : 'pharma',
+  ]) {
+    const route = `products/${candidate}/dossiers/topic/discovery-references`;
+    const response = await proxy(
+      new Request(`https://product.test/api/${route}`, {
+        method: 'POST',
+        body,
+        headers: {
+          origin: 'https://product.test',
+          'content-type': 'application/json',
+          'x-csrf-token': 'csrf',
+        },
+      }),
+      context(route),
+    );
+    assert.equal(response.status, candidate === product.id ? 201 : 404);
+  }
+  assert.equal(calls, 1);
+});

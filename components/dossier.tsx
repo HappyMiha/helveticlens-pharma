@@ -1,4 +1,5 @@
 'use client';
+import { SourceProvenance } from '@/components/source-provenance';
 import { useEffect, useState } from 'react';
 import {
   ArrowDownToLine,
@@ -458,6 +459,7 @@ export function Dossier({
                   <ArrowUpRight size={14} />
                 </a>
                 <p>{r.body}</p>
+                <SourceProvenance value={r.data.discovery} />
               </div>
               {d.documents.some((s) => s.url === r.url) ? (
                 <span className="tag good">Connected</span>

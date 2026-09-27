@@ -64,7 +64,15 @@ export interface Profile {
   created_at: string;
   updated_at: string;
 }
+export interface DiscoveryProvenance {
+  provider: 'fedlex' | 'europepmc';
+  query: string;
+  retrieved_at: string;
+  page_number: number;
+  record: Omit<SearchHit, 'discovery_receipt' | 'dossier_id' | 'thread_id'>;
+}
 export interface EntryData {
+  discovery?: DiscoveryProvenance;
   relevance?: string;
   law_id?: string;
   topics?: Suggestion[];
@@ -361,6 +369,7 @@ export interface ThreadDetail extends ResearchThread {
   accepted: Entry | null;
 }
 export interface SearchHit {
+  discovery_receipt?: string;
   id: string;
   kind: string;
   provider: string;

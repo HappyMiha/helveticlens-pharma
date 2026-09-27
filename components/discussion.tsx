@@ -1,5 +1,6 @@
 'use client';
 
+import { sourceImport } from '@/lib/discovery-reference';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -279,21 +280,10 @@ export function Discussion({
     });
   }
   async function saveSource(hit: SearchHit) {
-    let key = sourceKeys.current.get(hit.id);
-    if (!key) {
-      key = uid();
-      sourceKeys.current.set(hit.id, key);
-    }
-    await api(`${root}/entries`, {
-      request_key: key,
-      kind: 'reference',
-      title: hit.title.slice(0, 240),
-      body: `Discovery record from ${hit.provider} (${hit.kind}). ${hit.summary}`.slice(
-        0,
-        10000,
-      ),
-      url: hit.url,
-    });
+    await api(
+      `${root}/discovery-references`,
+      sourceImport(hit, sourceKeys.current, uid),
+    );
     await reload();
     notify(
       'Source saved to the topic. Open Evidence & sources to connect a page watch.',

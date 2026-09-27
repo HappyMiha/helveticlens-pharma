@@ -327,6 +327,13 @@ export function Discovery({
             </span>
             <span>{date(result.checked_at)}</span>
           </div>
+          {onSave && result.provider !== 'workspace' && (
+            <p className="muted">
+              Saving a record preserves this query, catalogue metadata and
+              retrieval time. Save within 30 minutes, or run the search again. A
+              saved reference can be connected to a page watch separately.
+            </p>
+          )}
           {onSaveSearch && (
             <form
               className="save-search-form"
