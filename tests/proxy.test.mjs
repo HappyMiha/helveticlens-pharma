@@ -31,6 +31,69 @@ function context(path) {
   return { params: Promise.resolve({ path: path.split('/') }) };
 }
 
+test('evidence comparison routes retain product isolation, current cookies and write origin checks', async () => {
+  const base = `products/${product.id}/public-dossiers/11111111-1111-4111-8111-111111111111/evidence-changes`;
+  const review = `${base}/22222222-2222-4222-8222-222222222222/review`;
+  let called = 0;
+  globalThis.fetch = async (url, init) => {
+    called++;
+    assert.match(url, /\/evidence-changes/);
+    if (init.method === 'POST')
+      assert.equal(init.headers.get('x-csrf-token'), 'fixture-token');
+    return Response.json({ items: [], total: 0 });
+  };
+  for (const route of [base, `${base}/workspace`, review]) {
+    const response = await proxy(
+      new Request(
+        `https://product.test/api/${route}`,
+        route === review
+          ? {
+              method: 'POST',
+              headers: {
+                origin: 'https://product.test',
+                'x-csrf-token': 'fixture-token',
+              },
+              body: '{}',
+            }
+          : {},
+      ),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  for (const route of [
+    `${base}/private`,
+    `${base}/workspace/export`,
+    `${review}/other`,
+    base.replace(product.id, 'foreign'),
+  ]) {
+    assert.equal(
+      (
+        await proxy(
+          new Request(`https://product.test/api/${route}`),
+          context(route),
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${review}`, {
+          method: 'POST',
+          headers: { origin: 'https://foreign.test' },
+          body: '{}',
+        }),
+        context(review),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(called, 3);
+});
+
 test('public catalogue and reader are bounded to this product', async () => {
   let called = 0;
   globalThis.fetch = async () => {
@@ -909,7 +972,6 @@ test('guest readers retain account scope and cannot select another product or wo
   assert.equal(calls, 3);
 });
 
-
 test('public research gateway allows scoped readers and blocks unrelated private paths', async () => {
   const id = '11111111-1111-4111-8111-111111111111';
   const run = '22222222-2222-4222-8222-222222222222';
@@ -920,18 +982,44 @@ test('public research gateway allows scoped readers and blocks unrelated private
     return Response.json({});
   };
   const paths = [
-    'public-knowledge', `public-dossiers/topic-${id}`, `public-dossiers/дослідження-${id}`,
-    `public-dossiers/${id}/research`, `public-dossiers/${id}/research/${run}`,
-    `public-dossiers/${id}/research/${run}/events`, `public-dossiers/${id}/research/${run}/workspace`,
+    'public-knowledge',
+    `public-dossiers/topic-${id}`,
+    `public-dossiers/дослідження-${id}`,
+    `public-dossiers/${id}/research`,
+    `public-dossiers/${id}/research/${run}`,
+    `public-dossiers/${id}/research/${run}/events`,
+    `public-dossiers/${id}/research/${run}/workspace`,
     `public-dossiers/${id}/files/${run}`,
   ];
   for (const path of paths) {
     const route = `products/${product.id}/${path}`;
-    assert.equal((await proxy(new Request('https://product.test/api/' + route, {headers: {'x-organization-id': 'injected'}}), context(route))).status, 200);
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + route, {
+            headers: { 'x-organization-id': 'injected' },
+          }),
+          context(route),
+        )
+      ).status,
+      200,
+    );
   }
-  for (const path of [`public-dossiers/${id}/research/${run}/private`, `public-dossiers/${id}/files/${run}/export`, 'public-knowledge/export']) {
+  for (const path of [
+    `public-dossiers/${id}/research/${run}/private`,
+    `public-dossiers/${id}/files/${run}/export`,
+    'public-knowledge/export',
+  ]) {
     const route = `products/${product.id}/${path}`;
-    assert.equal((await proxy(new Request('https://product.test/api/' + route), context(route))).status, 404);
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + route),
+          context(route),
+        )
+      ).status,
+      404,
+    );
   }
   assert.equal(count, paths.length);
 });

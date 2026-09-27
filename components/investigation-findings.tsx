@@ -40,6 +40,25 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
               {readable(claim.status)}
             </span>
             <h4>{claim.statement}</h4>
+            {claim.later_evidence && (
+              <aside className="claim-later-evidence">
+                <strong>
+                  Later evidence
+                  {claim.later_evidence.status
+                    ? `: ${readable(claim.later_evidence.status)}`
+                    : ''}
+                </strong>
+                <p>
+                  {claim.later_evidence.changes
+                    .map((item) => `${readable(item.kind)} (${item.count})`)
+                    .join(' · ')}
+                  . The recorded finding above remains unchanged.
+                </p>
+                <a href="#evidence-changes">
+                  Inspect source comparisons & editor history
+                </a>
+              </aside>
+            )}
             {value.evidence
               .filter((e) => e.claim_id === claim.id)
               .map((e) => (

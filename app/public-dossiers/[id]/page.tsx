@@ -11,6 +11,7 @@ import {
   readPublicDiscussion,
   readPublicResearch,
   readPublicInvestigation,
+  readPublicChanges,
 } from '@/lib/public-reader';
 import { publicHref } from '@/lib/publication';
 import { date } from '@/lib/api';
@@ -59,6 +60,9 @@ export default async function PublicDossierPage({
     result.data?.living_research && selected
       ? await readPublicInvestigation(result.data.id, selected)
       : null;
+  const changes = result.data?.living_research
+    ? await readPublicChanges(result.data.id)
+    : null;
   return (
     <main className="public-shell public-reader">
       <header className="public-header">
@@ -85,6 +89,7 @@ export default async function PublicDossierPage({
               initial={research?.data || null}
               selectedId={selected}
               initialValue={investigation?.data || null}
+              initialChanges={changes?.data || null}
             />
           )}
           <PublicDiscussion

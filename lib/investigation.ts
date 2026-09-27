@@ -73,6 +73,10 @@ export type Investigation = InvestigationSummary & {
     statement: string;
     status: string;
     revision: number;
+    later_evidence?: {
+      status: string | null;
+      changes: { kind: string; count: number }[];
+    } | null;
     history: {
       revision: number;
       from: string;

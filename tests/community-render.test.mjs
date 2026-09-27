@@ -525,6 +525,14 @@ function activityFixture(phase = 'read', status = 'running') {
 test('Lens uses the recorded in-flight step and never fabricates an analysis stage', () => {
   assert.equal(investigationActivity(activityFixture(), now).state, 'reading');
   assert.equal(
+    investigationActivity(activityFixture('compare'), now).state,
+    'cross-referencing',
+  );
+  assert.equal(
+    investigationActivity(activityFixture('compare'), now + 100_000).state,
+    'idle',
+  );
+  assert.equal(
     investigationActivity(activityFixture('extract'), now).state,
     'extracting',
   );
@@ -846,38 +854,284 @@ test('activation review defaults to private monitoring and preserves existing wo
   );
 });
 
-
 test('living public reader renders attributed evidence and anchors without private controls', () => {
   const { PublicResearchView } = require('../components/public-research.tsx');
   const run = {
-    id: '11111111-1111-4111-8111-111111111111', question: 'Research a public question',
-    status: 'completed', revision: 4, plan_version: 1, event_sequence: 3,
-    stop_reason: 'Bounded accessible research.', sources: [], evidence: [], entities: [], relationships: [],
-    plans: [], branches: [], activity: [],
-    claims: [{ id: 'public-claim', statement: '<script>untrusted source statement</script>', status: 'UNVERIFIED', revision: 1, history: [] }],
-    evidence_basis: 'Source support is not independent truth.', coverage: 'Only explicitly public material.',
-    original: { id: 'public-contribution', kind: 'comment', body: 'The exact public submission.', author: 'Chosen public name' },
+    id: '11111111-1111-4111-8111-111111111111',
+    question: 'Research a public question',
+    status: 'completed',
+    revision: 4,
+    plan_version: 1,
+    event_sequence: 3,
+    stop_reason: 'Bounded accessible research.',
+    sources: [],
+    evidence: [],
+    entities: [],
+    relationships: [],
+    plans: [],
+    branches: [],
+    activity: [],
+    claims: [
+      {
+        id: 'public-claim',
+        statement: '<script>untrusted source statement</script>',
+        status: 'UNVERIFIED',
+        revision: 1,
+        history: [],
+      },
+    ],
+    evidence_basis: 'Source support is not independent truth.',
+    coverage: 'Only explicitly public material.',
+    original: {
+      id: 'public-contribution',
+      kind: 'comment',
+      body: 'The exact public submission.',
+      author: 'Chosen public name',
+    },
   };
-  const html = renderToStaticMarkup(React.createElement(PublicResearchView, {
-    publicationId: '22222222-2222-4222-8222-222222222222', revision: 1,
-    initial: { items: [run], total: 1, offset: 0, page_size: 20, publication_revision: 1, living_research: true },
-    selectedId: run.id, initialValue: run,
-  }));
+  const html = renderToStaticMarkup(
+    React.createElement(PublicResearchView, {
+      publicationId: '22222222-2222-4222-8222-222222222222',
+      revision: 1,
+      initial: {
+        items: [run],
+        total: 1,
+        offset: 0,
+        page_size: 20,
+        publication_revision: 1,
+        living_research: true,
+      },
+      selectedId: run.id,
+      initialValue: run,
+    }),
+  );
   assert.match(html, /Chosen public name/);
   assert.match(html, /Source support is not independent truth/);
   assert.match(html, /id="claim-public-claim"/);
   assert.match(html, /&lt;script&gt;untrusted source statement/);
   assert.match(html, /Sign in to add a public question/);
-  assert.doesNotMatch(html, /<form|<script>|\/dossiers\/|>Pause<|>Resume<|>Cancel</);
+  assert.doesNotMatch(
+    html,
+    /<form|<script>|\/dossiers\/|>Pause<|>Resume<|>Cancel</,
+  );
 });
 
 test('changed public publication revision withholds old rendered findings', () => {
   const { PublicResearchView } = require('../components/public-research.tsx');
-  const html = renderToStaticMarkup(React.createElement(PublicResearchView, {
-    publicationId: '22222222-2222-4222-8222-222222222222', revision: 2,
-    initial: { items: [], total: 0, offset: 0, page_size: 20, publication_revision: 3, living_research: true },
-    selectedId: 'old', initialValue: { id: 'old', question: 'WITHDRAWN-PUBLIC-TEXT' },
-  }));
+  const html = renderToStaticMarkup(
+    React.createElement(PublicResearchView, {
+      publicationId: '22222222-2222-4222-8222-222222222222',
+      revision: 2,
+      initial: {
+        items: [],
+        total: 0,
+        offset: 0,
+        page_size: 20,
+        publication_revision: 3,
+        living_research: true,
+      },
+      selectedId: 'old',
+      initialValue: { id: 'old', question: 'WITHDRAWN-PUBLIC-TEXT' },
+    }),
+  );
   assert.match(html, /published version changed/);
   assert.doesNotMatch(html, /WITHDRAWN-PUBLIC-TEXT/);
+});
+
+const {
+  ClaimEvolution,
+  EvidenceChangeCard,
+} = require('../components/claim-evolution.tsx');
+const { currentChanges } = require('../lib/claim-evolution.ts');
+const previousFinding = {
+  id: 'previous-claim',
+  investigation_id: 'previous-run',
+  statement: '<script>Earlier statement</script>',
+  status: 'SUPPORTED',
+  revision: 2,
+  evidence: {
+    quote: '<img src=x onerror=alert(1)> Exact older quotation.',
+    locator: 'p2',
+    relation: 'SUPPORTS',
+    source: {
+      id: 'source-old',
+      title: 'Earlier registry',
+      kind: 'public_source',
+      url: 'https://example.org/earlier',
+      sha256: 'a'.repeat(64),
+      captured_at: '2026-09-27T12:00:00Z',
+    },
+  },
+};
+const evolution = {
+  id: 'change',
+  kind: 'UPDATES',
+  status: 'active',
+  revision: 1,
+  previous_revision: 2,
+  previous_status: 'SUPPORTED',
+  created_at: '2026-09-27T15:00:00Z',
+  updated_at: '2026-09-27T15:00:00Z',
+  explanation: 'The newer source describes a later state.',
+  basis: 'Machine comparison, not independent verification.',
+  previous: previousFinding,
+  current: {
+    ...previousFinding,
+    id: 'newer-claim',
+    investigation_id: 'newer-run',
+    statement: 'A later statement.',
+    evidence: {
+      ...previousFinding.evidence,
+      quote: 'Exact newer quotation.',
+      source: {
+        ...previousFinding.evidence.source,
+        url: 'javascript:alert(1)',
+        title: 'Newer source',
+      },
+    },
+  },
+  history: [],
+};
+const changesPage = {
+  items: [evolution],
+  total: 24,
+  offset: 0,
+  page_size: 20,
+  publication_revision: 1,
+  coverage: 'Bounded evidence, not completeness.',
+  can_review: true,
+};
+
+test('anonymous comparison SSR renders both originals and safe quotes, without editor controls', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(ClaimEvolution, {
+      base: '/products/pharma/public-dossiers/public/evidence-changes',
+      publicationRevision: 1,
+      initial: changesPage,
+      onOpen() {},
+      onChange() {},
+    }),
+  );
+  assert.match(html, /Changes over time/);
+  assert.match(html, /Earlier finding/);
+  assert.match(html, /Newer finding/);
+  assert.match(html, /&lt;script&gt;Earlier statement/);
+  assert.match(html, /&lt;img src=x/);
+  assert.match(html, /Exact newer quotation/);
+  assert.match(html, /Recorded status: Supported/);
+  assert.match(html, /noopener noreferrer nofollow ugc/);
+  assert.match(html, /Older comparisons/);
+  assert.doesNotMatch(
+    html,
+    /<form|Dismiss comparison|javascript:|<script>|<img/,
+  );
+});
+
+test('comparison snapshots never survive a failed read, changed publication or unrelated page', () => {
+  assert.equal(
+    currentChanges(null, 'Access changed', changesPage, 0, false, 1),
+    null,
+  );
+  assert.equal(currentChanges(changesPage, '', null, 0, false, 2), null);
+  assert.equal(currentChanges(null, '', changesPage, 20, false, 1), null);
+  assert.equal(currentChanges(null, '', changesPage, 0, true, 1), null);
+  assert.equal(currentChanges(changesPage, '', null, 0, false), null);
+  assert.equal(currentChanges(null, '', changesPage, 0, false, 1), changesPage);
+  assert.equal(
+    currentChanges(
+      { ...changesPage, publication_revision: null },
+      '',
+      null,
+      0,
+      false,
+    )?.total,
+    24,
+  );
+});
+
+test('changed public comparison revision renders no withdrawn source text or stale count', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(ClaimEvolution, {
+      base: '/public/evidence-changes',
+      publicationRevision: 2,
+      initial: changesPage,
+      onOpen() {},
+      onChange() {},
+    }),
+  );
+  assert.match(html, /Checking current evidence/);
+  assert.doesNotMatch(
+    html,
+    /Earlier statement|Exact newer quotation|24 active/,
+  );
+});
+
+test('review history preserves an editor decision without presenting a dismissed relation as active', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidenceChangeCard, {
+      value: {
+        ...evolution,
+        status: 'dismissed',
+        revision: 2,
+        history: [
+          {
+            revision: 2,
+            from: 'active',
+            to: 'dismissed',
+            reason: '<script>Different subjects</script>',
+            at: '2026-09-27T16:00:00Z',
+          },
+        ],
+      },
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /Dismissed · revision 2/);
+  assert.match(html, /Editor review history/);
+  assert.match(html, /&lt;script&gt;Different subjects/);
+  assert.match(html, /Earlier statement/);
+  assert.doesNotMatch(html, /<script>/);
+});
+
+test('later evidence status is separate from the original supported claim and its history', () => {
+  const {
+    InvestigationFindings,
+  } = require('../components/investigation-findings.tsx');
+  const html = renderToStaticMarkup(
+    React.createElement(InvestigationFindings, {
+      value: {
+        sources: [],
+        evidence: [],
+        entities: [],
+        relationships: [],
+        evidence_basis: 'Source-linked evidence',
+        claims: [
+          {
+            id: 'old',
+            statement: 'Recorded finding.',
+            status: 'SUPPORTED',
+            revision: 1,
+            history: [
+              {
+                revision: 1,
+                from: 'UNVERIFIED',
+                to: 'SUPPORTED',
+                at: '2026-09-27T12:00:00Z',
+                basis: 'Exact quotation',
+              },
+            ],
+            later_evidence: {
+              status: 'CONTESTED',
+              changes: [{ kind: 'CONTRADICTS', count: 1 }],
+            },
+          },
+        ],
+      },
+    }),
+  );
+  assert.match(html, /data-status="SUPPORTED"/);
+  assert.match(html, /Later evidence: Contested/);
+  assert.match(html, /Contradicts \(1\)/);
+  assert.match(html, /href="#evidence-changes"/);
+  assert.match(html, /Exact quotation/);
 });

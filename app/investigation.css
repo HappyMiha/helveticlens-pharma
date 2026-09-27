@@ -95,6 +95,92 @@
 .investigation-findings {
   min-width: 0;
 }
+.evolution-tools,
+.evidence-change > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.evolution-checkbox {
+  display: flex;
+  align-items: start;
+  gap: var(--space-2);
+  font-size: var(--type-label);
+  line-height: 1.65;
+}
+.evolution-checkbox [role='checkbox'] {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+.evidence-change {
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.evidence-change > header h4 {
+  margin: 0;
+  font-size: var(--type-section);
+}
+.evidence-change-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-block: var(--space-3);
+  gap: var(--space-3);
+}
+.compared-finding {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-large);
+  background: var(--surface-secondary);
+}
+.compared-finding h5 {
+  font-size: var(--type-body);
+  font-weight: 600;
+  line-height: 1.6;
+  margin-block: var(--space-2);
+}
+.compared-finding blockquote {
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--text-secondary);
+  margin: var(--space-3) 0;
+  white-space: pre-wrap;
+}
+.compared-finding button {
+  margin-top: var(--space-2);
+  white-space: normal;
+}
+.evidence-hash {
+  overflow-wrap: anywhere;
+  font-family: monospace;
+}
+.comparison-review {
+  margin-top: var(--space-3);
+}
+.comparison-review fieldset {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+}
+.comparison-review button {
+  justify-self: start;
+}
+.claim-later-evidence {
+  margin-block: var(--space-2);
+  padding: var(--space-2);
+  border-left: 2px solid var(--border);
+}
+.claim-later-evidence p {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+}
+@media (max-width: 760px) {
+  .evidence-change-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .investigation-section-title {
   display: flex;
   justify-content: space-between;

@@ -224,10 +224,11 @@ export function Dossier({
         }}
       />
       <DossierInvestigation
-        key={d.id}
+        key={`${d.id}:${userId || ''}`}
         dossierId={d.id}
         title={c.name}
         focusRequest={focusInvestigation}
+        onOpen={openInvestigation}
         canEdit={canEdit}
         canContribute={canContribute}
         userId={userId}

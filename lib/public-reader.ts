@@ -8,6 +8,7 @@ import type {
   PublicResearch,
 } from './public-research';
 import type { DiscussionPage } from './community';
+import type { EvidenceChangesPage } from './claim-evolution';
 
 const CORE = process.env.HELVETICLENS_API_ORIGIN || 'https://helveticlens.ch';
 export type PublicResult<T> =
@@ -73,6 +74,14 @@ export function readPublicDiscussion(id: string) {
 
 export function readPublicResearch(id: string) {
   return read<PublicResearchPage>(`/${encodeURIComponent(id)}/research`);
+}
+export function readPublicChanges(id: string) {
+  return /^[0-9a-f-]{36}$/.test(id)
+    ? read<EvidenceChangesPage>(`/${id}/evidence-changes`)
+    : Promise.resolve<PublicResult<EvidenceChangesPage>>({
+        error: 'Evidence changes unavailable.',
+        missing: true,
+      });
 }
 export function readPublicInvestigation(id: string, investigation: string) {
   return /^[0-9a-f-]{36}$/.test(investigation)

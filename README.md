@@ -1,5 +1,11 @@
 # HelveticLens Pharma
 
+## Changes over time
+
+Release 1.15 adds source-linked comparisons across investigations. Read both original findings and supporting quotes, inspect their sources, and distinguish corroboration, contradiction and a later state. The earlier claim and revision history are preserved; later-evidence status is shown separately. Current dossier editors can dismiss or restore a comparison with a recorded explanation, with explicit consent for public notes. Anonymous public reading follows current publication and source visibility.
+
+Comparisons are bounded to 24 current and 24 earlier claims in the same audience, with one supporting quote per claim. They do not prove independent corroboration or complete coverage. Interrupted comparison requests require explicit retry. Completed comparisons remain retained; further evidence can be compared in a new investigation. Monitoring-triggered reopening remains the next stage.
+
 ## Living public research
 
 Release 1.14 adds owner-opted public investigations using the same durable core engine. Enable **Living public research** while previewing the public version; a snapshot never opts in automatically. Verified public participants can contribute text, source URLs, corrections, research questions and supported files up to 2 MB, with explicit publication/analysis consent. Public findings never use private parent material. The anonymous directory and global Ask search typed public knowledge with literal word matching; this is not a claim of semantic/vector indexing.
@@ -12,7 +18,7 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.13.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.15.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 

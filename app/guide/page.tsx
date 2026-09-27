@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 const chapters = [
   ['interface', 'Ask, read and trace evidence'],
   ['public-research', 'Develop a living public dossier'],
+  ['changes-over-time', 'Compare evidence over time'],
   ['start', 'Frame a useful question'],
   ['investigate', 'Ask this dossier'],
   ['contributions', 'Add material for private analysis'],
@@ -71,6 +72,43 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section
+              id="changes-over-time"
+              aria-labelledby="changes-over-time-title"
+            >
+              <span className="guide-step">EVIDENCE HISTORY</span>
+              <h2 id="changes-over-time-title">See what changed, and why.</h2>
+              <p>
+                Changes over time connects a newer finding to earlier evidence
+                in the same dossier. It can corroborate a claim, contradict it,
+                or describe a later state. Read the two original statements and
+                exact supporting quotations side by side, then open either
+                investigation for its full sources and original material.
+              </p>
+              <p>
+                The original claim, status and history remain intact. Later
+                evidence is shown separately. A machine-suggested relationship
+                can be wrong; corroboration does not prove that sources are
+                independent. Current dossier owners and editors can dismiss or
+                restore a comparison with an explanation. Include dismissed
+                comparisons to inspect the review history.
+              </p>
+              <p>
+                Public comparisons can be read without registration. Public
+                review notes require explicit publication confirmation.
+                Withdrawing a contribution, publication or source removes its
+                links from the current public view. Private material never
+                enters public comparisons.
+              </p>
+              <p>
+                Each completed analysis may compare up to 24 new and 24 earlier
+                source-supported claims, using one retained supporting quotation
+                per claim. This bounded step does not establish exhaustive
+                coverage. Retry unavailable steps explicitly; completed
+                comparisons are retained. Automated reopening from monitoring
+                alerts is not yet available.
+              </p>
+            </section>
             <section
               id="public-research"
               aria-labelledby="public-research-title"

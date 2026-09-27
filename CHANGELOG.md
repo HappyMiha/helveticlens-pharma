@@ -1,5 +1,13 @@
 # Changes
 
+## 1.15.0 — evidence changes across investigations
+
+Changes over time compares independently captured findings in the same dossier and audience. Read the earlier and newer statements, exact supporting quotations, source records and original investigations side by side. Corroboration, contradiction and temporal update remain machine interpretations; original claims and their histories are preserved. Later evidence appears separately from the recorded status.
+
+Current dossier editors can dismiss or restore a comparison with a revisioned, replay-safe explanation. Public review notes require explicit publication consent. Current publication/contribution visibility, source exclusions and erasure fence both comparison inputs and every derived reader/count/status. Anonymous public readers need no account; private exports retain eligible private comparison history.
+
+One additional durable, bounded comparison request considers at most 24 current and 24 earlier claims, using one retained supporting quotation per claim. Interrupted work requires an explicit retry; completed comparisons are not repeated automatically when another step is retried. Add a new investigation to compare additional evidence. The interface follows Brandbook v1.0, supports mobile reading and exposes the Lens comparison state only during a recorded current operation. Monitoring-triggered reopening, recurring discovery, private semantic indexing and native visual migration remain open.
+
 ## 1.14.0 — living public research
 
 Owners can explicitly enable living research in the signed publication preview. Stable title-based URLs lead to anonymous research readers with claims, exact quotes, source captures, entities, history and live activity. Verified participants can submit public questions, comments, corrections, URLs and original files. The same bounded native coordinator powers private and public research; private material never seeds a public run.

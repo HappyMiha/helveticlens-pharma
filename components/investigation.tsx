@@ -17,6 +17,7 @@ import { TransparencyPanel, DossierTimeline } from './transparency-panel';
 import { evidenceCounts } from '@/lib/lens';
 import { OriginalContribution } from './dossier-contributions';
 import { InvestigationFindings } from './investigation-findings';
+import { ClaimEvolution } from './claim-evolution';
 
 export function DossierInvestigation({
   dossierId,
@@ -25,9 +26,11 @@ export function DossierInvestigation({
   userId,
   title = 'this dossier',
   focusRequest,
+  onOpen,
 }: {
   title?: string;
   focusRequest?: { id: string; tick: number };
+  onOpen: (id: string) => void;
   dossierId: string;
   canEdit: boolean;
   canContribute?: boolean;
@@ -141,10 +144,11 @@ export function DossierInvestigation({
     };
   }, [base, selected]);
   useEffect(() => {
-    if (!focusRequest) return;
+    const focus = focusRequest;
+    if (!focus) return;
     let active = true;
     const epoch = accessEpoch.current;
-    api<Investigation>(`${base}/${focusRequest.id}`)
+    api<Investigation>(`${base}/${focus.id}`)
       .then((next) => {
         if (!active || epoch !== accessEpoch.current) return;
         setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
@@ -164,7 +168,18 @@ export function DossierInvestigation({
       active = false;
     };
   }, [base, focusRequest]);
+  useEffect(() => {
+    if (focusRequest?.id === value?.id)
+      document
+        .getElementById(`investigation-${value?.id}`)
+        ?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }, [focusRequest, value?.id]);
   const running = isRunning(value);
+  useEffect(() => {
+    if (!selected || running) return;
+    const timer = setInterval(() => void refresh(), 15000);
+    return () => clearInterval(timer);
+  }, [selected, running, refresh]);
   const cursor = useRef(0);
   useEffect(() => {
     cursor.current = 0;
@@ -385,7 +400,10 @@ export function DossierInvestigation({
       )}
       {value && (
         <>
-          <div className="investigation-run-heading">
+          <div
+            className="investigation-run-heading"
+            id={`investigation-${value.id}`}
+          >
             <div>
               <span className="investigation-status" data-status={value.status}>
                 {readable(value.status)}
@@ -399,7 +417,6 @@ export function DossierInvestigation({
             </div>
             <div className="investigation-controls">
               {canControl &&
-                value.trigger_entry_id &&
                 ['completed', 'failed'].includes(value.status) &&
                 value.branches.some((branch) => branch.status === 'failed') && (
                   <Button
@@ -459,8 +476,8 @@ export function DossierInvestigation({
           {value.external_discovery === false && (
             <p className="investigation-muted">
               Private contribution review · no public web discovery. Findings
-              belong to this review; they do not automatically rewrite other
-              investigations.
+              retain their original evidence. Comparisons with earlier findings
+              appear in Changes over time.
             </p>
           )}
           <LensAnalysisState value={value} />
@@ -483,6 +500,7 @@ export function DossierInvestigation({
             <a href="#research-timeline">Timeline</a>
             <a href="#open-questions">Open questions</a>
             <a href="#research-method">Method</a>
+            <a href="#evidence-changes">Changes over time</a>
           </nav>
           <div className="investigation-layout">
             <InvestigationFindings value={value} />
@@ -538,6 +556,13 @@ export function DossierInvestigation({
           </div>
         </>
       )}
+      <ClaimEvolution
+        key={`${dossierId}:${userId || ''}`}
+        base={`/products/${product.id}/dossiers/${dossierId}/evidence-changes`}
+        refreshToken={value?.event_sequence || 0}
+        onOpen={onOpen}
+        onChange={() => void refresh()}
+      />
     </section>
   );
 }

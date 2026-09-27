@@ -22,6 +22,8 @@ import { InvestigationFindings } from './investigation-findings';
 import { LensAnalysisState } from './lens';
 import { DossierTimeline, TransparencyPanel } from './transparency-panel';
 import { useAskSearch } from './universal-ask-search';
+import { ClaimEvolution } from './claim-evolution';
+import type { EvidenceChangesPage } from '@/lib/claim-evolution';
 
 export function PublicResearchView({
   publicationId,
@@ -29,12 +31,14 @@ export function PublicResearchView({
   initial,
   selectedId,
   initialValue,
+  initialChanges = null,
 }: {
   publicationId: string;
   revision: number;
   initial: PublicResearchPage | null;
   selectedId: string;
   initialValue: PublicResearch | null;
+  initialChanges?: EvidenceChangesPage | null;
 }) {
   const base = `/products/${product.id}/public-dossiers/${publicationId}/research`;
   const [offset, setOffset] = useState(0);
@@ -325,6 +329,22 @@ export function PublicResearchView({
           </section>
           <TransparencyPanel value={value} />
         </div>
+      )}
+      {scopeValid && (
+        <ClaimEvolution
+          key={`${publicationId}:${revision}:${identity?.user.id || ''}:${identity?.organization.id || ''}`}
+          base={`/products/${product.id}/public-dossiers/${publicationId}/evidence-changes`}
+          publicationRevision={revision}
+          accountKey={
+            identity
+              ? `${identity.user.id}:${identity.organization.id}`
+              : undefined
+          }
+          initial={initialChanges}
+          refreshToken={tick}
+          onOpen={select}
+          onChange={refresh}
+        />
       )}
     </section>
   );
