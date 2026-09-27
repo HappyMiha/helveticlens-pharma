@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicContentView } from '@/components/public-content';
+import { PublicDossierActions } from '@/components/public-following';
 import { PublicDiscussion } from '@/components/public-discussion';
 import { product } from '@/lib/product';
 import { readPublicDossier, readPublicDiscussion } from '@/lib/public-reader';
@@ -48,6 +49,7 @@ export default async function PublicDossierPage({ params }: Props) {
             This is an author-published version. Publication does not certify
             its conclusions or the completeness of its sources.
           </aside>
+          <PublicDossierActions dossier={result.data} />
           <PublicDiscussion
             publicationId={id}
             publicationRevision={result.data.revision}

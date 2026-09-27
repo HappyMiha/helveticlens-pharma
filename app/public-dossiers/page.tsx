@@ -38,6 +38,7 @@ export default async function PublicDossiers({
           HelveticLens <b>{product.name}</b>
         </Link>
         <nav aria-label="Product navigation">
+          <Link href="/following">Followed dossiers</Link>
           <Link href="/guide">Guide</Link>
           <Link href="/">Open workspace</Link>
         </nav>

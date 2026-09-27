@@ -1,4 +1,5 @@
 'use client';
+import { PublicCopyOrigin } from './public-origin';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useEffect, useState } from 'react';
 import {
@@ -181,6 +182,7 @@ export function Dossier({
         </span>
         <span>Created {date(p.created_at)}</span>
       </div>
+      <PublicCopyOrigin origin={d.public_origin} />
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(String(v))}

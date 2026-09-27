@@ -1,5 +1,9 @@
 # Changes
 
+## 1.5.0 — Personal following and private working copies
+
+Personal following now has a private paginated library, public-change markers, explicit acknowledgement and withdrawal/deletion handling. Reviewed private reuse creates a native author-private draft with the complete public snapshot, attribution, source links and origin preserved. Exact signed previews, current membership, CSRF, revisions and durable retry tombstones protect the operation. No monitoring, fetching, publication or email starts implicitly. Exact production activation is verified separately.
+
 ## 1.4.0 — Public discussion
 
 Published dossiers now have a public discussion. Anyone can read; current account members can deliberately submit a reviewed public display name, text and up to ten HTTPS source links. Authors can edit or remove their own contributions. Dossier workspace administrators can hide or restore contributions with a reason, while author edits preserve a hidden state. Public and personal views have real counts, 20-item pages and failure recovery. Sign-in reuses the existing native account flow on the reader. Private dossier discussions stay private.

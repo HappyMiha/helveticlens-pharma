@@ -186,6 +186,27 @@ export default function Guide() {
                 reviewed. Withdrawing the dossier closes its public discussion.
               </p>
               <p>
+                Use <strong>Follow dossier</strong> to keep publication and
+                public discussion changes in your personal{' '}
+                <Link href="/following">Followed dossiers</Link> list. Refresh
+                to check updates and explicitly mark an update as seen.
+                Following is private to your account and sends no email. Hidden
+                contributions do not generate visible update signals. Withdrawn
+                text is unavailable; deleted publications leave the list.
+              </p>
+              <p>
+                Workspace administrators can choose{' '}
+                <strong>Create a private working copy</strong>
+                on a public reader. Set your own question, preview the exact
+                public text and links, and confirm. The result is an
+                author-private draft with its original attribution and revision,
+                visible throughout setup and in the working dossier. Complete
+                setup to activate monitoring; choose delivery explicitly. The
+                saved snapshot stays with your dossier if the original changes
+                or is withdrawn. Public discussion, private material and linked
+                document files are not copied.
+              </p>
+              <p>
                 Review saved-source decisions with a reason: include a URL for
                 new AI research, exclude it or return it to unreviewed. Source
                 decisions retain an attributed history. Unreviewed does not mean

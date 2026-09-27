@@ -19,6 +19,10 @@ import {
   PaginationContent,
   PaginationItem,
 } from '@/components/ui/pagination';
+import {
+  usePublicSession,
+  publicSessionChanged,
+} from '@/lib/use-public-session';
 import { AuthDialog } from './auth-dialog';
 import { api, date, uid } from '@/lib/api';
 import { useResource } from '@/lib/use-resource';
@@ -29,7 +33,6 @@ import type {
   ContributionContent,
   DiscussionPage,
 } from '@/lib/community';
-import type { Identity } from '@/lib/contracts';
 
 export function PublicDiscussion({
   publicationId,
@@ -40,8 +43,9 @@ export function PublicDiscussion({
   publicationRevision: number;
   initial: DiscussionPage | null;
 }) {
-  const session = useResource<Identity>('/auth/session');
-  const identity = session.data?.authenticated ? session.data : null;
+  const session = usePublicSession();
+  const identity =
+    !session.error && session.data?.authenticated ? session.data : null;
   const [offset, setOffset] = useState(0);
   const [login, setLogin] = useState(false);
   const [notice, setNotice] = useState('');
@@ -234,7 +238,7 @@ export function PublicDiscussion({
         open={login}
         onClose={() => setLogin(false)}
         onSuccess={async () => {
-          await session.refresh();
+          publicSessionChanged();
           setLogin(false);
           setOffset(0);
         }}

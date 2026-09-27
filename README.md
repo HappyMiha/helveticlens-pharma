@@ -34,9 +34,33 @@ See [the product model](PRODUCT.md) for the research loop, intended users, cover
 - Team invitations and viewer/administrator roles. Drafts remain author-private; activated dossiers are shared within the current organization.
 - AI improvements based on bounded saved feedback. Applying a reviewed suggestion creates a native topic revision; stale proposals cannot overwrite current monitoring.
 
+## Personal following and private reuse
+
+Follow a public dossier from its reader and return through **Followed dossiers**.
+The list belongs to your native account across workspaces, including for viewer
+members. It has real counts and 20-item pages. Published revision changes and
+visible discussion changes produce an unseen-update marker. Refresh explicitly;
+acknowledging an old marker cannot hide newer changes. Hidden edits produce no
+public signal. Withdrawal redacts the content; deletion removes the follow.
+Following does not send email or change digest preferences.
+
+Workspace administrators can preview and confirm a private working copy with
+their own name and monitoring question. It is an author-private native draft,
+with no activated topics or source subscriptions. The complete reviewed public
+snapshot, author label, public URL/revision and SHA-256 remain inspectable in
+setup, the working dossier and JSON export. Published source links become reference
+entries. The snapshot is independent of later edits or withdrawal. Private parent
+material, public contributions and linked document contents are not copied. Source
+rights remain with their owners. Native setup and delivery consent still apply.
+Signed previews expire after 30 minutes and bind exact content, user, workspace
+and session. Durable retry receipts prevent duplicate drafts, including retries
+after deletion. Account erasure removes personal follows and reuse receipts.
+Open-web discovery, multilingual semantic retrieval and new recurring search/delivery
+remain separate cycles. Production activation requires the exact release receipts.
+
 ## Public discussion
 
-Each published dossier has an anonymous reader and public contribution stream. Current native account members, including workspace viewers, can publish personal contributions after reviewing their display name, text and HTTPS links. Authors edit/remove their own work; dossier administrators moderate visibility with reasons. Hidden text is visible only to its author and the dossier administrators. Existing private workspace permissions are unchanged. Following, private reuse and open-web/semantic discovery are not included in this release.
+Each published dossier has an anonymous reader and public contribution stream. Current native account members, including workspace viewers, can publish personal contributions after reviewing their display name, text and HTTPS links. Authors edit/remove their own work; dossier administrators moderate visibility with reasons. Hidden text is visible only to its author and the dossier administrators. Existing private workspace permissions are unchanged. Public following and private reuse are described below. Open-web/semantic discovery remains a subsequent direction.
 
 ## Architecture
 
@@ -71,7 +95,7 @@ Email choices change the current user's personal organization digest, not an ind
 
 ## Verification
 
-Production builds, strict TypeScript and authored-source lint are required before publication. The client currently has 50 automated checks covering the private gateway, session/CSRF/product boundaries, downloads, literal search and displayed-query pagination, import retry identity, review conflicts, source status, exact source/question navigation, saved-document revision guards, reviewed AI inputs and explicit answer reconfirmation. Delayed question responses and stale errors are tested through cancelled and superseded reads.
+Production builds, strict TypeScript and authored-source lint are required before publication. The client has automated checks covering the private gateway, session/CSRF/product boundaries, downloads, literal search and displayed-query pagination, import retry identity, review conflicts, source status, exact source/question navigation, saved-document revision guards, reviewed AI inputs and explicit answer reconfirmation. Delayed question responses and stale errors are tested through cancelled and superseded reads.
 
 Native backend tests exercise real persistence, access control, source/model boundaries, migrations, monitoring admission, evidence provenance, exact citations, accountable actions, source and answer review, complete question/source retrieval and recovery. Validation results and the distinction between pushed code and active releases are recorded in the shared platform's `BACKLOG_MONITORING_V2.md` and `docs/PRODUCT_DOSSIERS.md`. Passing automated checks does not constitute a clinical/legal review or a user pilot.
 

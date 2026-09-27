@@ -452,6 +452,7 @@ export default function Workspace() {
             ))}
           </nav>
           <div className="sidebar-note">
+            <Link href="/following">Followed dossiers</Link>
             <Link href="/public-dossiers">
               Public dossiers <Globe size={14} />
             </Link>
@@ -535,6 +536,7 @@ export default function Workspace() {
             </b>
           </div>
           <div className="header-actions">
+            <Link href="/following">Followed dossiers</Link>
             <Link href="/public-dossiers">Public dossiers</Link>
             <span className="private-note">
               <LockKeyhole size={13} />

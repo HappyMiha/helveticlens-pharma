@@ -381,7 +381,9 @@ function PublicationForm({
         >
           <p className="public-reading-note">
             Review exactly what will be visible to everyone. This preview
-            expires {date(preview.preview_expires_at)}.
+            expires {date(preview.preview_expires_at)}. Readers can retain a
+            reviewed copy in their own workspace; withdrawing the original does
+            not recall those copies.
           </p>
           <PublicContentView content={preview.content} />
           <label htmlFor={`${formId}-consent`} className="publication-consent">

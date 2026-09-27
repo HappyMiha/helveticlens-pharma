@@ -255,6 +255,7 @@ export interface DocumentWatch {
   checked_at?: string;
 }
 export interface DossierRecord {
+  public_origin?: import('./public-following').PublicOrigin | null;
   id: string;
   product: string;
   created_at: string;

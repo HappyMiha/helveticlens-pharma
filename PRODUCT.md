@@ -50,6 +50,30 @@ Accepted answers show specific review reasons for new saved material and, for AI
 
 Older questions remain discoverable inside each topic through a private title/context search. It matches all submitted words literally (up to 12 distinct words and 300 characters), puts title matches first and retains 30-question pages. All/open/working-answer filters show real matching counts alongside the topic total. Search is explicit; page navigation retains the displayed query even if a new query is being typed. Clear/reset, refresh, failed-list retry and first-page recovery keep empty views understandable. A failed exact-question link retries that question, and cancelled or superseded reads cannot reopen a view. Contributions, attachments and external pages are outside this title/context search. It changes no records and calls no external source or model.
 
+## Personal following and private reuse
+
+Follow a public dossier from its reader and return through **Followed dossiers**.
+The list belongs to your native account across workspaces, including for viewer
+members. It has real counts and 20-item pages. Published revision changes and
+visible discussion changes produce an unseen-update marker. Refresh explicitly;
+acknowledging an old marker cannot hide newer changes. Hidden edits produce no
+public signal. Withdrawal redacts the content; deletion removes the follow.
+Following does not send email or change digest preferences.
+
+Workspace administrators can preview and confirm a private working copy with
+their own name and monitoring question. It is an author-private native draft,
+with no activated topics or source subscriptions. The complete reviewed public
+snapshot, author label, public URL/revision and SHA-256 remain inspectable in
+setup, the working dossier and JSON export. Published source links become reference
+entries. The snapshot is independent of later edits or withdrawal. Private parent
+material, public contributions and linked document contents are not copied. Source
+rights remain with their owners. Native setup and delivery consent still apply.
+Signed previews expire after 30 minutes and bind exact content, user, workspace
+and session. Durable retry receipts prevent duplicate drafts, including retries
+after deletion. Account erasure removes personal follows and reuse receipts.
+Open-web discovery, multilingual semantic retrieval and new recurring search/delivery
+remain separate cycles. Production activation requires the exact release receipts.
+
 ## Public collective discussion
 
 Public dossiers support 20-item contribution pages, anonymous reading and native sign-in from the same page. Contributors deliberately enter a public display name and review their text and source links before posting. Authors can revise or remove their own contributions; dossier workspace administrators can hide/restore with a reason and inspect the private change history. Hidden text never appears in anonymous results, and an author edit cannot undo moderation. Personal public participation is available to current members, including viewers, without granting private workspace write access. Publication changes require a fresh read before posting. Withdrawal closes public reads and writes; account erasure removes that account's contributions.

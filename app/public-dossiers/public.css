@@ -377,3 +377,123 @@
     padding-inline: 16px;
   }
 }
+
+.public-personal,
+.public-origin {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+  background: var(--card);
+}
+.public-personal h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.public-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.public-action-row h2 {
+  flex: 1;
+}
+.follow-state {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.public-origin summary,
+.public-reuse summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.public-origin summary:focus-visible,
+.public-reuse summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+.public-reuse {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.public-reuse summary svg {
+  display: inline;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.public-reuse form > p {
+  margin: 16px 0;
+}
+.public-reuse form > label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.reuse-preview {
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+.reuse-preview p {
+  margin: 12px 0;
+}
+.reuse-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+}
+.reuse-consent > button {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.public-snapshot {
+  border-block: 1px solid var(--border);
+  margin: 20px 0;
+  padding: 20px 0;
+  overflow-wrap: anywhere;
+}
+.public-snapshot h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.public-snapshot h4 {
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+.public-snapshot ol {
+  list-style: decimal;
+  padding-left: 24px;
+}
+.public-source-address {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.public-integrity {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.public-origin p {
+  margin: 12px 0;
+}
+.public-origin a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .public-personal,
+  .public-origin,
+  .reuse-preview {
+    padding: 16px;
+  }
+  .public-action-row {
+    align-items: stretch;
+  }
+}

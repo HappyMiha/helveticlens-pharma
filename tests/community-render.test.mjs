@@ -13,10 +13,16 @@ const require = createRequire(import.meta.url);
 const originalResolve = Module._resolveFilename;
 const originalTs = Module._extensions['.ts'];
 const originalTsx = Module._extensions['.tsx'];
+const originalCss = Module._extensions['.css'];
+Module._extensions['.css'] = () => {}; // Server markup assertions do not load styles.
 Module._resolveFilename = function (name, ...args) {
   return originalResolve.call(
     this,
-    name.startsWith('@/') ? resolve(name.slice(2)) : name,
+    name === 'next/link'
+      ? resolve('node_modules/vinext/dist/shims/link.js')
+      : name.startsWith('@/')
+        ? resolve(name.slice(2))
+        : name,
     ...args,
   );
 };
@@ -37,8 +43,19 @@ const { PublicDiscussion } = require(
   resolve('components/public-discussion.tsx'),
 );
 const { contributionDraft } = require(resolve('lib/community.ts'));
+const { PublicCopyOrigin, PublicSnapshot } = require(
+  resolve('components/public-origin.tsx'),
+);
+const { reuseDraft, reuseCommand } = require(
+  resolve('lib/public-following.ts'),
+);
+const { PublicDossierActions, FollowedDossiers } = require(
+  resolve('components/public-following.tsx'),
+);
 after(() => {
   Module._resolveFilename = originalResolve;
+  if (originalCss) Module._extensions['.css'] = originalCss;
+  else delete Module._extensions['.css'];
   if (originalTs) Module._extensions['.ts'] = originalTs;
   else delete Module._extensions['.ts'];
   if (originalTsx) Module._extensions['.tsx'] = originalTsx;
@@ -121,4 +138,86 @@ test('new contributions never infer a public name or copy hidden account metadat
     organization_id: 'PRIVATE',
   });
   assert.equal(JSON.stringify(draft).includes('PRIVATE'), false);
+});
+
+const published = {
+  id: base.publicationId,
+  product: 'pharma',
+  revision: 4,
+  title: 'A published research topic',
+  summary: 'An explicitly published question and summary.',
+  author_label: '<script>person()</script>',
+  body: '<img src=x onerror=alert(1)>',
+  sources: [
+    { title: 'Original <source>', url: 'https://www.fedlex.admin.ch/' },
+  ],
+  first_published_at: '2026-09-27T00:00:00Z',
+  updated_at: '2026-09-27T00:00:00Z',
+};
+test('private snapshot keeps full text, attribution, revision and safe source links', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(PublicCopyOrigin, {
+      origin: {
+        snapshot: published,
+        snapshot_sha256: 'a'.repeat(64),
+        copied_at: published.updated_at,
+        source_url:
+          'https://pharma.helveticlens.ch/public-dossiers/' + published.id,
+      },
+    }),
+  );
+  assert.match(html, /revision 4/);
+  assert.match(html, /&lt;script&gt;person/);
+  assert.match(html, /&lt;img src=x/);
+  assert.match(html, /noopener noreferrer nofollow ugc/);
+  assert.match(html, /Open original public dossier/);
+  assert.match(html, /a{64}/);
+  assert.doesNotMatch(html, /<script>|<img src=x/);
+  const long = renderToStaticMarkup(
+    React.createElement(PublicSnapshot, {
+      snapshot: { ...published, body: 'x'.repeat(29990) + 'END-OF-COPY' },
+    }),
+  );
+  assert.match(long, /x{29990}END-OF-COPY/);
+});
+test('copy preview uses only deliberate setup fields and retains retry identity', () => {
+  const draft = reuseDraft({
+    ...published,
+    organization_id: 'PRIVATE',
+    email: 'PRIVATE',
+    title: 'x'.repeat(240),
+  });
+  assert.equal(draft.name.length, 160);
+  assert.deepEqual(Object.keys(draft).sort(), [
+    'expected_revision',
+    'goal',
+    'name',
+  ]);
+  const preview = {
+    draft,
+    snapshot: { secret: 'PRIVATE' },
+    preview_token: 'b'.repeat(64),
+    preview_expires_at: '2026-09-27T01:00:00Z',
+    internal: 'PRIVATE',
+  };
+  const command = reuseCommand(preview, base.publicationId, false);
+  assert.equal(command.confirm_private_copy, false);
+  assert.equal(command.request_key, base.publicationId);
+  assert.deepEqual(reuseCommand(preview, base.publicationId, false), command);
+  assert.equal(JSON.stringify(command).includes('PRIVATE'), false);
+  assert.equal('source_pack_ids' in command, false);
+});
+test('public personal surfaces wait for native identity without rendering private records', () => {
+  const actions = renderToStaticMarkup(
+    React.createElement(PublicDossierActions, { dossier: published }),
+  );
+  assert.match(actions, /Checking sign-in/);
+  assert.match(actions, /Following sends no email/);
+  assert.doesNotMatch(
+    actions,
+    /Create private draft|Stop following|Signed in as/,
+  );
+  const list = renderToStaticMarkup(React.createElement(FollowedDossiers));
+  assert.match(list, /Checking sign-in/);
+  assert.doesNotMatch(list, /No followed dossiers yet|New public changes/);
 });

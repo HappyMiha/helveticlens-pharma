@@ -1,4 +1,5 @@
 'use client';
+import { PublicCopyOrigin } from './public-origin';
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
@@ -215,6 +216,7 @@ export function Wizard({
   }
   return (
     <div className="wizard">
+      <PublicCopyOrigin origin={doc?.public_origin} />
       <div className="wizard-top">
         <Button variant="ghost" disabled={!!busy} onClick={onCancel}>
           <ArrowLeft size={16} />

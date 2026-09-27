@@ -675,3 +675,61 @@ test('private discussion controls require the current native session', async () 
   assert.equal(response.status, 401);
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
 });
+
+test('personal following and reviewed reuse use only native product routes', async () => {
+  let called = 0;
+  globalThis.fetch = async (_url, init) => {
+    called++;
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    return Response.json({ ok: true });
+  };
+  const id = '11111111-1111-1111-1111-111111111111';
+  for (const suffix of [
+    'followed-dossiers',
+    `public-dossiers/${id}/follow`,
+    `public-dossiers/${id}/follow/read`,
+    `public-dossiers/${id}/reuse`,
+    `public-dossiers/${id}/reuse/preview`,
+  ]) {
+    const route = `products/${product.id}/${suffix}`;
+    const response = await proxy(
+      new Request('https://product.test/api/' + route, {
+        headers: { 'x-csrf-token': 'csrf' },
+      }),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  for (const suffix of [
+    `public-dossiers/${id}/follow/export`,
+    `public-dossiers/${id}/reuse/private`,
+    'followed-dossiers/another-user',
+  ]) {
+    const route = `products/${product.id}/${suffix}`;
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + route),
+          context(route),
+        )
+      ).status,
+      404,
+    );
+  }
+  const route = `products/${product.id}/public-dossiers/${id}/reuse`;
+  assert.equal(
+    (
+      await proxy(
+        new Request('https://product.test/api/' + route, {
+          method: 'POST',
+          headers: { origin: 'https://other.test' },
+          body: '{}',
+        }),
+        context(route),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(called, 5);
+});
