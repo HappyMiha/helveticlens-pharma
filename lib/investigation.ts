@@ -1,5 +1,18 @@
+export type ContributionOriginal = {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  url: string;
+  byte_size: number;
+  sha256: string;
+  author: string;
+  created_at: string;
+};
 export type InvestigationSummary = {
   id: string;
+  trigger_entry_id?: string | null;
+  external_discovery?: boolean;
   question: string;
   status:
     | 'queued'
@@ -21,6 +34,7 @@ export type EvidenceLink = {
   locator: string;
 };
 export type Investigation = InvestigationSummary & {
+  original?: ContributionOriginal | null;
   plans: {
     id: string;
     version: number;
@@ -50,6 +64,7 @@ export type Investigation = InvestigationSummary & {
     url: string;
     sha256: string;
     created_at: string;
+    original?: ContributionOriginal | null;
     snapshot: { scope: string; excerpts: { text: string; passage: string }[] };
   }[];
   claims: {

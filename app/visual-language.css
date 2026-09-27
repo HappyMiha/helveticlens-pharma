@@ -750,3 +750,95 @@ button[data-slot='button'] {
 [data-slot='sidebar'][data-mobile='true'] [data-slot='sidebar-footer'] {
   padding: var(--space-3);
 }
+
+.dossier-contributions {
+  margin: var(--space-5) 0;
+  padding: var(--space-5) 0;
+  border-block: 1px solid var(--border);
+}
+.contribution-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.contribution-heading h2 {
+  font-size: 1.25rem;
+}
+.dossier-contributions fieldset {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.dossier-contributions label {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: 0.875rem;
+}
+.dossier-contributions small {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.dossier-contributions select {
+  width: 100%;
+  min-height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+.contribution-fields {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr);
+  gap: var(--space-3);
+}
+.dossier-contributions button[type='submit'] {
+  justify-self: start;
+}
+.contribution-recent,
+.contribution-original {
+  margin: var(--space-3) 0;
+  font-size: 0.875rem;
+}
+.contribution-recent li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.contribution-recent small {
+  display: block;
+}
+.contribution-original summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.contribution-original blockquote {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: var(--space-3);
+  border-left: 2px solid var(--border);
+  max-height: 24rem;
+  overflow: auto;
+}
+.contribution-original code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.8125rem;
+  margin-top: var(--space-2);
+}
+.contribution-original a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 640px) {
+  .contribution-fields {
+    grid-template-columns: 1fr;
+  }
+}

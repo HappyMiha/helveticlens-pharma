@@ -189,10 +189,13 @@ export interface EntryData {
   sources?: ResearchSource[];
 }
 export interface Entry {
+  analysis?: import('./investigation').InvestigationSummary | null;
   id: string;
   source_review?: Entry | null;
   kind:
     | 'note'
+    | 'correction'
+    | 'research_request'
     | 'reference'
     | 'file'
     | 'feedback'

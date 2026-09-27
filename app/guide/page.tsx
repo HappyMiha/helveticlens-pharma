@@ -14,6 +14,7 @@ const chapters = [
   ['interface', 'Ask, read and trace evidence'],
   ['start', 'Frame a useful question'],
   ['investigate', 'Ask this dossier'],
+  ['contributions', 'Add material for private analysis'],
   ['discover', 'Find and keep sources'],
   ['monitor', 'Connect monitoring'],
   ['collaborate', 'Develop it together'],
@@ -171,13 +172,48 @@ export default function Guide() {
                 <strong>Discussion, monitoring &amp; dossier tools</strong>.
               </p>
             </section>
+            <section id="contributions" aria-labelledby="contributions-title">
+              <span className="guide-step">PRIVATE CONTRIBUTIONS</span>
+              <h2 id="contributions-title">Add material. Keep its original.</h2>
+              <p>
+                Use Develop this dossier together to add a comment, source URL,
+                correction, research request or file. Add &amp; analyse saves
+                the original and authorship, then queues a private review. Open
+                review to follow real progress, inspect exact quotes or download
+                the original. Later contributions wait for current dossier work.
+              </p>
+              <p>
+                The workspace AI analyses the submitted material. A submitted
+                URL may be opened anonymously, using existing source
+                restrictions. Private text is never used for public web
+                searches. Nothing is published automatically. Use Ask explicitly
+                for public discovery.
+              </p>
+              <p>
+                Files up to 10 MB are retained. Automatic extraction accepts
+                TXT, Markdown, CSV, HTML and text PDF up to 2 MB. PDF reading is
+                limited to documents of at most 60 pages, the first 20 pages and
+                24,000 extracted characters. Images, Office files, scanned or
+                encrypted PDFs remain downloadable with an explicit unavailable
+                result. Research requests and corrections can also inspect two
+                saved evidence snapshots; they do not automatically rewrite
+                other reviews.
+              </p>
+              <p>
+                Retry unavailable steps preserves completed work and the
+                original. Pause, resume and cancel apply to the review. If a
+                save response is lost, retry the unchanged form to recover the
+                same contribution. Legacy attachment and note tools remain
+                save-only.
+              </p>
+            </section>
             <section id="discover" aria-labelledby="discover-title">
               <span className="guide-step">02 / DISCOVERY</span>
               <h2 id="discover-title">Find and keep sources.</h2>
               <p>
-                Choose <strong>Public web</strong> to investigate a
-                public question beyond the source catalogue. Quick, Broad and
-                Deep select up to 8, 24 or 36 sources. Confirm which queries may
+                Choose <strong>Public web</strong> to investigate a public
+                question beyond the source catalogue. Quick, Broad and Deep
+                select up to 8, 24 or 36 sources. Confirm which queries may
                 leave your workspace. Auto uses Jev with local Laya fallback;
                 Compare evaluates the same candidates with both available
                 engines.

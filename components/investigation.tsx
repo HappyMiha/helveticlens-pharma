@@ -15,14 +15,17 @@ import { LensAnalysisState } from './lens';
 import { LargeMetric, DossierSection } from './research-blocks';
 import { TransparencyPanel, DossierTimeline } from './transparency-panel';
 import { evidenceCounts } from '@/lib/lens';
+import { OriginalContribution } from './dossier-contributions';
 import { InvestigationFindings } from './investigation-findings';
 
 export function DossierInvestigation({
   dossierId,
   canEdit,
   title = 'this dossier',
+  focusRequest,
 }: {
   title?: string;
+  focusRequest?: { id: string; tick: number };
   dossierId: string;
   canEdit: boolean;
 }) {
@@ -77,9 +80,14 @@ export function DossierInvestigation({
     api<{ items: InvestigationSummary[]; total: number }>(base)
       .then((page) => {
         if (!active) return;
-        setHistory(page.items);
+        setHistory((old) => [
+          ...page.items,
+          ...old.filter(
+            (row) => !page.items.some((item) => item.id === row.id),
+          ),
+        ]);
         setTotal(page.total);
-        setSelected(page.items[0]?.id || '');
+        setSelected((old) => old || page.items[0]?.id || '');
         setLoading(false);
       })
       .catch((e) => {
@@ -120,6 +128,30 @@ export function DossierInvestigation({
       active = false;
     };
   }, [base, selected]);
+  useEffect(() => {
+    if (!focusRequest) return;
+    let active = true;
+    const epoch = accessEpoch.current;
+    api<Investigation>(`${base}/${focusRequest.id}`)
+      .then((next) => {
+        if (!active || epoch !== accessEpoch.current) return;
+        setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
+        setSelected(next.id);
+        setValue(next);
+        setError('');
+      })
+      .catch((failure) => {
+        if (active && epoch === accessEpoch.current)
+          setError(
+            failure instanceof Error
+              ? failure.message
+              : 'Could not open the saved contribution review.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [base, focusRequest]);
   const running = isRunning(value);
   const cursor = useRef(0);
   useEffect(() => {
@@ -189,7 +221,7 @@ export function DossierInvestigation({
     },
     [base, busy, canEdit],
   );
-  async function control(action: 'pause' | 'resume' | 'cancel') {
+  async function control(action: 'pause' | 'resume' | 'cancel' | 'retry') {
     if (!value) return;
     setBusy(true);
     setError('');
@@ -345,10 +377,27 @@ export function DossierInvestigation({
               <span className="investigation-status" data-status={value.status}>
                 {readable(value.status)}
               </span>
-              <p className="eyebrow">Research question</p>
+              <p className="eyebrow">
+                {value.trigger_entry_id
+                  ? 'Contribution review'
+                  : 'Research question'}
+              </p>
               <h2>{value.question}</h2>
             </div>
             <div className="investigation-controls">
+              {canEdit &&
+                value.trigger_entry_id &&
+                ['completed', 'failed'].includes(value.status) &&
+                value.branches.some((branch) => branch.status === 'failed') && (
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => void control('retry')}
+                  >
+                    Retry unavailable steps
+                  </Button>
+                )}
+
               {canEdit && running && (
                 <Button
                   variant="outline"
@@ -362,7 +411,9 @@ export function DossierInvestigation({
               {canEdit && value.status === 'paused' && (
                 <Button
                   variant="outline"
-                  disabled={busy || activeElsewhere}
+                  disabled={
+                    busy || (activeElsewhere && !value.trigger_entry_id)
+                  }
                   onClick={() => void control('resume')}
                 >
                   <Play size={14} />
@@ -386,6 +437,19 @@ export function DossierInvestigation({
               ? connection || 'Waiting for the next saved checkpoint…'
               : value.stop_reason}
           </output>
+          {value.original && (
+            <OriginalContribution
+              original={value.original}
+              dossierId={dossierId}
+            />
+          )}
+          {value.external_discovery === false && (
+            <p className="investigation-muted">
+              Private contribution review · no public web discovery. Findings
+              belong to this review; they do not automatically rewrite other
+              investigations.
+            </p>
+          )}
           <LensAnalysisState value={value} />
           {counts && (
             <dl

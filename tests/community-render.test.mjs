@@ -665,3 +665,76 @@ test('transparency counts only completed actions and retains unavailable steps a
   assert.match(html, /Bounded accessible sources/);
   assert.doesNotMatch(html, /100%|7 sources|independently verified/);
 });
+
+test('contribution composer discloses private analysis and requires explicit submission', () => {
+  const {
+    DossierContributions,
+  } = require('../components/dossier-contributions.tsx');
+  const html = renderToStaticMarkup(
+    React.createElement(DossierContributions, {
+      dossierId: '11111111-1111-4111-8111-111111111111',
+      entries: [],
+      canEdit: true,
+      onOpen: () => {
+        throw new Error('Rendering must not open research');
+      },
+      onSaved: () => {
+        throw new Error('Rendering must not submit research');
+      },
+    }),
+  );
+  assert.match(html, /Add &amp; analyse/);
+  assert.match(html, /private text is never used for public web searches/);
+  assert.match(html, /Nothing is published automatically/);
+  assert.match(html, /Source URL/);
+  assert.match(html, /Correction/);
+  assert.match(html, /Research request/);
+});
+
+test('read-only dossier contribution surface does not expose write controls', () => {
+  const {
+    DossierContributions,
+  } = require('../components/dossier-contributions.tsx');
+  const html = renderToStaticMarkup(
+    React.createElement(DossierContributions, {
+      dossierId: '11111111-1111-4111-8111-111111111111',
+      entries: [],
+      canEdit: false,
+      onOpen() {},
+      async onSaved() {},
+    }),
+  );
+  assert.doesNotMatch(html, /<form|<textarea|type="submit"/);
+  assert.match(html, /workspace administrator/);
+});
+
+test('original contributions preserve literal text, authorship and scoped download URLs', () => {
+  const {
+    OriginalContribution,
+  } = require('../components/dossier-contributions.tsx');
+  const original = {
+    id: '22222222-2222-4222-8222-222222222222',
+    kind: 'file',
+    title: '<script>source</script>',
+    body: 'Original  spaces\n<script>untrusted</script>',
+    url: '',
+    byte_size: 123,
+    sha256: 'a'.repeat(64),
+    author: 'Original author',
+    created_at: '2026-09-27T12:00:00Z',
+  };
+  const render = (dossierId) =>
+    renderToStaticMarkup(
+      React.createElement(OriginalContribution, { original, dossierId }),
+    );
+  const html = render('11111111-1111-4111-8111-111111111111');
+  assert.match(html, /Original author/);
+  assert.match(html, /Original  spaces\n&lt;script&gt;untrusted/);
+  assert.match(html, /Original SHA-256/);
+  assert.match(
+    html,
+    /\/dossiers\/11111111-1111-4111-8111-111111111111\/files\/22222222-2222-4222-8222-222222222222/,
+  );
+  assert.doesNotMatch(html, /<script>/);
+  assert.doesNotMatch(render('../another-dossier'), /href=/);
+});

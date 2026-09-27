@@ -1,5 +1,11 @@
 # Changes
 
+## 1.10.0 — original contributions become private evidence
+
+One dossier composer saves comments, source URLs, files, corrections and research requests with original authorship and queues a durable private review. Exact text/file hashes and original downloads survive failed extraction or inference. Reviews serialize per dossier; failed steps can be retried without repeating completed work. Contribution research cannot send private material to public discovery or expand source entities into public queries. Existing explicit Ask remains available.
+
+Local extraction supports bounded TXT, Markdown, CSV, HTML and text PDF. Unsupported or scanned files remain downloadable with explicit limitations. Both products show original contributions, attributed sources, queued/live progress, partial failures and recovery through the existing research interface. Existing native permissions and explicit public publication remain unchanged. Full per-dossier invitations, living public research and cross-run reconciliation remain later stages.
+
 ## 1.9.0 — a research-first visual language
 
 A shared light/dark design foundation replaces the blue/purple dashboard palette with neutral research surfaces, strong typography, large evidence counts and restrained glass navigation. Cmd/Ctrl+K opens one floating Ask/Search on every route. It searches public dossiers anonymously, current authorized workspace knowledge, or deliberately submitted public-web questions using automatic Jev/Laya routing. In a dossier it starts the existing durable investigation without model or agent setup. Typing alone never sends a query. Existing detailed search tools remain accessible.

@@ -22,6 +22,12 @@ export function SourceMetadata({ source }: { source: Source }) {
         <dt>Origin</dt>
         <dd>{href ? new URL(href).hostname : 'Saved dossier material'}</dd>
       </div>
+      {source.original && (
+        <div>
+          <dt>Contributed by</dt>
+          <dd>{source.original.author}</dd>
+        </div>
+      )}
       <div>
         <dt>Captured</dt>
         <dd>

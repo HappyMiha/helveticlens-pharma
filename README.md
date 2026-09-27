@@ -10,6 +10,24 @@ Read the [product guide](https://pharma.helveticlens.ch/guide) for the working l
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 
+## Private contribution reviews
+
+The dossier composer accepts comments, URLs, corrections, research requests and
+files. **Add & analyse** retains the original and author and atomically queues a
+native private investigation. Reviews execute in dossier order; quotes and source
+hashes remain inspectable. Failed steps have an explicit retry that preserves
+completed work. Uncertain saves reuse the same request identity.
+
+Private text never becomes a public search query. Submitted URLs use the bounded
+anonymous reader with a fixed public passage-ranking purpose; contribution reviews
+cannot spawn public discovery. Uploads retain up to 10 MB; local extraction supports
+TXT, Markdown, CSV, HTML and text PDF up to 2 MB, at most 60 PDF pages, text from the
+first 20 pages and 24,000 characters. Unsupported/scanned/encrypted inputs retain
+their original with a visible unavailable result. Native workspace AI can analyse
+captured excerpts; this is not a semantic index of all private files. No automatic
+publication, email or cross-investigation claim reconciliation. Existing workspace
+roles and legacy save-only tools remain in force.
+
 ## What works
 
 - A global floating **Ask / Search** (Cmd/Ctrl+K) connects anonymous public-dossier search, authorized workspace knowledge, public web discovery and the current dossier investigation. Search scope is deliberate; typing does not make an external request. Light/dark/system themes use shared design tokens. The reference dossier emphasizes real evidence counts, claims, sources, timeline and provenance; Lens movement follows actual, recent native checkpoints, with reduced-motion support. Detailed search tools remain available.

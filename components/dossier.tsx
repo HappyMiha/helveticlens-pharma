@@ -1,5 +1,6 @@
 'use client';
 import { PublicCopyOrigin } from './public-origin';
+import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useEffect, useState } from 'react';
@@ -62,6 +63,11 @@ export function Dossier({
 }: DossierProps) {
   const p = d.profile,
     c = p.config;
+  const [focusInvestigation, setFocusInvestigation] = useState<
+    { id: string; tick: number } | undefined
+  >();
+  const openInvestigation = (id: string) =>
+    setFocusInvestigation((old) => ({ id, tick: (old?.tick || 0) + 1 }));
   const [tab, setTab] = useState(
       initialReferenceId ? 'evidence' : 'discussion',
     ),
@@ -186,10 +192,20 @@ export function Dossier({
         <span>Created {date(p.created_at)}</span>
       </div>
       <PublicCopyOrigin origin={d.public_origin} />
+      <DossierContributions
+        dossierId={d.id}
+        entries={entries}
+        canEdit={canEdit}
+        onOpen={openInvestigation}
+        onSaved={async () => {
+          await reload();
+        }}
+      />
       <DossierInvestigation
         key={d.id}
         dossierId={d.id}
         title={c.name}
+        focusRequest={focusInvestigation}
         canEdit={canEdit}
       />
       <details
@@ -623,8 +639,8 @@ export function Dossier({
                 <Upload size={30} />
                 <h3>Attach evidence or working documents</h3>
                 <p>
-                  Reports, source documents and team materials. Maximum 50 files
-                  per dossier.
+                  Save-only attachment. For automatic analysis, use Add &
+                  analyse above. Maximum 50 files per dossier.
                 </p>
                 <input
                   aria-label="Upload a dossier file"
