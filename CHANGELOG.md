@@ -1,5 +1,10 @@
 # Changes
 
+## 1.8.1 — reconnect to saved investigations
+
+Refresh reloads the dossier investigation list and selects current running work, including when the initial list failed or a start response was lost. An investigation started by another editor can be found without reloading the whole workspace. Failed reads clear the displayed research; retrying the question preserves its request identity. The same 70 client contracts, lint, strict type check and production build apply.
+
+
 ## 1.8.0 — durable dossier investigations
 
 The primary dossier view now starts with **Ask this dossier**. One submitted question queues native, persistent research using the existing search, Jev/Laya routing, source reader and configured workspace AI. Available sources shape the plan; a source-grounded entity can create another branch and a new plan version. No agent roster or model selection is required.

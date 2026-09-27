@@ -204,6 +204,31 @@ export function DossierInvestigation({
       setBusy(false);
     }
   }
+  async function reloadLatest() {
+    setBusy(true);
+    setError('');
+    try {
+      const page = await api<{ items: InvestigationSummary[]; total: number }>(
+        base,
+      );
+      setHistory(page.items);
+      setTotal(page.total);
+      const latest = page.items.find(isRunning) || page.items[0];
+      setSelected(latest?.id || '');
+      if (latest?.id === selected) await refresh();
+    } catch (e) {
+      setValue(null);
+      setHistory([]);
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'Could not reconnect to saved investigations.',
+      );
+    } finally {
+      setLoading(false);
+      setBusy(false);
+    }
+  }
   async function older() {
     setBusy(true);
     try {
@@ -288,7 +313,11 @@ export function DossierInvestigation({
       {error && (
         <div role="alert" className="investigation-error">
           {error}
-          <Button variant="ghost" onClick={() => void refresh()}>
+          <Button
+            variant="ghost"
+            disabled={busy}
+            onClick={() => void reloadLatest()}
+          >
             Refresh
           </Button>
         </div>
