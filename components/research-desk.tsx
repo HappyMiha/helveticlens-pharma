@@ -32,7 +32,11 @@ export function ResearchDesk({
   busy: string;
   run: Run;
   onStart: (seed?: Preset) => void;
-  onOpen: (id: string, threadId?: string | null) => Promise<void>;
+  onOpen: (
+    id: string,
+    threadId?: string | null,
+    referenceId?: string | null,
+  ) => Promise<void>;
   onMore: () => Promise<void>;
 }) {
   const [question, setQuestion] = useState(''),
@@ -69,8 +73,8 @@ export function ResearchDesk({
         {identity ? (
           <Discovery
             canPlan={identity.role === 'organization_admin'}
-            onOpen={(id, thread) =>
-              void run('Opening topic', () => onOpen(id, thread))
+            onOpen={(id, thread, source) =>
+              void run('Opening topic', () => onOpen(id, thread, source))
             }
             onCreate={onStart}
           />

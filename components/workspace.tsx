@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity,
   CalendarClock,
@@ -62,6 +62,10 @@ import {
 } from '@/components/ui/sidebar';
 import { api, date, text } from '@/lib/api';
 import { product } from '@/lib/product';
+import {
+  readDossierLink,
+  recordDossierNavigation,
+} from '@/lib/dossier-navigation';
 import { Wizard } from './wizard';
 import { Dossier } from './dossier';
 import { Workbench } from './workbench';
@@ -249,6 +253,8 @@ export default function Workspace() {
     [packs, setPacks] = useState<SourcePack[]>([]),
     [view, setView] = useState('research'),
     [questionId, setQuestionId] = useState<string | null>(null),
+    [referenceId, setReferenceId] = useState<string | null>(null),
+    [navigationVersion, setNavigationVersion] = useState(0),
     [refreshToken, setRefreshToken] = useState(0),
     [creating, setCreating] = useState(false),
     [selected, setSelected] = useState<DossierRecord | null>(null),
@@ -260,6 +266,7 @@ export default function Workspace() {
     [filter, setFilter] = useState('all'),
     [seed, setSeed] = useState<Preset | null>(null),
     [emailAvailable, setEmailAvailable] = useState(false);
+  const navigation = useRef({ value: 0 });
   const canEdit = identity?.role === 'organization_admin';
   async function run(label: string, fn: () => Promise<void>) {
     if (busy) return;
@@ -287,20 +294,44 @@ export default function Workspace() {
     setRefreshToken((n) => n + 1);
   }, []);
   const openDossier = useCallback(
-    async (id: string, threadId?: string | null) => {
-      const d = await api<DossierRecord>(`${ROOT}/${id}`);
-      setSelected(d);
-      setQuestionId(threadId || null);
-      setView(d.profile.status === 'draft' ? 'wizard' : 'detail');
-      window.history.pushState(
-        {},
-        '',
-        `/?dossier=${id}${threadId ? `&question=${threadId}` : ''}`,
-      );
+    async (
+      id: string,
+      threadId?: string | null,
+      sourceId?: string | null,
+      push = true,
+      resetView = true,
+    ) => {
+      const attempt = ++navigation.current.value;
+      try {
+        const d = await api<DossierRecord>(`${ROOT}/${encodeURIComponent(id)}`);
+        if (attempt !== navigation.current.value) return;
+        setSelected(d);
+        if (resetView) setNavigationVersion((version) => version + 1);
+        setQuestionId(sourceId ? null : threadId || null);
+        setReferenceId(sourceId || null);
+        setView(
+          d.profile.status === 'draft' && !sourceId && !threadId
+            ? 'wizard'
+            : 'detail',
+        );
+        recordDossierNavigation(
+          window.history,
+          { id, questionId: threadId, referenceId: sourceId },
+          push,
+        );
+      } catch (error) {
+        if (attempt !== navigation.current.value) return;
+        if (!push) {
+          setSelected(null);
+          setView('research');
+        }
+        throw error;
+      }
     },
     [],
   );
   useEffect(() => {
+    const counter = navigation.current;
     let disposed = false;
     async function boot() {
       try {
@@ -309,11 +340,14 @@ export default function Workspace() {
         setIdentity(session.authenticated ? session : null);
         if (session.authenticated) {
           await refresh();
-          const id = new URLSearchParams(window.location.search).get('dossier');
-          if (id)
+          if (disposed) return;
+          const target = readDossierLink(window.location.search);
+          if (target)
             await openDossier(
-              id,
-              new URLSearchParams(window.location.search).get('question'),
+              target.id,
+              target.questionId,
+              target.referenceId,
+              false,
             );
           else {
             const page = new URLSearchParams(window.location.search).get(
@@ -336,13 +370,16 @@ export default function Workspace() {
     }
     void boot();
     const pop = () => {
-      const id = new URLSearchParams(window.location.search).get('dossier');
-      if (id)
+      const target = readDossierLink(window.location.search);
+      if (target)
         void openDossier(
-          id,
-          new URLSearchParams(window.location.search).get('question'),
+          target.id,
+          target.questionId,
+          target.referenceId,
+          false,
         ).catch((e) => setError((e as Error).message));
       else {
+        navigation.current.value++;
         const page = new URLSearchParams(window.location.search).get('view');
         setView(
           page &&
@@ -356,10 +393,14 @@ export default function Workspace() {
     window.addEventListener('popstate', pop);
     return () => {
       disposed = true;
+      counter.value++;
       window.removeEventListener('popstate', pop);
     };
   }, [openDossier, refresh]);
   function go(next: string) {
+    navigation.current.value++;
+    setQuestionId(null);
+    setReferenceId(null);
     setView(next);
     setSelected(null);
     setError('');
@@ -522,7 +563,15 @@ export default function Workspace() {
                 onClick={() =>
                   run('Refreshing', async () => {
                     await refresh();
-                    if (selected) await openDossier(selected.id);
+                    const target = readDossierLink(window.location.search);
+                    if (selected && target?.id === selected.id)
+                      await openDossier(
+                        target.id,
+                        target.questionId,
+                        target.referenceId,
+                        false,
+                        false,
+                      );
                   })
                 }
               >
@@ -841,8 +890,19 @@ export default function Workspace() {
               )}
               {view === 'detail' && selected && (
                 <Dossier
-                  key={selected.id}
+                  key={`${selected.id}:${navigationVersion}`}
                   initialQuestionId={questionId}
+                  initialReferenceId={referenceId}
+                  onReferenceChange={(id) => {
+                    navigation.current.value++;
+                    setReferenceId(id);
+                    setQuestionId(null);
+                    recordDossierNavigation(
+                      window.history,
+                      { id: selected.id, referenceId: id },
+                      true,
+                    );
+                  }}
                   dossier={selected}
                   canEdit={canEdit}
                   busy={busy}
@@ -926,11 +986,13 @@ export default function Workspace() {
           setIdentity(s);
           await refresh();
           setLogin(false);
-          const id = new URLSearchParams(window.location.search).get('dossier');
-          if (id)
+          const target = readDossierLink(window.location.search);
+          if (target)
             await openDossier(
-              id,
-              new URLSearchParams(window.location.search).get('question'),
+              target.id,
+              target.questionId,
+              target.referenceId,
+              false,
             );
           else
             setView(

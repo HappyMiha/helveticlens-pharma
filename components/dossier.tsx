@@ -48,6 +48,8 @@ import { PageWatches } from './page-watches';
 export function Dossier({
   dossier: d,
   initialQuestionId,
+  initialReferenceId,
+  onReferenceChange,
   canEdit,
   busy,
   run,
@@ -57,7 +59,9 @@ export function Dossier({
 }: DossierProps) {
   const p = d.profile,
     c = p.config;
-  const [tab, setTab] = useState('discussion'),
+  const [tab, setTab] = useState(
+      initialReferenceId ? 'evidence' : 'discussion',
+    ),
     [actionEvidence, setActionEvidence] = useState<Match | null>(null),
     [note, setNote] = useState(''),
     [reference, setReference] = useState({ title: '', url: '', body: '' }),
@@ -357,6 +361,18 @@ export function Dossier({
           </div>
         </TabsContent>
         <TabsContent value="evidence">
+          <ReferenceLibrary
+            key={d.id}
+            dossier={d}
+            initialReferenceId={initialReferenceId}
+            onReferenceChange={onReferenceChange}
+            canEdit={canEdit}
+            busy={busy}
+            run={run}
+            reload={reload}
+            notify={notify}
+          />
+
           <div className="section-header">
             <div>
               <h2>Primary-source evidence</h2>
@@ -439,15 +455,6 @@ export function Dossier({
             busy={busy}
             run={run}
             reload={refreshed}
-            notify={notify}
-          />
-          <ReferenceLibrary
-            key={d.id}
-            dossier={d}
-            canEdit={canEdit}
-            busy={busy}
-            run={run}
-            reload={reload}
             notify={notify}
           />
           {canEdit && (

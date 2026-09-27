@@ -1,5 +1,6 @@
 'use client';
 
+import { dossierHref } from '@/lib/dossier-navigation';
 import { sourceImport } from '@/lib/discovery-reference';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -914,13 +915,17 @@ export function Discussion({
               key={discoveryQuery}
               initialQuery={discoveryQuery}
               initialRecipe={discoveryRecipe}
-              onOpen={(id, thread) => {
-                if (id === dossier.id && thread) {
+              onOpen={(id, thread, source) => {
+                if (id === dossier.id && thread && !source) {
                   setDiscoveryQuery(null);
                   void run('Opening question', () => open(thread));
                 } else
                   window.location.assign(
-                    `/?dossier=${id}${thread ? `&question=${thread}` : ''}`,
+                    dossierHref({
+                      id,
+                      questionId: thread,
+                      referenceId: source,
+                    }),
                   );
               }}
               onSave={canEdit ? saveSource : undefined}

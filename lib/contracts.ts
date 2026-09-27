@@ -279,6 +279,8 @@ export interface WizardProps {
 export interface DossierProps {
   dossier: DossierRecord;
   initialQuestionId?: string | null;
+  initialReferenceId?: string | null;
+  onReferenceChange: (id: string | null) => void;
   canEdit: boolean;
   busy: string;
   run: Run;

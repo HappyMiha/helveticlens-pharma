@@ -2171,3 +2171,10 @@ code {
   .reference-library-search { grid-template-columns: minmax(0, 1fr); }
   .reference-library .section-header { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
 }
+
+.reference-row .source-permalink {
+  display: flex;
+  width: fit-content;
+  margin-top: 8px;
+}
+.focused-reference { margin-bottom: 32px; }

@@ -1,5 +1,7 @@
 'use client';
 
+import { discoveryTarget } from '@/lib/dossier-navigation';
+
 import { useId, useRef, useState } from 'react';
 import {
   ArrowRight,
@@ -73,7 +75,11 @@ export function Discovery({
 }: {
   initialQuery?: string;
   initialRecipe?: SearchRecipe | null;
-  onOpen: (id: string, threadId?: string | null) => void;
+  onOpen: (
+    id: string,
+    threadId?: string | null,
+    referenceId?: string | null,
+  ) => void;
   onCreate?: (seed: Preset) => void;
   onSave?: (hit: SearchHit) => Promise<void>;
   onSaveSearch?: (recipe: SavedSearchInput) => Promise<void>;
@@ -401,9 +407,22 @@ export function Discovery({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onOpen(hit.dossier_id!, hit.thread_id)}
+                        onClick={() => {
+                          const target = discoveryTarget(hit);
+                          if (target)
+                            onOpen(
+                              target.id,
+                              target.questionId,
+                              target.referenceId,
+                            );
+                        }}
                       >
-                        Open topic <ArrowRight size={14} />
+                        {hit.kind === 'reference'
+                          ? 'Open saved source'
+                          : hit.thread_id
+                            ? 'Open question'
+                            : 'Open topic'}{' '}
+                        <ArrowRight size={14} />
                       </Button>
                     )}
                     {hit.url && (

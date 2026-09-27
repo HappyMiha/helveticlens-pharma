@@ -40,6 +40,8 @@ Email remains the existing verified, consented personal organization digest, con
 
 Limits: 500 questions per topic, 1,000 contributions per question, 1,000 actions per dossier; paginated histories. The printable brief includes the latest 50 questions, 100 actions, 20 notes/reviews and 100 references. Monitoring input snapshots and draft answers are historical records and can need review.
 
+Saved-reference search results open the exact private source, even when it is older than the current library page. Source cards offer a permalink containing only dossier and source IDs; it grants no access. Login, reload and browser history preserve the requested record. The focused source shows its saved catalogue provenance, current team decision and existing review/page-watch actions. Inaccessible or failed reads show a retry and a route back to the library, with no stale source left visible. Opening a saved reference does not fetch its original page or start monitoring.
+
 ## Success measures to validate with users
 
 The outcome to measure is **important questions with a reviewed, source-backed answer that remains current**. Proposed pilot measures, not claimed results:
