@@ -26,7 +26,7 @@ const require = createRequire(import.meta.url);
 const { publicContent, publicOffset, publicSearch } = require(
   join(build, 'publication.js'),
 );
-const { readPublicDossier, readPublicPage } = require(
+const { readPublicDossier, readPublicPage, readPublicDiscussion } = require(
   join(build, 'public-reader.js'),
 );
 const actualFetch = globalThis.fetch;
@@ -111,10 +111,37 @@ test('public reader distinguishes missing publication from failed platform and r
 test('an upstream redirect remains an unavailable response and is never followed', async () => {
   globalThis.fetch = async (url, init) => {
     assert.equal(init.redirect, 'manual');
-    return new Response('', { status: 302, headers: { location: 'https://unrelated.example/private' } });
+    return new Response('', {
+      status: 302,
+      headers: { location: 'https://unrelated.example/private' },
+    });
   };
   const result = await readPublicPage('', 0);
   assert.equal(result.data, undefined);
   assert.equal(result.missing, false);
   assert.ok(result.error);
+});
+
+test('server discussion renders only an anonymous public projection', async () => {
+  globalThis.fetch = async (url, init) => {
+    assert.match(
+      new URL(url).pathname,
+      /\/public-dossiers\/[0-9a-f-]{36}\/discussion$/,
+    );
+    assert.deepEqual(init.headers, { accept: 'application/json' });
+    assert.equal(init.cache, 'no-store');
+    assert.equal(init.redirect, 'manual');
+    return Response.json({ items: [], total: 0, can_post: false });
+  };
+  const result = await readPublicDiscussion(
+    '11111111-1111-1111-1111-111111111111',
+  );
+  assert.equal(result.data.can_post, false);
+  globalThis.fetch = () => {
+    assert.fail('invalid path must not be fetched');
+  };
+  assert.equal(
+    (await readPublicDiscussion('../private/workspace')).missing,
+    true,
+  );
 });

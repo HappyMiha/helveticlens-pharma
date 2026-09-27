@@ -1,5 +1,11 @@
 # Changes
 
+## 1.4.0 — Public discussion
+
+Published dossiers now have a public discussion. Anyone can read; current account members can deliberately submit a reviewed public display name, text and up to ten HTTPS source links. Authors can edit or remove their own contributions. Dossier workspace administrators can hide or restore contributions with a reason, while author edits preserve a hidden state. Public and personal views have real counts, 20-item pages and failure recovery. Sign-in reuses the existing native account flow on the reader. Private dossier discussions stay private.
+
+Consent, current sessions/memberships, CSRF, publication/comment revisions and durable retry identity are enforced by the shared core. Withdrawal closes the discussion; parent and account erasure remove contained contributions. Hidden text and private moderation history are never part of anonymous reads. Following, private reuse, open-web providers, semantic retrieval and new scheduled delivery remain subsequent cycles.
+
 ## 1.3.1 — Public reader runtime correction
 
 The server-rendered public catalogue and reader use the edge runtime’s supported manual redirect policy. Unexpected upstream redirects remain unavailable and are never followed. The API and public/private content boundaries are unchanged. This correction follows a failed live SSR check of 1.3.0; production activation is verified separately.

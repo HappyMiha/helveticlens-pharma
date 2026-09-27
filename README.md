@@ -34,9 +34,13 @@ See [the product model](PRODUCT.md) for the research loop, intended users, cover
 - Team invitations and viewer/administrator roles. Drafts remain author-private; activated dossiers are shared within the current organization.
 - AI improvements based on bounded saved feedback. Applying a reviewed suggestion creates a native topic revision; stale proposals cannot overwrite current monitoring.
 
+## Public discussion
+
+Each published dossier has an anonymous reader and public contribution stream. Current native account members, including workspace viewers, can publish personal contributions after reviewing their display name, text and HTTPS links. Authors edit/remove their own work; dossier administrators moderate visibility with reasons. Hidden text is visible only to its author and the dossier administrators. Existing private workspace permissions are unchanged. Following, private reuse and open-web/semantic discovery are not included in this release.
+
 ## Architecture
 
-This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f6c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
+This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f7c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
 
 No production records, credentials, provider keys or uploaded files are stored in this repository. The browser never chooses the upstream origin. The gateway forwards only HelveticLens session/CSRF cookies, preserves HttpOnly cookies, checks mutation origins, bounds streamed uploads and sends private responses with `no-store`.
 

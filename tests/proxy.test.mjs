@@ -33,14 +33,34 @@ function context(path) {
 
 test('public catalogue and reader are bounded to this product', async () => {
   let called = 0;
-  globalThis.fetch = async () => { called++; return Response.json({ items: [], total: 0 }); };
-  for (const route of [`products/${product.id}/public-dossiers`, `products/${product.id}/public-dossiers/11111111-1111-1111-1111-111111111111`]) {
-    const result = await proxy(new Request('https://product.test/api/' + route), context(route));
+  globalThis.fetch = async () => {
+    called++;
+    return Response.json({ items: [], total: 0 });
+  };
+  for (const route of [
+    `products/${product.id}/public-dossiers`,
+    `products/${product.id}/public-dossiers/11111111-1111-1111-1111-111111111111`,
+  ]) {
+    const result = await proxy(
+      new Request('https://product.test/api/' + route),
+      context(route),
+    );
     assert.equal(result.status, 200);
     assert.equal(result.headers.get('cache-control'), 'private, no-store');
   }
-  for (const route of ['products/other/public-dossiers', `products/${product.id}/public-dossiers/private/export`]) {
-    assert.equal((await proxy(new Request('https://product.test/api/' + route), context(route))).status, 404);
+  for (const route of [
+    'products/other/public-dossiers',
+    `products/${product.id}/public-dossiers/private/export`,
+  ]) {
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + route),
+          context(route),
+        )
+      ).status,
+      404,
+    );
   }
   assert.equal(called, 2);
 });
@@ -566,4 +586,92 @@ test('private question search preserves literal query, answer filter, page and u
     404,
   );
   assert.equal(calls, 1);
+});
+
+test('public contribution actions retain consent, revision and CSRF with strict route isolation', async () => {
+  const id = '11111111-1111-1111-1111-111111111111';
+  const route = `products/${product.id}/public-dossiers/${id}/discussion`;
+  const payload = {
+    request_key: id,
+    expected_revision: 2,
+    action: 'hide',
+    reason: 'Evidence reviewed',
+  };
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=member');
+    assert.deepEqual(JSON.parse(await new Response(init.body).text()), payload);
+    return Response.json(
+      {
+        detail:
+          'This contribution changed. Reload the discussion before saving.',
+      },
+      { status: 409 },
+    );
+  };
+  for (const suffix of ['', `/${id}`, `/${id}/action`]) {
+    const response = await proxy(
+      new Request(`https://product.test/api/${route}${suffix}`, {
+        method: 'POST',
+        headers: {
+          origin: 'https://product.test',
+          'content-type': 'application/json',
+          cookie: 'helvetic_lens_session=member; unrelated=secret',
+          'x-csrf-token': 'csrf',
+        },
+        body: JSON.stringify(payload),
+      }),
+      context(route + suffix),
+    );
+    assert.equal(response.status, 409);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  for (const denied of [
+    route.replace(product.id, other),
+    route + '/admin',
+    route + `/${id}/files`,
+    route + '/workspace/extra',
+  ]) {
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + denied),
+          context(denied),
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(
+    (
+      await proxy(
+        new Request('https://product.test/api/' + route, {
+          method: 'POST',
+          headers: { origin: 'https://foreign.test' },
+          body: '{}',
+        }),
+        context(route),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(calls, 3);
+});
+
+test('private discussion controls require the current native session', async () => {
+  const path = `products/${product.id}/public-dossiers/11111111-1111-1111-1111-111111111111/discussion/workspace`;
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).searchParams.get('offset'), '20');
+    assert.equal(init.headers.get('cookie'), null);
+    return Response.json({ detail: 'Sign in to continue.' }, { status: 401 });
+  };
+  const response = await proxy(
+    new Request('https://product.test/api/' + path + '?offset=20'),
+    context(path),
+  );
+  assert.equal(response.status, 401);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
 });

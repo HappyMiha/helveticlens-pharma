@@ -223,7 +223,147 @@
   margin: 24px 0;
   font-size: 0.875rem;
 }
+.public-discussion {
+  margin-top: 40px;
+  border-top: 2px solid var(--border);
+  padding-top: 32px;
+}
+.discussion-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.discussion-heading h2 {
+  font-size: 1.6rem;
+  font-weight: 620;
+}
+.discussion-heading p {
+  margin: 12px 0;
+}
+.discussion-note,
+.discussion-count,
+.contribution-card header p {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+.discussion-note {
+  margin: 12px 0 20px;
+}
+.discussion-count {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.discussion-signin,
+.discussion-notice {
+  padding: 20px;
+  background: var(--secondary);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+.discussion-signin p {
+  margin-bottom: 12px;
+}
+.contribution-card {
+  padding: 26px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.contribution-card h3,
+.new-contribution h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.contribution-card header p {
+  margin: 6px 0 18px;
+}
+.contribution-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+.contribution-controls:empty {
+  display: none;
+}
+.contribution-hidden {
+  background: var(--secondary);
+  border-left: 3px solid var(--primary);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.contribution-sources {
+  list-style: decimal;
+  padding-left: 24px;
+  margin: 20px 0;
+}
+.contribution-sources li {
+  margin: 12px 0;
+}
+.contribution-sources li > span {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+.contribution-history {
+  font-size: 0.875rem;
+  margin-top: 18px;
+}
+.contribution-history ol {
+  list-style: decimal;
+  padding: 12px 0 0 24px;
+}
+.contribution-history li {
+  margin-bottom: 10px;
+}
+.new-contribution {
+  margin-top: 32px;
+}
+.contribution-form {
+  margin-top: 18px;
+}
+.contribution-form fieldset,
+.contribution-link-fields {
+  display: grid;
+  gap: 18px;
+}
+.contribution-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.contribution-form textarea {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.contribution-preview {
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 24px;
+  margin-top: 24px;
+}
+.contribution-preview > p {
+  margin-bottom: 18px;
+}
+.contribution-preview > button {
+  margin-top: 20px;
+}
+.discussion-empty {
+  padding: 24px 0;
+}
+.public-discussion nav {
+  margin-top: 20px;
+}
 @media (max-width: 640px) {
+  .discussion-heading {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .contribution-preview {
+    padding: 16px;
+  }
   .public-shell {
     padding-inline: 18px;
   }

@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { product } from './product';
 import type { PublicDossier, PublicPage } from './publication';
+import type { DiscussionPage } from './community';
 
 const CORE = process.env.HELVETICLENS_API_ORIGIN || 'https://helveticlens.ch';
 export type PublicResult<T> =
@@ -28,7 +29,10 @@ async function read<T>(path: string): Promise<PublicResult<T>> {
       };
     return { data: (await response.json()) as T };
   } catch (error) {
-    console.error('Public dossier reader fetch failed:', error instanceof Error ? error.name : 'Unknown error');
+    console.error(
+      'Public dossier reader fetch failed:',
+      error instanceof Error ? error.name : 'Unknown error',
+    );
     return {
       error: 'Public dossiers could not be loaded. Please retry.',
       missing: false,
@@ -48,4 +52,12 @@ export function readPublicPage(query: string, offset: number) {
   return read<PublicPage>(
     `?${new URLSearchParams({ q: query, offset: String(offset) })}`,
   );
+}
+export function readPublicDiscussion(id: string) {
+  return /^[0-9a-f-]{36}$/.test(id)
+    ? read<DiscussionPage>(`/${encodeURIComponent(id)}/discussion`)
+    : Promise.resolve<PublicResult<DiscussionPage>>({
+        error: 'Discussion unavailable.',
+        missing: true,
+      });
 }

@@ -169,7 +169,22 @@ export default function Guide() {
             <section id="evidence" aria-labelledby="evidence-title">
               <span className="guide-step">05 / EVIDENCE</span>
               <h2 id="evidence-title">Review an AI research note.</h2>
-              <p>To share your findings with everyone, open the dossier’s <strong>Public version</strong> tab. Write a separate public title, summary, text and source links, preview the exact version and confirm publication. Read published versions at <Link href="/public-dossiers">Public dossiers</Link> without an account. Changes need a new preview; withdrawing removes the public version here. Private files and discussions stay in the workspace. Public replies are not available yet.</p>
+              <p>
+                To share your findings with everyone, open the dossier’s{' '}
+                <strong>Public version</strong> tab. Write a separate public
+                title, summary, text and source links, preview the exact version
+                and confirm publication. Read published versions at{' '}
+                <Link href="/public-dossiers">Public dossiers</Link> without an
+                account. Changes need a new preview; withdrawing removes the
+                public version here. Private files and discussions stay in the
+                workspace. Published dossiers also have a public discussion.
+                Sign in here to add a contribution, choose a public display
+                name, attach source links and review the preview before
+                confirming. You can edit or remove your own contributions.
+                Dossier administrators can hide or restore a contribution with a
+                reason; an edit to a hidden contribution stays hidden until
+                reviewed. Withdrawing the dossier closes its public discussion.
+              </p>
               <p>
                 Review saved-source decisions with a reason: include a URL for
                 new AI research, exclude it or return it to unreviewed. Source

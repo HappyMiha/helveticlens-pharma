@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicContentView } from '@/components/public-content';
+import { PublicDiscussion } from '@/components/public-discussion';
 import { product } from '@/lib/product';
-import { readPublicDossier } from '@/lib/public-reader';
+import { readPublicDossier, readPublicDiscussion } from '@/lib/public-reader';
 import { publicHref } from '@/lib/publication';
 import { date } from '@/lib/api';
 import '../public.css';
@@ -28,6 +29,7 @@ export default async function PublicDossierPage({ params }: Props) {
   const { id } = await params;
   const result = await readPublicDossier(id);
   if (result.missing) notFound();
+  const discussion = result.data ? await readPublicDiscussion(id) : null;
   return (
     <main className="public-shell public-reader">
       <header className="public-header">
@@ -46,6 +48,11 @@ export default async function PublicDossierPage({ params }: Props) {
             This is an author-published version. Publication does not certify
             its conclusions or the completeness of its sources.
           </aside>
+          <PublicDiscussion
+            publicationId={id}
+            publicationRevision={result.data.revision}
+            initial={discussion?.data || null}
+          />
         </>
       ) : (
         <div role="alert" className="public-empty">
