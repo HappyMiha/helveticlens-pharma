@@ -20,14 +20,14 @@ See [the product model](PRODUCT.md) for the research loop, intended users, cover
 - Existing HelveticLens sign-in and registration, organization permissions and server sessions.
 - Durable five-step drafts, real configured AI proposals, manual editing, source recommendations restricted to the real catalogue, saved-evidence previews and idempotent activation.
 - Organization- and product-scoped dossiers with original-source links, comments, files, relevance feedback, export and activity history.
-- Native scheduled Swiss source collections and explicit individual-page watches with real fetching, stored baselines, daily jobs and visible failure states.
+- Native scheduled Swiss source collections and individual-page watches with real fetching, retained evidence, separate attempt/success times, queue/schedule status, visible failures and explicit retry, pause/resume and daily-check controls.
 - In-app evidence and the existing verified-email daily/weekly personal organization digest.
 - Team invitations and viewer/administrator roles. Drafts remain author-private; activated dossiers are shared within the current organization.
 - AI improvements based on bounded saved feedback. Applying a reviewed suggestion creates a native topic revision; stale proposals cannot overwrite current monitoring.
 
 ## Architecture
 
-This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f4c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
+This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f5c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
 
 No production records, credentials, provider keys or uploaded files are stored in this repository. The browser never chooses the upstream origin. The gateway forwards only HelveticLens session/CSRF cookies, preserves HttpOnly cookies, checks mutation origins, bounds streamed uploads and sends private responses with `no-store`.
 
@@ -58,7 +58,7 @@ Email choices change the current user's personal organization digest, not an ind
 
 ## Verification
 
-Production build, strict TypeScript and authored-source lint. Seven gateway contract tests cover cookie filtering, session propagation, route/product restrictions, cross-origin writes, streamed upload bounds, private binary download, research/queue route isolation, brief security headers, explicit AI-plan bodies/CSRF, strict planning-route isolation and failure recovery. Native backend tests cover persistence, activation, tenant isolation, author-private drafts, viewer denial, CSRF, file ownership/integrity/retention, genuine scheduler admission, bounded AI catalogue recommendations, reviewed topic revisions, collaborative questions, exact research citations, action ownership/outcomes, server-verified question/gap origins, filtered follow-up pagination, legacy action retries, real pagination, migration preservation and retained team work after account erasure.
+Production build, strict TypeScript and authored-source lint. Seven gateway contract tests cover cookie filtering, session propagation, route/product restrictions, cross-origin writes, streamed upload bounds, private binary download, research/queue route isolation, brief security headers, explicit AI-plan bodies/CSRF, strict planning-route isolation and failure recovery. Three additional source-status tests prevent failed, synthetic, old or unknown checks from appearing healthy and prevent duplicate/paused admission from the card. Native backend tests cover source failure/recovery timestamps, conservative migration, native queue/settings privacy, persistence, activation, tenant isolation, author-private drafts, viewer denial, CSRF, file ownership/integrity/retention, genuine scheduler admission, bounded AI catalogue recommendations, reviewed topic revisions, collaborative questions, exact research citations, action ownership/outcomes, server-verified question/gap origins, filtered follow-up pagination, legacy action retries, real pagination, migration preservation and retained team work after account erasure.
 
 Vendored UI primitives and the generated mobile hook retain their upstream source. Lint excludes those generated files; all authored product code remains under the strict project rules.
 

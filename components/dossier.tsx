@@ -9,7 +9,6 @@ import {
   ClipboardList,
   Printer,
   Check,
-  ExternalLink,
   FileText,
   FolderOpen,
   Globe,
@@ -43,6 +42,7 @@ import { Empty, Field, ROOT, Status } from './workspace';
 import { Discussion } from './discussion';
 import { DossierWork } from './dossier-work';
 import { ActionDialog } from './action-dialog';
+import { PageWatches } from './page-watches';
 
 export function Dossier({
   dossier: d,
@@ -432,68 +432,14 @@ export function Dossier({
               ))}
             </div>
           )}
-          <div className="section-header spaced">
-            <h2>Connected page watches</h2>
-            <span className="tag">{d.documents.length} connected</span>
-          </div>
-          {d.documents.map((s) => (
-            <article className="page-watch" key={s.id}>
-              <div>
-                <h3>{s.name}</h3>
-                <a
-                  className="source-link break-url"
-                  href={s.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {s.url}
-                  <ArrowUpRight size={14} />
-                </a>
-                <p>
-                  Last checked {date(s.last_checked)} ·{' '}
-                  {s.last_result || 'Baseline saved'}
-                </p>
-                <span className="tag">
-                  {s.auto_check_enabled
-                    ? 'Daily checks enabled'
-                    : 'Automatic checks off'}
-                </span>
-              </div>
-              <div className="watch-actions">
-                <Button
-                  variant="outline"
-                  disabled={!canEdit || !!busy}
-                  onClick={() =>
-                    run('Queuing source check', async () => {
-                      const scan = await api<{
-                        status?: string;
-                        state?: string;
-                      }>('/scans', { law_ids: [s.id] });
-                      notify(
-                        `Source check ${scan.status || scan.state || 'queued'}. Refresh to see its result.`,
-                      );
-                    })
-                  }
-                >
-                  <RefreshCw size={15} />
-                  Check now
-                </Button>
-                <a
-                  href={`https://helveticlens.ch/laws/${s.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open full evidence history <ExternalLink size={14} />
-                </a>
-              </div>
-            </article>
-          ))}
-          {!d.documents.length && (
-            <p className="muted">
-              No individual page watches connected. Scheduled source collections
-              continue through the selected topics.
-            </p>
-          )}
+          <PageWatches
+            documents={d.documents}
+            canEdit={canEdit}
+            busy={busy}
+            run={run}
+            reload={refreshed}
+            notify={notify}
+          />
           <div className="section-header spaced">
             <h2>Saved source references</h2>
           </div>

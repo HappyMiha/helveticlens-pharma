@@ -128,6 +128,21 @@ export interface DocumentWatch {
   last_result: string;
   auto_check_enabled: boolean;
   active: boolean;
+  last_success_at?: string | null;
+  last_error?: string;
+  next_check_at?: string | null;
+  schedule?:
+    | 'paused'
+    | 'manual'
+    | 'needs_operator'
+    | 'unscheduled'
+    | 'due'
+    | 'scheduled';
+  stale?: boolean;
+  synthetic?: boolean;
+  saved_version_at?: string | null;
+  active_scan?: { id: string; status: string; stage: string } | null;
+  checked_at?: string;
 }
 export interface DossierRecord {
   id: string;

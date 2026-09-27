@@ -4,6 +4,91 @@
   letter-spacing: -0.045em;
   line-height: 1.1;
 }
+.source-health-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.source-health-badge {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+}
+.source-health-good {
+  background: #edf6ee;
+  color: #2b6536;
+}
+.source-health-warning,
+.source-health-badge.source-health-warning {
+  background: #fff7e9;
+  color: #754919;
+}
+.source-health > div > .source-health-warning {
+  padding: 0.85rem 1rem;
+  border-radius: 7px;
+  margin-top: 0.8rem;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+.source-health .source-health-warning p {
+  color: inherit;
+  margin: 0.3rem 0 0;
+}
+.source-health-busy {
+  background: var(--secondary);
+  color: var(--primary);
+}
+.source-health-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.source-health-facts dt {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin-bottom: 0.3rem;
+}
+.source-health-facts dd {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+.source-check-progress {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--primary);
+  margin-top: 1rem;
+  line-height: 1.7;
+}
+.source-check-progress svg {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+.source-health .watch-actions {
+  flex: 0 0 190px;
+}
+.source-health .watch-actions button {
+  white-space: normal;
+  height: auto;
+  min-height: 36px;
+}
+@media (max-width: 900px) {
+  .source-health .watch-actions {
+    flex-basis: auto;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .source-health.page-watch {
+    flex-direction: column;
+  }
+}
 .research-followups {
   padding: clamp(1rem, 3vw, 1.5rem);
   margin: 1.25rem 0;
