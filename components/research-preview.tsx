@@ -15,6 +15,7 @@ import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import { researchRequest } from '@/lib/research-preview';
 import { dossierHref } from '@/lib/dossier-navigation';
+import { ResearchSourceAccess } from './research-source-access';
 import type { Entry, ResearchPreview as Preview } from '@/lib/contracts';
 
 function sourceUrl(value: string) {
@@ -66,7 +67,12 @@ export function ResearchPreview({
     }
   }
   async function generate() {
-    if (saving || refreshing || (!saved && !canEdit) || (!saved && (!data || error)))
+    if (
+      saving ||
+      refreshing ||
+      (!saved && !canEdit) ||
+      (!saved && (!data || error))
+    )
       return;
     setSaving(true);
     setFailure('');
@@ -189,6 +195,11 @@ export function ResearchPreview({
                   </p>
                   <p className="research-preview-excerpt">{source.text}</p>
                   <div className="research-preview-links">
+                    <ResearchSourceAccess
+                      key={`${source.id}:${source.key}:${data.evidence_fingerprint}`}
+                      dossierId={dossierId}
+                      source={source}
+                    />
                     {source.entry_kind === 'reference' && (
                       <a
                         href={dossierHref({

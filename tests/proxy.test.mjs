@@ -435,3 +435,41 @@ test('saved document readers retain scoped cursors, revision conflicts and priva
   );
   assert.equal(calls.length, 2);
 });
+
+test('research source lookup stays private and cannot resolve through the other product', async () => {
+  const route = `products/${product.id}/dossiers/topic/discussion/question/research/note/sources/S1/document`;
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(new URL(url).pathname, `/api/${route}`);
+    assert.equal(new URL(url).search, '');
+    assert.equal(init.method, 'GET');
+    assert.equal(init.body, undefined);
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=member');
+    return Response.json(
+      { detail: 'The saved page is no longer accessible.' },
+      { status: 404 },
+    );
+  };
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}`, {
+      headers: { cookie: 'helvetic_lens_session=member; unrelated=private' },
+    }),
+    context(route),
+  );
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  assert.match((await response.json()).detail, /no longer accessible/);
+  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const denied = route.replace(`products/${product.id}/`, `products/${other}/`);
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${denied}`),
+        context(denied),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(calls, 1);
+});

@@ -48,6 +48,7 @@ import { Discovery } from './discovery';
 import { ResearchFollowups } from './research-followups';
 import { SavedSearches } from './saved-searches';
 import { ResearchPreview } from './research-preview';
+import { ResearchSourceAccess } from './research-source-access';
 
 function safeSource(url: string) {
   try {
@@ -58,11 +59,13 @@ function safeSource(url: string) {
 }
 
 export function ResearchPost({
+  dossierId,
   post,
   onSearch,
   onFollowup,
   busy = false,
 }: {
+  dossierId: string;
   post: Entry;
   onSearch: (query: string) => void;
   onFollowup?: (post: Entry, gapIndex: number) => void;
@@ -113,6 +116,14 @@ export function ResearchPost({
                       </a>
                     )}
                   </footer>
+                  {source && post.thread_id && (
+                    <ResearchSourceAccess
+                      key={`${post.id}:${source.id}`}
+                      dossierId={dossierId}
+                      source={source}
+                      note={{ id: post.id, questionId: post.thread_id }}
+                    />
+                  )}
                 </blockquote>
               );
             })}
@@ -171,6 +182,14 @@ export function ResearchPost({
               {source.kind.replaceAll('_', ' ')} · saved {date(source.date)}
             </span>
             <p>{source.text}</p>
+            {post.thread_id && (
+              <ResearchSourceAccess
+                key={`${post.id}:${source.id}`}
+                dossierId={dossierId}
+                source={source}
+                note={{ id: post.id, questionId: post.thread_id }}
+              />
+            )}
           </div>
         ))}
       </details>
@@ -612,6 +631,7 @@ export function Discussion({
                 {date(selected.accepted_at || selected.accepted.created_at)}
               </p>
               <ResearchPost
+                dossierId={dossier.id}
                 post={selected.accepted}
                 onSearch={openDiscovery}
                 onFollowup={canEdit ? prepareFollowup : undefined}
@@ -648,6 +668,7 @@ export function Discussion({
                   )}
                 </div>
                 <ResearchPost
+                  dossierId={dossier.id}
                   post={post}
                   onSearch={openDiscovery}
                   onFollowup={canEdit ? prepareFollowup : undefined}

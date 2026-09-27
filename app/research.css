@@ -1270,3 +1270,32 @@
     white-space: normal;
   }
 }
+
+.research-document-context {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--secondary);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+.research-document-context p {
+  margin: 8px 0;
+}
+.research-document-context summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.research-document-access {
+  margin: 8px 0;
+}
+.research-document-access > p {
+  max-width: 65ch;
+  font-size: 0.8125rem;
+  white-space: normal;
+}
+.research-document-access button {
+  white-space: normal;
+  height: auto;
+  min-height: 32px;
+}

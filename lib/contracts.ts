@@ -117,7 +117,15 @@ export interface DiscoveryProvenance {
   record: Omit<SearchHit, 'discovery_receipt' | 'dossier_id' | 'thread_id'>;
 }
 export type SourceDecision = 'include' | 'exclude' | 'unreviewed';
+export interface ResearchDocumentTarget {
+  document_id: string;
+  version_id: string;
+  expected_revision: number | null;
+  revision_recorded: boolean;
+}
 export interface ResearchSource {
+  document_id?: string;
+  evidence_revision?: number;
   id: string;
   key: string;
   kind: string;

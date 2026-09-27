@@ -317,11 +317,19 @@ export function DocumentHistory({
   dossierId,
   documentId,
   name,
+  initialPage,
+  researchContext,
   onClose,
 }: {
   dossierId: string;
   documentId: string;
   name: string;
+  initialPage?: PagePosition;
+  researchContext?: {
+    excerpt: string;
+    revisionRecorded: boolean;
+    fromNote: boolean;
+  };
   onClose: () => void;
 }) {
   const root = `/products/${product.id}/dossiers/${encodeURIComponent(dossierId)}/documents/${encodeURIComponent(documentId)}/versions`;
@@ -329,7 +337,7 @@ export function DocumentHistory({
     cursor: '',
     previous: [],
   });
-  const [page, setPage] = useState<PagePosition | null>(null);
+  const [page, setPage] = useState<PagePosition | null>(initialPage || null);
   const [generation, setGeneration] = useState(0);
   return (
     <Dialog
@@ -348,6 +356,33 @@ export function DocumentHistory({
             check.
           </DialogDescription>
         </DialogHeader>
+        {researchContext && (
+          <aside className="research-document-context">
+            <b>
+              {researchContext.fromNote
+                ? 'Excerpt retained with this AI note'
+                : 'Excerpt selected for AI review'}
+            </b>
+            <p>
+              {researchContext.fromNote
+                ? 'The excerpt stays as recorded in the research.'
+                : 'This excerpt belongs to the current preview. Return to the preview and choose Generate to request AI research.'}{' '}
+              The full saved document below opens from its first page; reloading
+              a corrected revision does not update this excerpt.
+            </p>
+            {!researchContext.revisionRecorded && (
+              <p className="source-health-warning">
+                This older note did not record the source revision. The reader
+                opens the currently saved revision, which may differ from the
+                excerpt.
+              </p>
+            )}
+            <details>
+              <summary>Compare the retained excerpt</summary>
+              <p className="snapshot-text">{researchContext.excerpt}</p>
+            </details>
+          </aside>
+        )}
         {page ? (
           <>
             <Button
