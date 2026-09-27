@@ -167,13 +167,13 @@
   color: var(--muted-foreground);
 }
 .source-health-good {
-  background: #edf6ee;
-  color: #2b6536;
+  background: var(--success-soft);
+  color: var(--success);
 }
 .source-health-warning,
 .source-health-badge.source-health-warning {
-  background: #fff7e9;
-  color: #754919;
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 .source-health > div > .source-health-warning {
   padding: 0.85rem 1rem;
@@ -308,7 +308,7 @@
 .research-search {
   padding: 1.7rem;
   margin: 1.8rem 0 2.8rem;
-  background: linear-gradient(110deg, var(--card), var(--secondary));
+  background: var(--surface);
 }
 .research-search > .section-header {
   margin-bottom: 1.3rem;
@@ -746,8 +746,8 @@
   flex-shrink: 0;
 }
 .question-state.answered {
-  background: #e9f6ee;
-  color: #256449;
+  background: var(--success-soft);
+  color: var(--success);
 }
 .question-byline {
   font-size: 0.75rem;
@@ -794,9 +794,9 @@
   border-radius: 6px;
 }
 .thread-state.answered {
-  color: #256449;
-  background: #e9f6ee;
-  border-color: #c6e7d2;
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: var(--success-soft);
 }
 .thread-question {
   padding: 1.7rem;
@@ -826,8 +826,8 @@
   max-width: 800px;
 }
 .accepted-answer {
-  background: #f1f8f3;
-  border: 1px solid #c6e4cf;
+  background: var(--success-soft);
+  border: 1px solid var(--success-soft);
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1.5rem 0;
@@ -836,7 +836,7 @@
   display: flex;
   gap: 0.6rem;
   align-items: center;
-  color: #256449;
+  color: var(--success);
   margin-bottom: 0.7rem;
 }
 .accepted-heading h3 {
@@ -886,7 +886,7 @@
   margin-left: auto;
   display: flex;
   gap: 0.3rem;
-  color: #256449;
+  color: var(--success);
   font-size: 0.75rem;
   align-items: center;
 }
@@ -1176,10 +1176,10 @@
   gap: 1rem;
   padding: 1rem;
   margin-bottom: 1.2rem;
-  background: #fff6e9;
-  border: 1px solid #e9d5b5;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-soft);
   border-radius: 8px;
-  color: #714b1e;
+  color: var(--warning);
 }
 .answer-review > div {
   flex: 1;

@@ -123,7 +123,7 @@ export function Dossier({
     setRefreshTick((n) => n + 1);
   }
   return (
-    <>
+    <article className="dossier-document">
       <div className="detail-top">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={16} />
@@ -186,7 +186,12 @@ export function Dossier({
         <span>Created {date(p.created_at)}</span>
       </div>
       <PublicCopyOrigin origin={d.public_origin} />
-      <DossierInvestigation key={d.id} dossierId={d.id} canEdit={canEdit} />
+      <DossierInvestigation
+        key={d.id}
+        dossierId={d.id}
+        title={c.name}
+        canEdit={canEdit}
+      />
       <details
         className="dossier-tools"
         open={initialQuestionId || initialReferenceId ? true : undefined}
@@ -917,7 +922,7 @@ export function Dossier({
           </Button>
         </div>
       )}
-    </>
+    </article>
   );
 }
 function Evidence({

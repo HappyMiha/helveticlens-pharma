@@ -488,3 +488,180 @@ test('evidence source links reject active content and credential URLs', () => {
     'https://example.org/evidence',
   );
 });
+
+const { investigationActivity, evidenceCounts, sourceUsage } = require(
+  resolve('lib/lens.ts'),
+);
+const { LensProgress } = require(resolve('components/lens.tsx'));
+const { UniversalAskSearch } = require(
+  resolve('components/universal-ask-search.tsx'),
+);
+const { SourceMetadata } = require(resolve('components/source-card.tsx'));
+const { TransparencyPanel } = require(
+  resolve('components/transparency-panel.tsx'),
+);
+const now = Date.parse('2026-09-27T15:00:30Z');
+function activityFixture(phase = 'read', status = 'running') {
+  return {
+    status,
+    stop_reason: '',
+    branches: [
+      {
+        query: 'Public question',
+        status: 'running',
+        phase,
+        steps: [
+          {
+            id: 'step',
+            phase,
+            status: 'running',
+            started_at: '2026-09-27T15:00:00Z',
+          },
+        ],
+      },
+    ],
+  };
+}
+test('Lens uses the recorded in-flight step and never fabricates an analysis stage', () => {
+  assert.equal(investigationActivity(activityFixture(), now).state, 'reading');
+  assert.equal(
+    investigationActivity(activityFixture('extract'), now).state,
+    'extracting',
+  );
+  assert.equal(
+    investigationActivity(activityFixture('search'), now).state,
+    'searching',
+  );
+  assert.equal(
+    investigationActivity(activityFixture('future-stage'), now).state,
+    'idle',
+  );
+  for (const status of ['queued', 'paused', 'cancelled', 'failed'])
+    assert.equal(
+      investigationActivity(activityFixture('read', status), now).state,
+      'idle',
+    );
+  assert.equal(
+    investigationActivity(activityFixture('read', 'completed'), now).state,
+    'complete',
+  );
+});
+test('stale, missing and future checkpoint timestamps cannot keep Lens animation active', () => {
+  assert.equal(
+    investigationActivity(activityFixture(), now + 100_000).state,
+    'idle',
+  );
+  assert.equal(
+    investigationActivity(activityFixture(), now - 50_000).state,
+    'idle',
+  );
+  const v = activityFixture();
+  delete v.branches[0].steps[0].started_at;
+  assert.equal(investigationActivity(v, now).state, 'idle');
+  v.branches[0].steps = [];
+  assert.equal(investigationActivity(v, now).state, 'idle');
+});
+test('Lens always has an accessible text state and has no optical element when idle or complete', () => {
+  for (const state of ['idle', 'complete']) {
+    const html = renderToStaticMarkup(
+      React.createElement(LensProgress, {
+        activity: { state, label: 'Saved state', detail: 'Source text' },
+      }),
+    );
+    assert.match(html, /<output aria-live="polite">Saved state/);
+    assert.doesNotMatch(html, /class="lens-overlay"|class="lens-optic"/);
+  }
+  const reading = renderToStaticMarkup(
+    React.createElement(LensProgress, {
+      activity: {
+        state: 'reading',
+        label: 'Reading source material',
+        detail: '<script>source</script>',
+      },
+    }),
+  );
+  assert.match(reading, /data-lens-state="reading" aria-hidden="true"/);
+  assert.match(reading, /&lt;script&gt;source/);
+});
+test('evidence metrics count stored records and source usage deduplicates multiple quotes', () => {
+  const v = {
+    sources: [{ id: 's' }],
+    claims: [
+      { id: 'a', status: 'CONTESTED' },
+      { id: 'b', status: 'SUPPORTED' },
+    ],
+    branches: [{ status: 'failed' }],
+    evidence: [
+      { source_id: 's', claim_id: 'a', relation: 'SUPPORTS' },
+      { source_id: 's', claim_id: 'a', relation: 'CONTRADICTS' },
+      { source_id: 's', claim_id: 'a', relation: 'CONTRADICTS' },
+      { source_id: 'other', claim_id: 'b', relation: 'SUPPORTS' },
+    ],
+  };
+  assert.deepEqual(evidenceCounts(v), {
+    sources: 1,
+    claims: 2,
+    contested: 1,
+    unfinished: 1,
+  });
+  assert.deepEqual(sourceUsage(v, 's'), { claims: ['a'], contradictions: 1 });
+});
+test('source metadata does not infer primary status or publication date from a capture', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(SourceMetadata, {
+      source: {
+        url: 'https://example.org/document',
+        created_at: '2026-09-27T15:00:00Z',
+      },
+    }),
+  );
+  assert.match(html, /example.org/);
+  assert.match(html, /Primary \/ secondary not established/);
+  assert.match(html, /Publication date<\/dt><dd>Not established/);
+});
+test('global Ask is present without a session and typing does not start a server-rendered search', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(
+      UniversalAskSearch,
+      null,
+      React.createElement('main', null, 'Research'),
+    ),
+  );
+  assert.match(html, /Ask Helvetic Lens or search anything/);
+  assert.match(html, /Ctrl K/);
+  assert.doesNotMatch(
+    html,
+    /Search results|lens-optic|New investigation|private query/,
+  );
+});
+test('transparency counts only completed actions and retains unavailable steps and coverage', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(TransparencyPanel, {
+      value: {
+        branches: [
+          {
+            steps: [
+              { phase: 'read', status: 'completed' },
+              { phase: 'read', status: 'interrupted' },
+              { phase: 'extract', status: 'running' },
+            ],
+          },
+        ],
+        sources: [{ id: 's' }],
+        plans: [],
+        activity: [],
+        plan_version: 1,
+        evidence_basis: 'Exact quotes are not independent verification.',
+        coverage: 'Bounded accessible sources.',
+      },
+    }),
+  );
+  assert.match(html, /How was this produced/);
+  assert.match(
+    html,
+    /Source retrieval · 1 completed · 1 unavailable or interrupted/,
+  );
+  assert.match(html, /Claim and entity extraction · 0 completed/);
+  assert.match(html, /Bounded accessible sources/);
+  assert.doesNotMatch(html, /100%|7 sources|independently verified/);
+});

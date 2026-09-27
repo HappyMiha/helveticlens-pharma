@@ -45,8 +45,8 @@
   color: var(--muted-foreground);
 }
 .work-metrics .metric-attention {
-  background: #fff6f1;
-  color: #a43b1b;
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 .work-layout {
   display: grid;
@@ -127,36 +127,36 @@
   height: 32px;
   border-radius: 5px;
   flex-shrink: 0;
-  background: #cbd5e1;
+  background: var(--border);
 }
 .priority-dot.priority-high {
-  background: #dd9228;
+  background: var(--warning);
 }
 .priority-dot.priority-urgent {
-  background: #c94c42;
+  background: var(--danger);
 }
 .work-status {
   padding: 0.35rem 0.6rem;
   border-radius: 6px;
   font-size: 0.875rem;
   white-space: nowrap;
-  background: #edf1f6;
-  color: #405673;
+  background: var(--surface-secondary);
+  color: var(--muted-foreground);
 }
 .work-status.status-in_progress {
-  color: #2254a4;
-  background: #edf4ff;
+  color: var(--primary);
+  background: var(--accent);
 }
 .work-status.status-done {
-  color: #216543;
-  background: #eaf7ee;
+  color: var(--success);
+  background: var(--success-soft);
 }
 .work-status.status-cancelled {
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--muted-foreground);
+  background: var(--surface-secondary);
 }
 .work-overdue {
-  color: #a43b1b !important;
+  color: var(--warning) !important;
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -164,10 +164,10 @@
   font-size: 0.875rem;
 }
 .work-priority.priority-high {
-  color: #925908;
+  color: var(--warning);
 }
 .work-priority.priority-urgent {
-  color: #ab352c;
+  color: var(--danger);
 }
 .work-empty {
   padding: 2.5rem 1rem;
@@ -248,9 +248,9 @@
   align-items: flex-start;
   line-height: 1.6;
   padding: 1rem;
-  background: #fff6e9;
+  background: var(--warning-soft);
   border-radius: 8px;
-  color: #81531e;
+  color: var(--warning);
 }
 .work-queue-note {
   padding: 1rem 0.25rem;

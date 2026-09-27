@@ -1,323 +1,237 @@
 .dossier-investigation {
-  margin: 24px 0 36px;
+  margin: var(--space-4) 0 var(--space-5);
 }
-.investigation-ask {
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--primary);
-  border-radius: 14px;
-  background: var(--card);
-}
-.investigation-ask .eyebrow {
+.investigation-introduction {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.investigation-ask label {
-  display: block;
-  font-size: 26px;
-  letter-spacing: -0.6px;
-  font-weight: 650;
-}
-.investigation-ask > p {
-  color: var(--muted-foreground);
-  margin: 6px 0 20px;
-}
-.investigation-ask textarea {
-  background: var(--background);
-  font-size: 16px;
-  padding: 15px;
-  line-height: 1.6;
-  resize: vertical;
-}
-.investigation-submit {
-  display: flex;
-  align-items: center;
-  gap: 24px;
   justify-content: space-between;
-  margin-top: 14px;
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--border);
 }
-.investigation-submit small {
-  max-width: 680px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted-foreground);
+.investigation-introduction h2 {
+  margin: 0 0 var(--space-1);
 }
-.investigation-submit button {
-  flex-shrink: 0;
+.investigation-introduction p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+.investigation-introduction > p {
+  flex-basis: 100%;
+  max-width: 85ch;
+}
+.investigation-introduction .ask-trigger {
+  box-shadow: none;
+}
+.investigation-introduction kbd {
+  display: none;
 }
 .investigation-history {
   display: flex;
-  gap: 12px;
+  gap: var(--space-2);
   align-items: center;
-  margin: 24px 0;
+  margin: var(--space-4) 0;
 }
 .investigation-history label {
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--type-label);
+  font-weight: 550;
 }
 .investigation-history select {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-small);
   padding: 10px;
-  background: var(--card);
-  max-width: 650px;
+  background: var(--surface);
+  max-width: 680px;
   width: 100%;
   min-width: 0;
 }
 .investigation-run-heading {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  margin: 28px 0 6px;
+  gap: var(--space-3);
+  align-items: start;
+  margin: var(--space-4) 0 var(--space-2);
 }
 .investigation-run-heading h2 {
-  font-size: 23px;
-  line-height: 1.35;
-  margin: 10px 0;
-  letter-spacing: -0.4px;
+  font-size: var(--type-section);
+  line-height: 1.3;
+  margin: var(--space-2) 0;
+  overflow-wrap: anywhere;
 }
 .investigation-controls {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: var(--space-1);
 }
 .investigation-muted {
-  color: var(--muted-foreground);
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: var(--type-label);
   line-height: 1.65;
 }
 .investigation-status {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  background: var(--muted);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.03em;
+  padding: 4px 8px;
+  background: var(--surface-secondary);
+  border-radius: var(--radius-small);
+  font-size: var(--type-meta);
+  font-weight: 550;
 }
 .investigation-status[data-status='CONTESTED'],
 .investigation-status[data-status='failed'] {
-  background: #fff1e4;
-  color: #8c3e08;
+  color: var(--warning);
+  background: var(--warning-soft);
 }
 .investigation-status[data-status='SUPPORTED'],
 .investigation-status[data-status='completed'] {
-  background: #e6f4ed;
-  color: #22583e;
-}
-.investigation-status[data-status='running'],
-.investigation-status[data-status='queued'] {
-  background: #e7effb;
-  color: #284e8c;
+  color: var(--success);
+  background: var(--success-soft);
 }
 .investigation-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(270px, 330px);
-  gap: 28px;
-  margin-top: 28px;
-  align-items: start;
+  display: block;
+  margin-top: var(--space-2);
 }
 .investigation-findings {
-  display: grid;
-  gap: 30px;
   min-width: 0;
 }
 .investigation-section-title {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: var(--space-2);
 }
 .investigation-section-title span {
-  font-size: 12px;
-  color: var(--muted-foreground);
+  font-size: var(--type-meta);
+  color: var(--text-secondary);
 }
-.investigation-layout h3 {
-  font-size: 16px;
-  font-weight: 650;
-  margin: 0 0 10px;
+.investigation-claim {
+  padding: var(--space-3) 0 var(--space-4);
+  margin-top: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: var(--space-4);
 }
-.investigation-claim,
-.investigation-source,
-.investigation-connections {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 14px;
-  background: var(--card);
-  scroll-margin-top: 85px;
+.investigation-source {
+  background: var(--surface);
+  padding: var(--space-4);
+  margin-top: var(--space-3);
+  border-radius: var(--radius-medium);
+  scroll-margin-top: var(--space-4);
 }
-.investigation-layout h4 {
-  font-size: 16px;
-  line-height: 1.6;
-  margin: 10px 0;
-  font-weight: 600;
+.investigation-claim h4,
+.investigation-source h4 {
+  font-size: 1.25rem;
+  font-weight: 550;
+  line-height: 1.5;
+  margin: var(--space-2) 0;
   overflow-wrap: anywhere;
 }
 .investigation-layout a {
   color: var(--primary);
   text-decoration: underline;
-  text-underline-offset: 3px;
-  font-size: 13px;
+  text-underline-offset: 4px;
 }
 .investigation-layout blockquote {
   border-left: 2px solid var(--border);
-  padding: 5px 0 5px 14px;
-  margin: 6px 0 10px;
-  font-size: 14px;
+  padding: 4px 0 4px var(--space-3);
+  margin: var(--space-2) 0;
+  font-size: var(--type-body);
   line-height: 1.75;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 .investigation-relation {
   display: block;
-  font-size: 12px;
-  color: var(--muted-foreground);
+  font-size: var(--type-meta);
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 18px;
+  letter-spacing: 0.07em;
+  margin-top: var(--space-3);
 }
 .investigation-layout details {
-  margin-top: 18px;
-  font-size: 13px;
+  margin-top: var(--space-3);
+  font-size: var(--type-label);
 }
 .investigation-layout summary {
-  cursor: pointer;
-  font-weight: 600;
+  font-weight: 550;
 }
 .investigation-layout details ol {
-  padding: 12px 0 0 18px;
+  padding: var(--space-2) 0 0 var(--space-3);
 }
 .investigation-layout details li {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-2);
   line-height: 1.6;
 }
 .investigation-layout code {
   display: block;
-  font-size: 12px;
+  font-size: var(--type-meta);
   overflow-wrap: anywhere;
-  padding-top: 10px;
-  color: var(--muted-foreground);
-}
-.investigation-connections ul {
-  list-style: none;
-  padding: 0;
-}
-.investigation-connections li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: baseline;
-  margin: 10px 0;
-  font-size: 14px;
-}
-.investigation-connections li span {
-  color: var(--muted-foreground);
-  font-size: 12px;
+  padding-top: var(--space-2);
+  color: var(--text-secondary);
 }
 .investigation-relationship {
-  padding-top: 14px;
-  margin-top: 14px;
+  padding-top: var(--space-2);
+  margin-top: var(--space-2);
   border-top: 1px solid var(--border);
-  font-size: 13px;
-}
-.investigation-progress {
-  background: var(--muted);
-  border-radius: 12px;
-  padding: 22px;
-  min-width: 0;
 }
 .investigation-branches {
   list-style: none;
-  margin: 20px 0;
+  margin: var(--space-3) 0;
   padding: 0;
 }
 .investigation-branches > li {
-  border-top: 1px solid var(--border);
-  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) 0;
 }
 .investigation-branches h4 {
-  font-size: 14px;
-}
-.investigation-branches p {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 1.125rem;
+  font-weight: 550;
+  margin: var(--space-2) 0;
 }
 .investigation-branches small,
-.investigation-plan small,
-.investigation-activity small {
+.investigation-plan small {
   display: block;
-  margin-top: 7px;
-  font-size: 12px;
-  color: var(--muted-foreground);
+  margin-top: var(--space-1);
+  font-size: var(--type-meta);
+  color: var(--text-secondary);
 }
 .investigation-plan {
-  padding: 14px 0;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border);
 }
-.investigation-plan p {
-  line-height: 1.6;
-  margin: 7px 0;
-}
-.investigation-activity {
-  max-height: 450px;
-  overflow: auto;
-}
 .investigation-empty {
-  padding: 28px 20px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  color: var(--muted-foreground);
-  font-size: 14px;
+  padding: var(--space-3) 0;
+  color: var(--text-secondary);
   line-height: 1.8;
-  margin-top: 16px;
 }
 .investigation-error {
-  font-size: 13px;
-  color: #8c3e08;
-  padding: 12px;
-  background: #fff6ec;
-  border-radius: 8px;
+  font-size: var(--type-label);
+  color: var(--warning);
+  padding: var(--space-2);
+  background: var(--warning-soft);
+  border-radius: var(--radius-small);
   line-height: 1.6;
-  margin: 12px 0;
+  margin: var(--space-2) 0;
 }
 .dossier-tools {
   border-top: 1px solid var(--border);
-  padding-top: 20px;
+  padding-top: var(--space-3);
 }
 .dossier-tools > summary {
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 20px;
+  font-size: var(--type-body);
+  font-weight: 550;
+  margin-bottom: var(--space-3);
 }
-@media (max-width: 1000px) {
-  .investigation-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .investigation-ask {
-    padding: 20px;
-  }
-  .investigation-submit,
-  .investigation-run-heading,
-  .investigation-history {
+@media (max-width: 640px) {
+  .investigation-history,
+  .investigation-run-heading {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
   }
-  .investigation-run-heading h2 {
-    font-size: 20px;
-  }
-  .investigation-controls {
-    justify-content: flex-start;
-  }
-  .investigation-claim,
   .investigation-source {
-    padding: 16px;
+    padding: var(--space-3);
+  }
+  .investigation-claim h4 {
+    font-size: 1.125rem;
   }
 }

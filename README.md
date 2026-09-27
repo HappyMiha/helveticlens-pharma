@@ -6,11 +6,13 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.8.1 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.9.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 
 ## What works
+
+- A global floating **Ask / Search** (Cmd/Ctrl+K) connects anonymous public-dossier search, authorized workspace knowledge, public web discovery and the current dossier investigation. Search scope is deliberate; typing does not make an external request. Light/dark/system themes use shared design tokens. The reference dossier emphasizes real evidence counts, claims, sources, timeline and provenance; Lens movement follows actual, recent native checkpoints, with reduced-motion support. Detailed search tools remain available.
 
 - **Ask this dossier** starts durable research from one question. The coordinator selects available search/read capabilities, checks saved evidence, and follows new public-source entities through versioned plans. Captured excerpts, evidence-linked claims, contradictions, unresolved entity mentions and relationships remain inspectable. Pause/resume/cancel and a live event stream use native authorization and persisted checkpoints. The question and public entity names go to external search; private saved material is never converted into external queries.
 
@@ -66,7 +68,7 @@ Each published dossier has an anonymous reader and public contribution stream. C
 
 ## Open-web semantic discovery
 
-Use **Open web · Jev + Laya** in Find sources. Review a public query, choose
+Use **Public web** in the expandable source tools. Review a public query, choose
 Quick (8 candidates), Broad (24) or Deep (36), and confirm disclosure before
 searching. Google and Bing provide independent web results; Pharma also includes
 Europe PMC literature in Broad/Deep modes. A multilingual Laya decision model or

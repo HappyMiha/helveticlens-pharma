@@ -10,11 +10,11 @@ import {
   Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import type { DossierRecord, Identity, Preset, Run } from '@/lib/contracts';
 import { date } from '@/lib/api';
 import { product } from '@/lib/product';
-import { Discovery, monitoringSeed } from './discovery';
+import { Discovery } from './discovery';
+import { AskTrigger } from './universal-ask-search';
 
 export function ResearchDesk({
   identity,
@@ -39,8 +39,7 @@ export function ResearchDesk({
   ) => Promise<void>;
   onMore: () => Promise<void>;
 }) {
-  const [question, setQuestion] = useState(''),
-    [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('all');
   const visible = items.filter(
     (d) =>
       filter === 'all' ||
@@ -70,49 +69,23 @@ export function ResearchDesk({
           <h2>What do you need to understand?</h2>
           <Search size={21} />
         </div>
-        {identity ? (
-          <Discovery
-            key={`${identity.user.id}:${identity.organization.id}`}
-            canPlan={identity.role === 'organization_admin'}
-            onOpen={(id, thread, source) =>
-              void run('Opening topic', () => onOpen(id, thread, source))
-            }
-            onCreate={onStart}
-          />
-        ) : (
-          <>
-            <form
-              className="discovery-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                onStart(monitoringSeed(question));
-              }}
-            >
-              <div className="discovery-input">
-                <Search size={21} />
-                <Input
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  aria-label="Your monitoring question"
-                  placeholder={
-                    product.id === 'pharma'
-                      ? 'How are safety requirements changing for this medicine?'
-                      : 'Which changes could affect this client or legal question?'
-                  }
-                  required
-                  minLength={5}
-                  maxLength={300}
-                />
-              </div>
-              <Button type="submit">
-                Explore this question <ArrowRight size={17} />
-              </Button>
-            </form>
-            <p className="search-scope">
-              Sign in to search team knowledge and official sources, then build
-              a monitored topic.
-            </p>
-          </>
+        <AskTrigger />
+        <p className="search-scope">
+          Search public dossiers, explore source evidence or ask a question
+          inside a dossier.
+        </p>
+        {identity && (
+          <details className="source-tools">
+            <summary>Saved searches & source tools</summary>
+            <Discovery
+              key={`${identity.user.id}:${identity.organization.id}`}
+              canPlan={identity.role === 'organization_admin'}
+              onOpen={(id, thread, source) =>
+                void run('Opening topic', () => onOpen(id, thread, source))
+              }
+              onCreate={onStart}
+            />
+          </details>
         )}
       </section>
       <section className="research-topics">

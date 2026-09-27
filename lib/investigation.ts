@@ -35,7 +35,13 @@ export type Investigation = InvestigationSummary & {
     phase: string;
     reason: string;
     error: string | null;
-    steps: { id: string; phase: string; status: string }[];
+    steps: {
+      id: string;
+      phase: string;
+      status: string;
+      started_at?: string;
+      finished_at?: string;
+    }[];
   }[];
   sources: {
     id: string;
@@ -85,6 +91,7 @@ export type Investigation = InvestigationSummary & {
       reason?: string;
       name?: string;
       phase?: string;
+      source_id?: string;
       capabilities?: { id: string; description: string; available: boolean }[];
     };
   }[];

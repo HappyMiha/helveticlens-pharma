@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 const chapters = [
+  ['interface', 'Ask, read and trace evidence'],
   ['start', 'Frame a useful question'],
   ['investigate', 'Ask this dossier'],
   ['discover', 'Find and keep sources'],
@@ -67,6 +68,45 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section id="interface" aria-labelledby="interface-title">
+              <span className="guide-step">THE WORKSPACE</span>
+              <h2 id="interface-title">Ask, read and trace evidence.</h2>
+              <p>
+                The floating Ask / Search control is available on every page.
+                Press Cmd/Ctrl + K, type your question, then choose where to
+                look. Typing alone does not search. Public dossiers are
+                available without an account; workspace search uses only
+                material your current account may read.
+              </p>
+              <p>
+                Inside a dossier, choose Investigate this dossier to start
+                durable research. Public web search and investigation send the
+                entered question to external search providers. Keep confidential
+                details in workspace search. Source tools retain saved searches,
+                multilingual drafting and detailed provider comparisons.
+              </p>
+              <p>
+                Large counts describe the selected investigation’s captured
+                sources, evidence-linked claims and contested claims. They do
+                not measure total internet coverage. A source shows its origin,
+                capture time, retained excerpts and the claims that use it.
+                Unknown source classification and publication dates stay
+                unknown.
+              </p>
+              <p>
+                The Lens appears only during a recorded search, read or
+                extraction step. Paused, finished and stale activity has no
+                moving Lens. Text describes the same state, including when
+                reduced motion is enabled. Open How was this produced? to
+                inspect recorded actions, plan history and coverage limits.
+              </p>
+              <p>
+                Use the theme control to cycle between system preference, light
+                and dark. This preference stays on this device. On smaller
+                screens, use the navigation drawer and open a source in its
+                full-screen reader.
+              </p>
+            </section>
             <section id="start" aria-labelledby="start-title">
               <span className="guide-step">01 / INTENT</span>
               <h2 id="start-title">Frame a useful question.</h2>
@@ -135,7 +175,7 @@ export default function Guide() {
               <span className="guide-step">02 / DISCOVERY</span>
               <h2 id="discover-title">Find and keep sources.</h2>
               <p>
-                Choose <strong>Open web · Jev + Laya</strong> to investigate a
+                Choose <strong>Public web</strong> to investigate a
                 public question beyond the source catalogue. Quick, Broad and
                 Deep select up to 8, 24 or 36 sources. Confirm which queries may
                 leave your workspace. Auto uses Jev with local Laya fallback;

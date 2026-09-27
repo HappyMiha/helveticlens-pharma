@@ -54,7 +54,7 @@ export function Discovery(props: DiscoveryProps) {
           variant={tab === 'web' ? 'secondary' : 'ghost'}
           onClick={() => setTab('web')}
         >
-          Open web · Jev + Laya
+          Public web
         </Button>
         <Button
           variant={tab === 'catalogues' ? 'secondary' : 'ghost'}

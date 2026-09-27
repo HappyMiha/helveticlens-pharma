@@ -1,5 +1,15 @@
 # Changes
 
+## 1.9.0 — a research-first visual language
+
+A shared light/dark design foundation replaces the blue/purple dashboard palette with neutral research surfaces, strong typography, large evidence counts and restrained glass navigation. Cmd/Ctrl+K opens one floating Ask/Search on every route. It searches public dossiers anonymously, current authorized workspace knowledge, or deliberately submitted public-web questions using automatic Jev/Laya routing. In a dossier it starts the existing durable investigation without model or agent setup. Typing alone never sends a query. Existing detailed search tools remain accessible.
+
+The reference dossier reads as a research document: the question, claims with exact quotes and contested history, prominent source objects with usage links, retained-source reader, timeline, open research paths and a “How was this produced?” panel. Unknown publication dates and primary/secondary classification stay explicitly unknown. Lens activity reflects only recent, persisted in-flight search/read/extraction steps, and disappears on pause, failure, completion or stale checkpoints. Reduced motion retains a static treatment and the same readable state.
+
+Keyboard-accessible command and source dialogs reuse existing primitives. Navigation collapses on tablets, mobile source readers fill the screen, and the floating search remains reachable. Theme preference is device-local; queries and private evidence are not stored in browser storage. Existing native authorization, provider setup, data, source rights and publication boundaries are unchanged. Full dynamic-dossier and native-platform page migration remain ongoing.
+
+Validation: 77 client tests, lint and strict types pass in both products; the seven new behavior checks cover real/stale Lens activity, evidence counts, source metadata, global availability and transparency. Sixteen authored theme color pairs exceed 4.5:1 contrast. Production build and exact deployment checks are recorded in the shared release evidence. Browser interaction and whole-page visual QA are not claimed.
+
 ## 1.8.1 — reconnect to saved investigations
 
 Refresh reloads the dossier investigation list and selects current running work, including when the initial list failed or a start response was lost. An investigation started by another editor can be found without reloading the whole workspace. Failed reads clear the displayed research; retrying the question preserves its request identity. The same 70 client contracts, lint, strict type check and production build apply.

@@ -47,8 +47,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AuthDialog as Auth } from './auth-dialog';
 import { Field } from './field';
 import {
-  Sidebar,
-  SidebarProvider,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
@@ -65,6 +63,7 @@ import { Wizard } from './wizard';
 import { Dossier } from './dossier';
 import { Workbench } from './workbench';
 import { ResearchDesk } from './research-desk';
+import { AppShell, GlassSidebar, TopNavigation } from './app-shell';
 
 export const ROOT = `/products/${product.id}/dossiers`;
 export const emptyConfig = (): ProfileConfig => ({
@@ -415,8 +414,8 @@ export default function Workspace() {
         .includes(search.toLowerCase()),
   );
   return (
-    <SidebarProvider>
-      <Sidebar className="product-sidebar">
+    <AppShell>
+      <GlassSidebar>
         <SidebarHeader>
           <Link href="/" aria-label={`HelveticLens ${product.name} home`}>
             <Brand />
@@ -488,6 +487,7 @@ export default function Workspace() {
               onClick={() =>
                 run('Signing out', async () => {
                   await api('/auth/logout', {});
+                  window.dispatchEvent(new Event('helvetic-session-changed'));
                   setIdentity(null);
                   setItems([]);
                   setTotal(0);
@@ -512,9 +512,9 @@ export default function Workspace() {
             </Button>
           )}
         </SidebarFooter>
-      </Sidebar>
+      </GlassSidebar>
       <SidebarInset>
-        <header className="workspace-header">
+        <TopNavigation>
           <div className="crumb">
             <SidebarTrigger />
             <span>{product.name}</span>
@@ -578,7 +578,7 @@ export default function Workspace() {
               </Button>
             )}
           </div>
-        </header>
+        </TopNavigation>
         <main className="product-main" aria-busy={!!busy}>
           <div aria-live="polite">
             {error && (
@@ -993,7 +993,7 @@ export default function Workspace() {
             );
         }}
       />
-    </SidebarProvider>
+    </AppShell>
   );
 }
 

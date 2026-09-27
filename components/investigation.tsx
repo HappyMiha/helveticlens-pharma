@@ -1,30 +1,33 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ArrowUpRight,
-  Pause,
-  Play,
-  Search,
-  Square,
-  Waypoints,
-} from 'lucide-react';
-import { api, date, uid } from '@/lib/api';
+import { Pause, Play, Square } from 'lucide-react';
+import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { isRunning, readable } from '@/lib/investigation';
 import type { Investigation, InvestigationSummary } from '@/lib/investigation';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  AskTrigger,
+  PUBLIC_QUERY_DISCLOSURE,
+  useAskSearch,
+} from './universal-ask-search';
+import { LensAnalysisState } from './lens';
+import { LargeMetric, DossierSection } from './research-blocks';
+import { TransparencyPanel, DossierTimeline } from './transparency-panel';
+import { evidenceCounts } from '@/lib/lens';
 import { InvestigationFindings } from './investigation-findings';
 
 export function DossierInvestigation({
   dossierId,
   canEdit,
+  title = 'this dossier',
 }: {
+  title?: string;
   dossierId: string;
   canEdit: boolean;
 }) {
   const base = `/products/${product.id}/dossiers/${dossierId}/investigations`;
-  const [question, setQuestion] = useState('');
+  const { register } = useAskSearch();
   const [history, setHistory] = useState<InvestigationSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState('');
@@ -157,31 +160,35 @@ export function DossierInvestigation({
       if (timer) clearTimeout(timer);
     };
   }, [base, selected, running, refresh]);
-  async function start() {
-    if (!question.trim() || busy) return;
-    if (!pending.current || pending.current.question !== question.trim())
-      pending.current = { request_key: uid(), question: question.trim() };
-    setBusy(true);
-    setError('');
-    try {
-      const next = await api<Investigation>(base, {
-        ...pending.current,
-        public_query_confirmed: true,
-      });
-      pending.current = null;
-      setQuestion('');
-      setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
-      setTotal((old) => old + 1);
-      setSelected(next.id);
-      setValue(next);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : 'Could not start the investigation.',
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+  const start = useCallback(
+    async (question: string): Promise<boolean> => {
+      if (question.trim().length < 2 || busy || !canEdit) return false;
+      if (!pending.current || pending.current.question !== question.trim())
+        pending.current = { request_key: uid(), question: question.trim() };
+      setBusy(true);
+      setError('');
+      try {
+        const next = await api<Investigation>(base, {
+          ...pending.current,
+          public_query_confirmed: true,
+        });
+        pending.current = null;
+        setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
+        setTotal((old) => old + 1);
+        setSelected(next.id);
+        setValue(next);
+        return true;
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : 'Could not start the investigation.',
+        );
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [base, busy, canEdit],
+  );
   async function control(action: 'pause' | 'resume' | 'cancel') {
     if (!value) return;
     setBusy(true);
@@ -251,65 +258,48 @@ export function DossierInvestigation({
   const activeElsewhere = history.some(
     (row) => isRunning(row) && row.id !== value?.id,
   );
+  useEffect(
+    () =>
+      register({
+        id: dossierId,
+        title,
+        canInvestigate: canEdit,
+        unavailable: busy || running || activeElsewhere,
+        investigate: start,
+      }),
+    [
+      register,
+      dossierId,
+      title,
+      canEdit,
+      busy,
+      running,
+      activeElsewhere,
+      start,
+    ],
+  );
+  const counts = value ? evidenceCounts(value) : null;
   return (
     <section
       className="dossier-investigation"
       aria-label="Dossier investigation"
     >
-      <form
-        className="investigation-ask"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void start();
-        }}
-      >
-        <div className="eyebrow">
-          <Waypoints size={15} /> Living research
+      <div className="investigation-introduction">
+        <div>
+          <h2>Follow the evidence.</h2>
+          <p>
+            Ask a question. Keep the sources, findings and open questions
+            together.
+          </p>
         </div>
-        <label htmlFor={`ask-${dossierId}`}>Ask this dossier</label>
-        <p>
-          Investigate a question and keep its sources, claims and follow-up
-          research together.
-        </p>
-        <Textarea
-          id={`ask-${dossierId}`}
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-          maxLength={300}
-          minLength={2}
-          required
-          rows={2}
-          placeholder="What do you want to understand, verify or keep an eye on?"
-          disabled={!canEdit || busy}
-          aria-describedby={`privacy-${dossierId}`}
-        />
-        <div className="investigation-submit">
-          <small id={`privacy-${dossierId}`}>
-            Investigate sends this question and newly found public entity names
-            to public search. Saved dossier evidence uses your workspace AI.
-            Keep confidential details out of this field.
-          </small>
-          <Button
-            type="submit"
-            disabled={
-              !canEdit ||
-              busy ||
-              question.trim().length < 2 ||
-              running ||
-              activeElsewhere
-            }
-          >
-            <Search size={16} />
-            {busy ? 'Saving…' : 'Investigate'}
-            <ArrowUpRight size={15} />
-          </Button>
-        </div>
+        <AskTrigger label="Ask this dossier" disabled={!canEdit} />
+        <p className="investigation-muted">{PUBLIC_QUERY_DISCLOSURE}</p>
         {!canEdit && (
           <p className="investigation-muted">
             A workspace administrator can start or manage an investigation.
           </p>
         )}
-      </form>
+      </div>
       {error && (
         <div role="alert" className="investigation-error">
           {error}
@@ -355,11 +345,8 @@ export function DossierInvestigation({
               <span className="investigation-status" data-status={value.status}>
                 {readable(value.status)}
               </span>
+              <p className="eyebrow">Research question</p>
               <h2>{value.question}</h2>
-              <p className="investigation-muted">
-                {value.sources.length} sources · {value.claims.length} claims ·
-                Plan {value.plan_version || 'pending'}
-              </p>
             </div>
             <div className="investigation-controls">
               {canEdit && running && (
@@ -399,13 +386,49 @@ export function DossierInvestigation({
               ? connection || 'Waiting for the next saved checkpoint…'
               : value.stop_reason}
           </output>
+          <LensAnalysisState value={value} />
+          {counts && (
+            <dl
+              className="research-metrics"
+              aria-label="Evidence in this investigation"
+            >
+              <LargeMetric value={counts.sources} label="Captured sources" />
+              <LargeMetric
+                value={counts.claims}
+                label="Evidence-linked claims"
+              />
+              <LargeMetric value={counts.contested} label="Contested claims" />
+            </dl>
+          )}
+          <nav className="dossier-section-nav" aria-label="Dossier sections">
+            <a href="#key-findings">Findings</a>
+            <a href="#research-sources">Sources</a>
+            <a href="#research-timeline">Timeline</a>
+            <a href="#open-questions">Open questions</a>
+            <a href="#research-method">Method</a>
+          </nav>
           <div className="investigation-layout">
             <InvestigationFindings value={value} />
-            <aside className="investigation-progress">
-              <h3>Research in motion</h3>
+            <DossierSection
+              id="research-timeline"
+              number="04"
+              title="Research timeline"
+            >
+              <details>
+                <summary>
+                  {value.activity.length} saved events · open timeline
+                </summary>
+                <DossierTimeline value={value} />
+              </details>
+            </DossierSection>
+            <DossierSection
+              id="open-questions"
+              number="05"
+              title="Open questions & research paths"
+            >
               <p className="investigation-muted">
-                The plan develops when source evidence reveals something worth
-                following.
+                Each path retains its scope and unfinished work. A completed
+                path does not establish exhaustive coverage.
               </p>
               <ol className="investigation-branches">
                 {value.branches.map((branch) => (
@@ -433,57 +456,8 @@ export function DossierInvestigation({
                   </li>
                 ))}
               </ol>
-              <details open>
-                <summary>How the plan changed</summary>
-                {value.plans.map((plan) => (
-                  <div className="investigation-plan" key={plan.id}>
-                    <strong>Plan {plan.version}</strong>
-                    <p>{plan.reason}</p>
-                    {plan.document.trigger && (
-                      <a href={`#source-${plan.document.trigger.source_id}`}>
-                        Triggering evidence
-                      </a>
-                    )}
-                    <small>{date(plan.created_at)}</small>
-                  </div>
-                ))}
-              </details>
-              <details>
-                <summary>
-                  Activity · {value.activity.length} saved events
-                </summary>
-                <ol className="investigation-activity">
-                  {value.activity.map((event) => (
-                    <li key={event.sequence}>
-                      <strong>{readable(event.kind)}</strong>
-                      <p>
-                        {event.detail.reason ||
-                          event.detail.name ||
-                          (event.detail.phase
-                            ? readable(event.detail.phase)
-                            : '')}
-                      </p>
-                      <small>{date(event.created_at)}</small>
-                      {event.detail.capabilities && (
-                        <ul>
-                          {event.detail.capabilities.map((capability) => (
-                            <li key={capability.id}>
-                              {capability.description} ·{' '}
-                              <strong>
-                                {capability.available
-                                  ? 'Available'
-                                  : 'Unavailable'}
-                              </strong>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </details>
-              <p className="investigation-muted">{value.coverage}</p>
-            </aside>
+            </DossierSection>
+            <TransparencyPanel value={value} />
           </div>
         </>
       )}

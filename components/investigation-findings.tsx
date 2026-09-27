@@ -1,5 +1,7 @@
 import type { Investigation, EvidenceLink } from '@/lib/investigation';
-import { readable, sourceHref } from '@/lib/investigation';
+import { readable } from '@/lib/investigation';
+import { SourceCard } from './source-card';
+import { DossierSection } from './research-blocks';
 import { date } from '@/lib/api';
 
 function Evidence({ value }: { value: EvidenceLink }) {
@@ -16,9 +18,9 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
   );
   return (
     <div className="investigation-findings">
-      <section aria-label="Research findings">
+      <DossierSection id="key-findings" number="01" title="Claims & evidence">
         <div className="investigation-section-title">
-          <h3>What the evidence says</h3>
+          <p className="eyebrow">What the evidence says</p>
           <span>{value.claims.length} claims</span>
         </div>
         <p className="investigation-muted">{value.evidence_basis}</p>
@@ -41,13 +43,17 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
             {value.evidence
               .filter((e) => e.claim_id === claim.id)
               .map((e) => (
-                <div key={e.id}>
+                <div key={e.id} data-evidence-relation={e.relation}>
                   <strong className="investigation-relation">
                     {readable(e.relation)}
                   </strong>
                   <Evidence value={e} />
                 </div>
               ))}
+            <p className="claim-method">
+              <a href="#research-method">How was this produced?</a> ·
+              Machine-linked source evidence
+            </p>
             <details>
               <summary>
                 Claim history · {claim.revision}{' '}
@@ -64,13 +70,13 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
             </details>
           </article>
         ))}
-      </section>
+      </DossierSection>
       {!!value.entities.length && (
-        <section
-          className="investigation-connections"
-          aria-label="Research connections"
+        <DossierSection
+          id="research-connections"
+          number="02"
+          title="Entities & connections"
         >
-          <h3>Entities & connections</h3>
           <p className="investigation-muted">
             Source mentions are machine extracted. Similar names do not
             establish that two entities are the same.
@@ -93,47 +99,17 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
               <Evidence value={relation.evidence} />
             </div>
           ))}
-        </section>
+        </DossierSection>
       )}
-      <section aria-label="Captured sources">
-        <div className="investigation-section-title">
-          <h3>Source library</h3>
-          <span>{value.sources.length} captures</span>
-        </div>
+      <DossierSection id="research-sources" number="03" title="Sources">
+        <p className="investigation-muted">
+          {value.sources.length} captured sources. Open a source to inspect
+          exactly what was retained and where it is used.
+        </p>
         {value.sources.map((source) => (
-          <article
-            id={`source-${source.id}`}
-            className="investigation-source"
-            key={source.id}
-          >
-            <div className="eyebrow">{readable(source.kind)}</div>
-            <h4>{source.title}</h4>
-            {sourceHref(source.url) && (
-              <a
-                href={sourceHref(source.url)!}
-                target="_blank"
-                rel="noopener noreferrer nofollow ugc"
-              >
-                Open original source ↗
-              </a>
-            )}
-            <p className="investigation-muted">
-              Captured {date(source.created_at)}
-            </p>
-            <details>
-              <summary>Preserved excerpts & provenance</summary>
-              {source.snapshot.excerpts.map((excerpt) => (
-                <div key={excerpt.passage}>
-                  <small>{excerpt.passage}</small>
-                  <blockquote>{excerpt.text}</blockquote>
-                </div>
-              ))}
-              <p>{source.snapshot.scope}</p>
-              <code>SHA-256 {source.sha256}</code>
-            </details>
-          </article>
+          <SourceCard key={source.id} source={source} value={value} />
         ))}
-      </section>
+      </DossierSection>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import './visual-language.css';
+import { ResearchEnvironment } from '@/components/app-shell';
 export const metadata: Metadata = {
   title: 'HelveticLens Pharma',
   description:
@@ -13,8 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ResearchEnvironment>{children}</ResearchEnvironment>
+      </body>
     </html>
   );
 }

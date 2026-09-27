@@ -1,0 +1,467 @@
+'use client';
+
+import Link from 'next/link';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  ArrowUpRight,
+  BookOpen,
+  FolderSearch,
+  Globe,
+  Search,
+  Waypoints,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
+import { api, uid } from '@/lib/api';
+import type { Identity, DiscoveryResult, SearchHit } from '@/lib/contracts';
+import type { DecisionRun } from '@/lib/decision-search';
+import type { PublicPage } from '@/lib/publication';
+import { product } from '@/lib/product';
+import { discoveryPath } from '@/lib/discovery-pages';
+import { discoveryTarget, dossierHref } from '@/lib/dossier-navigation';
+import { sourceHref } from '@/lib/investigation';
+import { publicHref } from '@/lib/publication';
+import { LensProgress } from './lens';
+
+export type AskScope = {
+  id: string;
+  title: string;
+  canInvestigate: boolean;
+  unavailable: boolean;
+  investigate: (question: string) => Promise<boolean>;
+};
+type AskEnvironment = {
+  openAsk: () => void;
+  register: (scope: AskScope) => () => void;
+};
+const AskContext = createContext<AskEnvironment>({
+  openAsk: () => {},
+  register: () => () => {},
+});
+export const useAskSearch = () => useContext(AskContext);
+type Destination = 'workspace' | 'public' | 'web' | 'investigate';
+type Result = {
+  title: string;
+  href: string;
+  detail: string;
+  external?: boolean;
+};
+
+export const PUBLIC_QUERY_DISCLOSURE =
+  'Investigate sends this question and newly found public entity names to public search. Saved dossier evidence uses your workspace AI. Keep confidential details out of this field.';
+
+export function AskTrigger({
+  label = 'Ask Helvetic Lens or search anything…',
+  disabled = false,
+}: {
+  label?: string;
+  disabled?: boolean;
+}) {
+  const { openAsk } = useAskSearch();
+  return (
+    <Button
+      variant="outline"
+      className="ask-trigger"
+      onClick={openAsk}
+      disabled={disabled}
+    >
+      <Search size={18} />
+      <span>{label}</span>
+      <kbd>⌘ / Ctrl K</kbd>
+    </Button>
+  );
+}
+
+export function UniversalAskSearch({ children }: { children: ReactNode }) {
+  const [scope, setScope] = useState<AskScope | null>(null);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [identity, setIdentity] = useState<Identity | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [busy, setBusy] = useState<Destination | null>(null);
+  const [error, setError] = useState('');
+  const [results, setResults] = useState<Result[] | null>(null);
+  const [coverage, setCoverage] = useState('');
+  const [searched, setSearched] = useState('');
+  const epoch = useRef(0);
+  const sessionEpoch = useRef(0);
+  const pending = useRef<{ fingerprint: string; key: string } | null>(null);
+  const register = useCallback((next: AskScope) => {
+    setScope(next);
+    return () => setScope((old) => (old === next ? null : old));
+  }, []);
+  const openAsk = useCallback(() => {
+    const attempt = ++sessionEpoch.current;
+    epoch.current++;
+    setOpen(true);
+    setChecking(true);
+    setIdentity(null);
+    setResults(null);
+    setCoverage('');
+    setError('');
+    api<Identity>('/auth/session')
+      .then((value) => {
+        if (attempt === sessionEpoch.current) {
+          setIdentity(value.authenticated ? value : null);
+          setChecking(false);
+        }
+      })
+      .catch(() => {
+        if (attempt === sessionEpoch.current) {
+          setChecking(false);
+          setError(
+            'Workspace access could not be checked. Public dossiers are still available.',
+          );
+        }
+      });
+  }, []);
+  const close = useCallback(() => {
+    epoch.current++;
+    sessionEpoch.current++;
+    setOpen(false);
+    setQuery('');
+    setResults(null);
+    setIdentity(null);
+    setError('');
+    setBusy(null);
+    setCoverage('');
+  }, []);
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === 'k' &&
+        !event.altKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+        if (open) close();
+        else openAsk();
+      }
+    };
+    window.addEventListener('keydown', keyboard);
+    window.addEventListener('helvetic-session-changed', close);
+    window.addEventListener('popstate', close);
+    return () => {
+      window.removeEventListener('keydown', keyboard);
+      window.removeEventListener('helvetic-session-changed', close);
+      window.removeEventListener('popstate', close);
+    };
+  }, [open, openAsk, close]);
+  const admin = identity?.role === 'organization_admin';
+  const ready = query.trim().length >= 2 && !busy;
+  async function submit(destination: Destination) {
+    if (
+      !ready ||
+      (destination === 'workspace' && !identity) ||
+      ((destination === 'web' || destination === 'investigate') && !admin)
+    )
+      return;
+    const question = query.trim();
+    const attempt = ++epoch.current;
+    setBusy(destination);
+    setError('');
+    setResults(null);
+    setCoverage('');
+    setSearched(question);
+    try {
+      if (destination === 'investigate') {
+        if (!scope?.canInvestigate || scope.unavailable) return;
+        const success = await scope.investigate(question);
+        if (epoch.current !== attempt) return;
+        if (success) close();
+        else
+          setError(
+            'The investigation could not start. Its saved progress and error are shown in the dossier.',
+          );
+        return;
+      }
+      let found: Result[];
+      let description: string;
+      if (destination === 'public') {
+        const page = await api<PublicPage>(
+          `/products/${product.id}/public-dossiers?${new URLSearchParams({ q: question })}`,
+        );
+        found = page.items.map((item) => ({
+          title: item.title,
+          href: publicHref(item.id),
+          detail: item.summary,
+        }));
+        description = `${page.total} public dossiers match all search words. Showing the first ${page.items.length}. Only author-published material is searched.`;
+      } else {
+        let hits: SearchHit[];
+        if (destination === 'workspace') {
+          const page = await api<DiscoveryResult>(
+            discoveryPath(product.id, {
+              query: question,
+              provider: 'workspace',
+              match_mode: 'all',
+            }),
+          );
+          hits = page.items;
+          description = page.coverage;
+        } else {
+          const fingerprint = JSON.stringify([
+            identity?.organization.id,
+            identity?.user.id,
+            question,
+          ]);
+          if (pending.current?.fingerprint !== fingerprint)
+            pending.current = { fingerprint, key: uid() };
+          const run = await api<DecisionRun>(
+            `/products/${product.id}/discover/decision`,
+            {
+              request_key: pending.current.key,
+              query: question,
+              mode: 'auto',
+              depth: 'balanced',
+              alternatives: [],
+              public_query_confirmed: true,
+            },
+          );
+          if (run.status !== 'running' && epoch.current === attempt)
+            pending.current = null;
+          hits = run.items;
+          description =
+            run.coverage ||
+            'A bounded search of accessible public indexes. Search snippets are leads, not verified evidence.';
+          if (run.status === 'failed' || run.status === 'interrupted')
+            description =
+              'This search did not finish. Any returned leads need review. Reopen its saved run in the source tools for details.';
+          if (run.status === 'running')
+            description =
+              'This search is still recorded as running. Retry this same query to recover the saved run without creating another request.';
+        }
+        found = hits.flatMap((hit) => {
+          const target =
+            destination === 'workspace' ? discoveryTarget(hit) : null;
+          const href = target ? dossierHref(target) : sourceHref(hit.url);
+          return href
+            ? [
+                {
+                  title: hit.title,
+                  href,
+                  detail: hit.summary,
+                  external: !target,
+                },
+              ]
+            : [];
+        });
+      }
+      if (epoch.current !== attempt) return;
+      setResults(found);
+      setCoverage(description);
+    } catch (failure) {
+      if (epoch.current === attempt)
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : 'Search could not finish. Try again.',
+        );
+    } finally {
+      if (epoch.current === attempt) setBusy(null);
+    }
+  }
+  return (
+    <AskContext.Provider value={{ openAsk, register }}>
+      {children}
+      <div className="universal-ask">
+        <AskTrigger />
+      </div>
+      <Dialog open={open} onOpenChange={(next) => (next ? openAsk() : close())}>
+        <DialogContent className="ask-palette" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Ask / Search</DialogTitle>
+            <DialogDescription>
+              {scope
+                ? `Research in ${scope.title}`
+                : 'Find sources, public dossiers and knowledge in your workspace.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Command shouldFilter={false} className="ask-command">
+            <CommandInput
+              aria-label="Ask Helvetic Lens or search anything"
+              placeholder="A question, a source, a topic…"
+              value={query}
+              maxLength={300}
+              disabled={!!busy}
+              onValueChange={(value) => {
+                setQuery(value);
+                setResults(null);
+                setCoverage('');
+                setError('');
+              }}
+            />
+            <CommandList>
+              <CommandGroup
+                heading={
+                  query.trim()
+                    ? 'Choose where to look'
+                    : 'Start with a question or a few search words'
+                }
+              >
+                {scope && (
+                  <CommandItem
+                    value="investigate"
+                    disabled={
+                      !ready ||
+                      checking ||
+                      !admin ||
+                      !scope.canInvestigate ||
+                      scope.unavailable
+                    }
+                    onSelect={() => void submit('investigate')}
+                  >
+                    <Waypoints />
+                    <span>
+                      Investigate this dossier
+                      <small>
+                        {scope.unavailable
+                          ? 'Another investigation is active'
+                          : 'Find sources and build an evidence trail'}
+                      </small>
+                    </span>
+                  </CommandItem>
+                )}
+                <CommandItem
+                  value="workspace"
+                  disabled={!ready || checking || !identity}
+                  onSelect={() => void submit('workspace')}
+                >
+                  <FolderSearch />
+                  <span>
+                    Search your workspace
+                    <small>
+                      {checking
+                        ? 'Checking access…'
+                        : identity
+                          ? 'Dossiers, questions and saved references · all words'
+                          : 'Sign in from the workspace to search private knowledge'}
+                    </small>
+                  </span>
+                </CommandItem>
+                <CommandItem
+                  value="public"
+                  disabled={!ready}
+                  onSelect={() => void submit('public')}
+                >
+                  <BookOpen />
+                  <span>
+                    Search public dossiers
+                    <small>Published research · no account needed</small>
+                  </span>
+                </CommandItem>
+                <CommandItem
+                  value="web"
+                  disabled={!ready || checking || !admin}
+                  onSelect={() => void submit('web')}
+                >
+                  <Globe />
+                  <span>
+                    Search the public web
+                    <small>
+                      {admin
+                        ? 'Sends only the question above to public search providers'
+                        : 'Workspace administrator access required'}
+                    </small>
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+          <p className="ask-privacy">
+            {scope
+              ? PUBLIC_QUERY_DISCLOSURE
+              : 'Public web search sends the question above to external providers. Keep confidential details in workspace search. Typing alone does not send a query.'}
+          </p>
+          {error && (
+            <p role="alert" className="investigation-error">
+              {error}
+            </p>
+          )}
+          {busy && (
+            <LensProgress
+              activity={{
+                state: busy === 'web' ? 'searching' : 'idle',
+                label:
+                  busy === 'investigate'
+                    ? 'Saving your investigation'
+                    : 'Searching',
+                detail:
+                  busy === 'web'
+                    ? 'Discovering and ranking public source leads.'
+                    : 'Reading permitted records.',
+              }}
+            />
+          )}
+          {results && (
+            <section className="ask-results" aria-label="Search results">
+              <output>
+                {results.length} results shown for “{searched}”
+              </output>
+              <p>{coverage}</p>
+              {!results.length && (
+                <p>
+                  No matching results were returned. Try fewer words or another
+                  search scope.
+                </p>
+              )}
+              {results.map((result, i) => (
+                <a
+                  key={`${result.href}:${i}`}
+                  href={result.href}
+                  target={result.external ? '_blank' : undefined}
+                  rel={
+                    result.external
+                      ? 'noopener noreferrer nofollow ugc'
+                      : undefined
+                  }
+                  onClick={() => close()}
+                >
+                  <strong>
+                    {result.title}
+                    {result.external && <ArrowUpRight size={15} />}
+                  </strong>
+                  <span>{result.detail}</span>
+                </a>
+              ))}
+            </section>
+          )}
+          <div className="ask-navigation">
+            <Link href="/" onClick={close}>
+              Workspace
+            </Link>
+            <Link href="/public-dossiers" onClick={close}>
+              Public dossiers
+            </Link>
+            <Link href="/guide" onClick={close}>
+              Guide
+            </Link>
+            <small>↑ ↓ to choose · Enter to run · Esc to close</small>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </AskContext.Provider>
+  );
+}
