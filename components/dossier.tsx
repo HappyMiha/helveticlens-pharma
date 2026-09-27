@@ -1,6 +1,5 @@
 'use client';
-import { SourceReviews, SourceReviewStatus } from '@/components/source-reviews';
-import { SourceProvenance } from '@/components/source-provenance';
+import { ReferenceLibrary } from '@/components/reference-library';
 import { useEffect, useState } from 'react';
 import {
   ArrowDownToLine,
@@ -59,7 +58,6 @@ export function Dossier({
   const p = d.profile,
     c = p.config;
   const [tab, setTab] = useState('discussion'),
-    [reviewingSource, setReviewingSource] = useState<Entry | null>(null),
     [actionEvidence, setActionEvidence] = useState<Match | null>(null),
     [note, setNote] = useState(''),
     [reference, setReference] = useState({ title: '', url: '', body: '' }),
@@ -97,7 +95,6 @@ export function Dossier({
     ],
     files = entries.filter((x) => x.kind === 'file'),
     notes = entries.filter((x) => x.kind === 'note'),
-    references = entries.filter((x) => x.kind === 'reference'),
     feedbacks = entries.filter((x) => x.kind === 'feedback'),
     proposals = entries.filter((x) => x.kind === 'proposal');
   const sourceUrl = (m: Match) => m.evidence?.source_url || '';
@@ -120,28 +117,6 @@ export function Dossier({
   }
   return (
     <>
-      {reviewingSource && (
-        <SourceReviews
-          key={reviewingSource.id}
-          dossierId={d.id}
-          reference={reviewingSource}
-          canEdit={canEdit}
-          onClose={() => setReviewingSource(null)}
-          onSaved={async (review) => {
-            await reload();
-            setOlder((items) =>
-              items.map((entry) =>
-                entry.kind === 'reference' && entry.url === review.url
-                  ? { ...entry, source_review: review }
-                  : entry,
-              ),
-            );
-            notify(
-              'Source decision saved. New AI research will use the current source choices.',
-            );
-          }}
-        />
-      )}
       <div className="detail-top">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={16} />
@@ -466,55 +441,15 @@ export function Dossier({
             reload={refreshed}
             notify={notify}
           />
-          <div className="section-header spaced">
-            <h2>Saved source references</h2>
-          </div>
-          {references.map((r) => (
-            <article className="reference-row" key={r.id}>
-              <Globe size={22} />
-              <div>
-                <h3>{r.title || new URL(r.url).hostname}</h3>
-                <a
-                  href={r.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="source-link break-url"
-                >
-                  {r.url}
-                  <ArrowUpRight size={14} />
-                </a>
-                <p>{r.body}</p>
-                <SourceProvenance value={r.data.discovery} />
-                <SourceReviewStatus review={r.source_review} />
-                <Button
-                  variant="outline"
-                  disabled={!!busy}
-                  onClick={() => setReviewingSource(r)}
-                >
-                  {canEdit ? 'Review source' : 'Review history'}
-                </Button>
-              </div>
-              {d.documents.some((s) => s.url === r.url) ? (
-                <span className="tag good">Connected</span>
-              ) : (
-                <Button
-                  variant="outline"
-                  disabled={!canEdit || !!busy || p.status !== 'active'}
-                  onClick={() =>
-                    run('Connecting primary-source page', async () => {
-                      await api(`${ROOT}/${d.id}/sources/${r.id}/monitor`, {});
-                      await reload();
-                      notify(
-                        'Page baseline saved. Automatic checks are enabled for this page.',
-                      );
-                    })
-                  }
-                >
-                  Connect page watch
-                </Button>
-              )}
-            </article>
-          ))}
+          <ReferenceLibrary
+            key={d.id}
+            dossier={d}
+            canEdit={canEdit}
+            busy={busy}
+            run={run}
+            reload={reload}
+            notify={notify}
+          />
           {canEdit && (
             <form
               className="surface spaced"
@@ -925,7 +860,7 @@ export function Dossier({
           }}
         />
       )}
-      {d.entry_count > entries.length && (
+      {tab !== 'evidence' && d.entry_count > entries.length && (
         <div className="load-history">
           <p>
             Showing {entries.length} of {d.entry_count} dossier entries.

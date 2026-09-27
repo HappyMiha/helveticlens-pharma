@@ -2148,3 +2148,26 @@ code {
 .source-review-dialog nav ul {
   flex-wrap: wrap;
 }
+
+
+.reference-library-search {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+  align-items: end;
+  gap: 14px;
+}
+.reference-library-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.reference-library-summary {
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+.reference-library nav ul { flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .reference-library-search { grid-template-columns: minmax(0, 1fr); }
+  .reference-library .section-header { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+}

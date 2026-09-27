@@ -135,6 +135,19 @@ export interface Entry {
   author: string;
   created_at: string;
 }
+export type ReferenceDecision = 'all' | SourceDecision;
+export interface ReferenceSelection {
+  query: string;
+  decision: ReferenceDecision;
+  offset: number;
+}
+export interface ReferenceLibraryResult extends ReferenceSelection {
+  items: Entry[];
+  total: number;
+  dossier_total: number;
+  counts: Record<ReferenceDecision, number>;
+  page_size: number;
+}
 export interface DocumentWatch {
   id: string;
   name: string;

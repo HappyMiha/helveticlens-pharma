@@ -210,6 +210,7 @@ test('research, private discussion and brief preserve query, authorization and r
     `products/${product.id}/dossiers/topic/discussion/question`,
     `products/${product.id}/dossiers/topic/brief`,
     `products/${product.id}/dossiers/topic/searches`,
+    `products/${product.id}/dossiers/topic/references`,
   ]) {
     const response = await proxy(
       new Request(
@@ -228,7 +229,7 @@ test('research, private discussion and brief preserve query, authorization and r
     );
     assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
   }
-  assert.equal(calls.length, 5);
+  assert.equal(calls.length, 6);
   for (const { url, init } of calls) {
     assert.equal(url.origin, 'https://helveticlens.ch');
     assert.equal(url.searchParams.get('q'), 'source evidence');
@@ -239,6 +240,7 @@ test('research, private discussion and brief preserve query, authorization and r
     `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover`,
     `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/workbench`,
     `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/topic/searches`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/topic/references`,
   ])
     assert.equal(
       (
@@ -249,7 +251,7 @@ test('research, private discussion and brief preserve query, authorization and r
       ).status,
       404,
     );
-  assert.equal(calls.length, 5);
+  assert.equal(calls.length, 6);
 });
 
 test('discovery imports preserve the exact signed body and CSRF only within this product', async () => {
