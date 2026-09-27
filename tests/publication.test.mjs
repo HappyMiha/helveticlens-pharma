@@ -84,7 +84,7 @@ test('server reader fetches only public records without credentials or persisten
     );
     assert.deepEqual(init.headers, { accept: 'application/json' });
     assert.equal(init.cache, 'no-store');
-    assert.equal(init.redirect, 'error');
+    assert.equal(init.redirect, 'manual');
     return Response.json({ items: [], total: 0 });
   };
   assert.equal((await readPublicPage('research', 0)).data.total, 0);
@@ -106,4 +106,15 @@ test('public reader distinguishes missing publication from failed platform and r
     assert.fail('invalid path must not be fetched');
   };
   assert.equal((await readPublicDossier('../dossiers/private')).missing, true);
+});
+
+test('an upstream redirect remains an unavailable response and is never followed', async () => {
+  globalThis.fetch = async (url, init) => {
+    assert.equal(init.redirect, 'manual');
+    return new Response('', { status: 302, headers: { location: 'https://unrelated.example/private' } });
+  };
+  const result = await readPublicPage('', 0);
+  assert.equal(result.data, undefined);
+  assert.equal(result.missing, false);
+  assert.ok(result.error);
 });

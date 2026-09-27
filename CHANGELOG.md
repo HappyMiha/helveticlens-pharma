@@ -1,5 +1,9 @@
 # Changes
 
+## 1.3.1 — Public reader runtime correction
+
+The server-rendered public catalogue and reader use the edge runtime’s supported manual redirect policy. Unexpected upstream redirects remain unavailable and are never followed. The API and public/private content boundaries are unchanged. This correction follows a failed live SSR check of 1.3.0; production activation is verified separately.
+
 ## 1.3.0 — Public dossier publication
 
 Authors can prepare a separate public version of a private dossier, preview its exact text and source links, then explicitly publish it. Anonymous readers can search the public catalogue and open permanent server-rendered pages. Updates require a new preview; withdrawal immediately removes the version from application reads. Revisions and publication consent are retained in the private audit. Existing files, client context, discussions and monitoring settings remain private.

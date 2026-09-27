@@ -6,7 +6,7 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.3.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.3.1 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 
@@ -67,7 +67,7 @@ Email choices change the current user's personal organization digest, not an ind
 
 ## Verification
 
-Production builds, strict TypeScript and authored-source lint are required before publication. The client currently has 49 automated checks covering the private gateway, session/CSRF/product boundaries, downloads, literal search and displayed-query pagination, import retry identity, review conflicts, source status, exact source/question navigation, saved-document revision guards, reviewed AI inputs and explicit answer reconfirmation. Delayed question responses and stale errors are tested through cancelled and superseded reads.
+Production builds, strict TypeScript and authored-source lint are required before publication. The client currently has 50 automated checks covering the private gateway, session/CSRF/product boundaries, downloads, literal search and displayed-query pagination, import retry identity, review conflicts, source status, exact source/question navigation, saved-document revision guards, reviewed AI inputs and explicit answer reconfirmation. Delayed question responses and stale errors are tested through cancelled and superseded reads.
 
 Native backend tests exercise real persistence, access control, source/model boundaries, migrations, monitoring admission, evidence provenance, exact citations, accountable actions, source and answer review, complete question/source retrieval and recovery. Validation results and the distinction between pushed code and active releases are recorded in the shared platform's `BACKLOG_MONITORING_V2.md` and `docs/PRODUCT_DOSSIERS.md`. Passing automated checks does not constitute a clinical/legal review or a user pilot.
 

@@ -13,7 +13,7 @@ async function read<T>(path: string): Promise<PublicResult<T>> {
       `${CORE}/api/products/${product.id}/public-dossiers${path}`,
       {
         cache: 'no-store',
-        redirect: 'error',
+        redirect: 'manual',
         signal: AbortSignal.timeout(15000),
         headers: { accept: 'application/json' },
       },
@@ -27,7 +27,8 @@ async function read<T>(path: string): Promise<PublicResult<T>> {
         missing: response.status === 404,
       };
     return { data: (await response.json()) as T };
-  } catch {
+  } catch (error) {
+    console.error('Public dossier reader fetch failed:', error instanceof Error ? error.name : 'Unknown error');
     return {
       error: 'Public dossiers could not be loaded. Please retry.',
       missing: false,
