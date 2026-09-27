@@ -462,9 +462,18 @@ export interface ResearchThread {
   created_at: string;
   updated_at: string;
 }
-export interface ThreadPage {
+export type QuestionStatus = 'all' | 'open' | 'answered';
+export interface QuestionSelection {
+  query: string;
+  status: QuestionStatus;
+  offset: number;
+}
+export interface ThreadPage extends QuestionSelection {
   items: ResearchThread[];
   total: number;
+  dossier_total: number;
+  counts: Record<QuestionStatus, number>;
+  page_size: number;
 }
 export interface ThreadDetail extends ResearchThread {
   answer_needs_review: boolean;

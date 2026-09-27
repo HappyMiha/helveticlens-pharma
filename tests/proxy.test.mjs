@@ -506,3 +506,50 @@ test('answer reconfirmation preserves the reviewed-state fingerprint and stale c
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
   assert.match((await response.json()).detail, /Refresh the question/);
 });
+
+test('private question search preserves literal query, answer filter, page and upstream error', async () => {
+  const route = `products/${product.id}/dossiers/topic/discussion`;
+  const params = new URLSearchParams({
+    q: 'renal 50% A_B & safety',
+    status: 'answered',
+    offset: '60',
+  });
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(new URL(url).pathname, `/api/${route}`);
+    assert.equal(new URL(url).searchParams.get('q'), 'renal 50% A_B & safety');
+    assert.equal(new URL(url).searchParams.get('status'), 'answered');
+    assert.equal(new URL(url).searchParams.get('offset'), '60');
+    assert.equal(init.method, 'GET');
+    assert.equal(init.body, undefined);
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=member');
+    return Response.json(
+      { detail: 'Use up to 12 distinct words to find questions.' },
+      { status: 422 },
+    );
+  };
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}?${params}`, {
+      headers: { cookie: 'helvetic_lens_session=member; unrelated=private' },
+    }),
+    context(route),
+  );
+  assert.equal(response.status, 422);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  assert.match((await response.json()).detail, /12 distinct words/);
+  const other = route.replace(
+    `products/${product.id}/`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/`,
+  );
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${other}?${params}`),
+        context(other),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(calls, 1);
+});

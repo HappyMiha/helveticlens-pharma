@@ -3,6 +3,13 @@
 import { dossierHref } from '@/lib/dossier-navigation';
 import { sourceImport } from '@/lib/discovery-reference';
 import { answerReviewRequest } from '@/lib/answer-review';
+import {
+  firstQuestionPage,
+  questionFilters,
+  questionLibraryPath,
+  questionPage,
+  questionReads,
+} from '@/lib/question-library';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -39,6 +46,8 @@ import type {
   SavedSearchInput,
   ThreadDetail,
   ThreadPage,
+  QuestionSelection,
+  QuestionStatus,
   WorkAction,
 } from '@/lib/contracts';
 import { api, date, uid } from '@/lib/api';
@@ -219,8 +228,18 @@ export function Discussion({
 }) {
   const [selected, setSelected] = useState<ThreadDetail | null>(null),
     [failure, setFailure] = useState(''),
-    [status, setStatus] = useState('all'),
-    [offset, setOffset] = useState(0),
+    [selection, setSelection] = useState<QuestionSelection>(() =>
+      firstQuestionPage({ query: '', status: 'all' }),
+    ),
+    [draftQuery, setDraftQuery] = useState(''),
+    [refreshing, setRefreshing] = useState(false),
+    [failedQuestion, setFailedQuestion] = useState<{
+      id: string;
+      offset: number;
+    } | null>(null),
+    [openingQuestion, setOpeningQuestion] = useState<string | null>(
+      initialQuestionId || null,
+    ),
     [postOffset, setPostOffset] = useState(0),
     [adding, setAdding] = useState(false),
     [question, setQuestion] = useState({ title: '', body: '' }),
@@ -236,50 +255,84 @@ export function Discussion({
     [editingAction, setEditingAction] = useState<WorkAction | null>(null),
     [actionsRefresh, setActionsRefresh] = useState(0);
   const sourceKeys = useRef(new Map<string, string>());
+  const reads = useRef(questionReads());
   const root = `/products/${product.id}/dossiers/${dossier.id}`;
+  const url = questionLibraryPath(product.id, dossier.id, selection);
   const {
     data,
     error: listFailure,
+    loading,
     refresh: load,
-  } = useResource<ThreadPage>(
-    `${root}/discussion?status=${status}&offset=${offset}`,
-  );
-  const open = useCallback(
+  } = useResource<ThreadPage>(url);
+  const fetchQuestion = useCallback(
     async (id: string, page = 0) => {
-      const thread = await api<ThreadDetail>(
-        `${root}/discussion/${id}?offset=${page}`,
-      );
-      setSelected(thread);
-      setPostOffset(page);
-      setFailure('');
-      window.history.replaceState(
-        {},
-        '',
-        `/?dossier=${dossier.id}&question=${id}`,
-      );
+      try {
+        const thread = await reads.current.read(() =>
+          api<ThreadDetail>(
+            `${root}/discussion/${encodeURIComponent(id)}?offset=${page}`,
+          ),
+        );
+        if (!thread) return;
+        setSelected(thread);
+        setPostOffset(page);
+        setFailure('');
+        setFailedQuestion(null);
+        setOpeningQuestion(null);
+        window.history.replaceState(
+          {},
+          '',
+          dossierHref({ id: dossier.id, questionId: id }),
+        );
+      } catch (error) {
+        setFailure((error as Error).message);
+        setFailedQuestion({ id, offset: page });
+        setOpeningQuestion(null);
+      }
     },
     [root, dossier.id],
   );
+  const open = useCallback(
+    async (id: string, page = 0) => {
+      setOpeningQuestion(id);
+      setFailure('');
+      setFailedQuestion(null);
+      await fetchQuestion(id, page);
+    },
+    [fetchQuestion],
+  );
   useEffect(() => {
+    const currentReads = reads.current;
     const questionToOpen = new URLSearchParams(window.location.search).get(
       'question',
     );
-    if (!questionToOpen) return;
-    let live = true;
-    void api<ThreadDetail>(`${root}/discussion/${questionToOpen}`)
-      .then((thread) => {
-        if (live) {
-          setSelected(thread);
-          setPostOffset(0);
-        }
-      })
-      .catch((e) => {
-        if (live) setFailure((e as Error).message);
-      });
-    return () => {
-      live = false;
-    };
-  }, [initialQuestionId, root]);
+    if (questionToOpen) void fetchQuestion(questionToOpen);
+    return () => currentReads.cancel();
+  }, [initialQuestionId, fetchQuestion]);
+  function returnToQuestions() {
+    reads.current.cancel();
+    setSelected(null);
+    setFailure('');
+    setFailedQuestion(null);
+    setOpeningQuestion(null);
+    setReply('');
+    setSource('');
+    setReplyKey(uid());
+    window.history.replaceState({}, '', dossierHref({ id: dossier.id }));
+  }
+  async function refreshQuestions() {
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }
+  function searchQuestions(next: QuestionSelection) {
+    if (questionLibraryPath(product.id, dossier.id, next) === url)
+      void refreshQuestions();
+    else setSelection(next);
+  }
+  const waiting = !!busy || loading || refreshing || !!openingQuestion;
   async function changed(id: string) {
     await open(id, postOffset);
     await load();
@@ -325,12 +378,26 @@ export function Discussion({
   }
   return (
     <>
-      {(failure || listFailure) && (
+      {failure && failedQuestion && (
         <div role="alert" className="banner error">
-          <span>{failure || listFailure}</span>
-          <Button variant="outline" onClick={() => void load()}>
-            <RefreshCw size={16} />
-            Retry
+          <span>{failure}</span>
+          <Button
+            variant="outline"
+            disabled={!!openingQuestion}
+            onClick={() => void open(failedQuestion.id, failedQuestion.offset)}
+          >
+            <RefreshCw size={16} /> Retry question
+          </Button>
+          <Button variant="ghost" onClick={returnToQuestions}>
+            Return to questions
+          </Button>
+        </div>
+      )}
+      {openingQuestion && !selected && (
+        <div className="banner">
+          <output>Opening question…</output>
+          <Button variant="ghost" onClick={returnToQuestions}>
+            Return to questions
           </Button>
         </div>
       )}
@@ -365,34 +432,127 @@ export function Discussion({
               </Button>
             </div>
           </div>
-          <div className="discussion-filters filters">
-            {[
-              ['all', 'All questions'],
-              ['open', 'Still open'],
-              ['answered', 'Working answers'],
-            ].map(([value, label]) => (
+          <form
+            className="grid gap-3 my-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              searchQuestions(
+                firstQuestionPage({
+                  query: draftQuery,
+                  status: selection.status,
+                }),
+              );
+            }}
+          >
+            <WorkField label="Find questions in this topic">
+              <Input
+                type="search"
+                maxLength={300}
+                value={draftQuery}
+                onChange={(event) => setDraftQuery(event.target.value)}
+                placeholder={
+                  product.id === 'pharma'
+                    ? 'For example: renal safety'
+                    : 'For example: data protection'
+                }
+                aria-describedby="question-search-scope"
+              />
+            </WorkField>
+            <div className="reference-library-controls">
+              <Button type="submit" disabled={waiting}>
+                <Search size={16} /> Search questions
+              </Button>
               <Button
-                key={value}
-                variant={status === value ? 'secondary' : 'ghost'}
+                type="button"
+                variant="outline"
+                disabled={waiting || (!draftQuery && !selection.query)}
                 onClick={() => {
-                  setStatus(value);
-                  setOffset(0);
+                  setDraftQuery('');
+                  searchQuestions(
+                    firstQuestionPage({ query: '', status: selection.status }),
+                  );
                 }}
               >
+                Clear search
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={waiting}
+                onClick={() => void refreshQuestions()}
+              >
+                <RefreshCw size={16} /> {refreshing ? 'Refreshing…' : 'Refresh'}
+              </Button>
+            </div>
+          </form>
+          <p id="question-search-scope" className="muted">
+            Matches all words across question titles and context in this topic,
+            with title matches first. Up to 12 distinct words. Use Find sources
+            for broader discovery.
+          </p>
+          <div className="discussion-filters filters">
+            {(
+              Object.entries(questionFilters) as [QuestionStatus, string][]
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                variant={selection.status === value ? 'secondary' : 'ghost'}
+                aria-pressed={selection.status === value}
+                disabled={waiting}
+                onClick={() =>
+                  searchQuestions(
+                    firstQuestionPage({
+                      query: selection.query,
+                      status: value,
+                    }),
+                  )
+                }
+              >
                 {label}
+                {data && !listFailure ? ` (${data.counts[value]})` : ''}
               </Button>
             ))}
           </div>
-          {!data && !failure && (
-            <p className="muted">Loading research questions…</p>
+          {listFailure && (
+            <div className="banner error" role="alert">
+              <span>{listFailure}</span>
+              <Button
+                variant="outline"
+                disabled={waiting}
+                onClick={() => void refreshQuestions()}
+              >
+                Retry list
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={waiting}
+                onClick={() => {
+                  setDraftQuery('');
+                  searchQuestions(
+                    firstQuestionPage({ query: '', status: 'all' }),
+                  );
+                }}
+              >
+                Show all questions
+              </Button>
+            </div>
           )}
-          {data && (
+          {loading && (
+            <output className="muted">Loading research questions…</output>
+          )}
+          {data && !listFailure && (
             <>
+              <p className="muted" aria-live="polite">
+                {data.total} {questionFilters[data.status].toLowerCase()} in
+                this view · {data.dossier_total} questions in this topic
+                {data.query && <> · Search: “{data.query}”</>}
+              </p>
               <div className="question-list">
                 {data.items.map((thread) => (
                   <button
                     key={thread.id}
                     className="question-row"
+                    disabled={waiting}
                     onClick={() =>
                       void run('Opening question', () => open(thread.id))
                     }
@@ -432,17 +592,43 @@ export function Discussion({
                 <div className="discussion-empty">
                   <MessageSquare size={30} />
                   <h3>
-                    {status === 'all'
-                      ? 'What does the team still need to know?'
-                      : 'No questions in this view'}
+                    {data.offset > 0
+                      ? 'No questions on this page'
+                      : data.dossier_total === 0
+                        ? 'What does the team still need to know?'
+                        : 'No matching questions'}
                   </h3>
                   <p>
-                    Use questions to develop the topic: what changed, which
-                    source supports it, what remains uncertain and what to
-                    monitor next.
+                    {data.dossier_total === 0
+                      ? 'Open a focused question to develop this topic with evidence and contributions.'
+                      : 'Try fewer words, change the answer filter or return to all questions.'}
                   </p>
-                  {canEdit && (
+                  {data.offset > 0 && (
                     <Button
+                      variant="outline"
+                      disabled={waiting}
+                      onClick={() => searchQuestions(questionPage(data, 0))}
+                    >
+                      Return to first page
+                    </Button>
+                  )}
+                  {(data.query || data.status !== 'all') && (
+                    <Button
+                      variant="outline"
+                      disabled={waiting}
+                      onClick={() => {
+                        setDraftQuery('');
+                        searchQuestions(
+                          firstQuestionPage({ query: '', status: 'all' }),
+                        );
+                      }}
+                    >
+                      Show all questions
+                    </Button>
+                  )}
+                  {canEdit && data.dossier_total === 0 && (
+                    <Button
+                      disabled={waiting}
                       onClick={() => {
                         setQuestion({
                           title: dossier.profile.config.goal.slice(0, 240),
@@ -456,23 +642,26 @@ export function Discussion({
                   )}
                 </div>
               )}
-              {data.total > 30 && (
+              {(data.total > data.page_size || data.offset > 0) && (
                 <div className="work-pagination">
                   <Button
                     variant="outline"
-                    disabled={!offset}
-                    onClick={() => setOffset(Math.max(0, offset - 30))}
+                    disabled={waiting || !data.offset}
+                    onClick={() => searchQuestions(questionPage(data, -1))}
                   >
                     Previous
                   </Button>
                   <span>
-                    {offset + 1}–{Math.min(offset + 30, data.total)} of{' '}
-                    {data.total}
+                    {data.items.length
+                      ? `${data.offset + 1}–${data.offset + data.items.length} of ${data.total}`
+                      : `0 shown · ${data.total} matching questions`}
                   </span>
                   <Button
                     variant="outline"
-                    disabled={offset + 30 >= data.total}
-                    onClick={() => setOffset(offset + 30)}
+                    disabled={
+                      waiting || data.offset + data.page_size >= data.total
+                    }
+                    onClick={() => searchQuestions(questionPage(data, 1))}
                   >
                     Next
                   </Button>
@@ -484,16 +673,7 @@ export function Discussion({
       ) : (
         <>
           <div className="thread-toolbar">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSelected(null);
-                setReply('');
-                setSource('');
-                setReplyKey(uid());
-                window.history.replaceState({}, '', `/?dossier=${dossier.id}`);
-              }}
-            >
+            <Button variant="ghost" onClick={returnToQuestions}>
               <ArrowLeft size={16} />
               All questions
             </Button>
