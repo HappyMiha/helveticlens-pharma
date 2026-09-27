@@ -473,3 +473,36 @@ test('research source lookup stays private and cannot resolve through the other 
   );
   assert.equal(calls, 1);
 });
+
+test('answer reconfirmation preserves the reviewed-state fingerprint and stale conflict', async () => {
+  const route = `products/${product.id}/dossiers/topic/discussion/question/accept`;
+  const body = {
+    expected_revision: 4,
+    entry_id: 'note',
+    expected_review: 'a'.repeat(64),
+  };
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).pathname, `/api/${route}`);
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.deepEqual(JSON.parse(await new Response(init.body).text()), body);
+    return Response.json(
+      { detail: 'Evidence changed. Refresh the question before reconfirming.' },
+      { status: 409 },
+    );
+  };
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        origin: 'https://product.test',
+        'content-type': 'application/json',
+        'x-csrf-token': 'csrf',
+      },
+    }),
+    context(route),
+  );
+  assert.equal(response.status, 409);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  assert.match((await response.json()).detail, /Refresh the question/);
+});

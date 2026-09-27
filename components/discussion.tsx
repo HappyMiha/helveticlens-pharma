@@ -2,6 +2,7 @@
 
 import { dossierHref } from '@/lib/dossier-navigation';
 import { sourceImport } from '@/lib/discovery-reference';
+import { answerReviewRequest } from '@/lib/answer-review';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -566,36 +567,61 @@ export function Discussion({
               {selected.answer_needs_review && (
                 <div className="answer-review">
                   <div>
-                    <b>New material or source decisions need review</b>
+                    <b>The working answer needs your review</b>
+                    <ul className="answer-review-reasons">
+                      {selected.answer_review?.reasons?.map((reason) => (
+                        <li key={reason.code}>
+                          {reason.message}
+                          {reason.source_ids.length > 0 && (
+                            <span>
+                              {' '}
+                              Sources: {reason.source_ids.join(', ')}.
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                     <p>
-                      Review the topic’s new contributions, source decisions,
-                      snapshots and matching events before relying on the
-                      working answer.
+                      Inspect the sources and new material before reconfirming.
+                      Your review records the current evidence state; the AI
+                      note remains a historical snapshot.
                     </p>
                   </div>
-                  {canEdit && (
+                  <div className="answer-review-actions">
                     <Button
                       variant="outline"
                       disabled={!!busy}
                       onClick={() =>
-                        void run('Recording answer review', async () => {
-                          await api(
-                            `${root}/discussion/${selected.id}/accept`,
-                            {
-                              expected_revision: selected.revision,
-                              entry_id: selected.accepted_entry_id,
-                            },
-                          );
-                          await changed(selected.id);
-                          notify(
-                            'Working answer reconfirmed after your review.',
-                          );
-                        })
+                        void run('Refreshing answer review', () =>
+                          changed(selected.id),
+                        )
                       }
                     >
-                      Reconfirm after review
+                      <RefreshCw size={15} /> Refresh review
                     </Button>
-                  )}
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        disabled={
+                          !!busy || !selected.answer_review?.fingerprint
+                        }
+                        onClick={() =>
+                          void run('Recording answer review', async () => {
+                            await api(
+                              `${root}/discussion/${selected.id}/accept`,
+                              answerReviewRequest(selected),
+                            );
+                            await changed(selected.id);
+                            notify(
+                              'Working answer reconfirmed after your review.',
+                            );
+                          })
+                        }
+                      >
+                        Reconfirm after review
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 

@@ -1299,3 +1299,24 @@
   height: auto;
   min-height: 32px;
 }
+
+.answer-review-reasons {
+  margin: 10px 0;
+  padding-left: 18px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.answer-review-reasons li + li {
+  margin-top: 6px;
+}
+.answer-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.answer-review-actions button {
+  white-space: normal;
+  height: auto;
+  min-height: 36px;
+}

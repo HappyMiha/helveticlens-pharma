@@ -468,6 +468,11 @@ export interface ThreadPage {
 }
 export interface ThreadDetail extends ResearchThread {
   answer_needs_review: boolean;
+  answer_review: {
+    fingerprint: string;
+    reviewed_at: string | null;
+    reasons: { code: string; message: string; source_ids: string[] }[];
+  };
   replies: Entry[];
   accepted: Entry | null;
 }
