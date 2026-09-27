@@ -212,9 +212,12 @@ test('research, private discussion and brief preserve query, authorization and r
     `products/${product.id}/dossiers/topic/searches`,
   ]) {
     const response = await proxy(
-      new Request(`https://product.test/api/${route}?q=source%20evidence`, {
-        headers: { cookie: 'helvetic_lens_session=test; unrelated=secret' },
-      }),
+      new Request(
+        `https://product.test/api/${route}?q=source%20evidence&cursor=opaque%2B%2F%3D`,
+        {
+          headers: { cookie: 'helvetic_lens_session=test; unrelated=secret' },
+        },
+      ),
       context(route),
     );
     assert.equal(response.status, 200);
@@ -229,6 +232,7 @@ test('research, private discussion and brief preserve query, authorization and r
   for (const { url, init } of calls) {
     assert.equal(url.origin, 'https://helveticlens.ch');
     assert.equal(url.searchParams.get('q'), 'source evidence');
+    assert.equal(url.searchParams.get('cursor'), 'opaque+/=');
     assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=test');
   }
   for (const route of [

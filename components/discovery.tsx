@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from 'react';
 import {
   ArrowRight,
+  ArrowLeft,
   ArrowUpRight,
   BookOpen,
   Bookmark,
@@ -14,6 +15,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from '@/components/ui/pagination';
 import {
   NativeSelect,
   NativeSelectOption,
@@ -30,6 +36,7 @@ import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { SearchPlanView } from './search-plan';
 import { recipeFromResult } from '@/lib/search-recipes';
+import { appendDiscoveryPage, discoveryPath } from '@/lib/discovery-pages';
 
 export function monitoringSeed(query: string, hit?: SearchHit): Preset {
   return {
@@ -79,7 +86,8 @@ export function Discovery({
     [matchMode, setMatchMode] = useState<string>(
       initialRecipe?.match_mode || 'all',
     ),
-    [result, setResult] = useState<DiscoveryResult | null>(null),
+    [pages, setPages] = useState<DiscoveryResult[]>([]),
+    [pageIndex, setPageIndex] = useState(0),
     [plan, setPlan] = useState<SearchPlan | null>(null),
     [failure, setFailure] = useState(''),
     [busy, setBusy] = useState(''),
@@ -87,8 +95,10 @@ export function Discovery({
     [purpose, setPurpose] = useState(''),
     [savedRecipes, setSavedRecipes] = useState<string[]>([]);
   const searchInput = useRef<HTMLInputElement>(null);
+  const resultsHeading = useRef<HTMLDivElement>(null);
   const purposeId = useId();
   const recipeKeys = useRef(new Map<string, string>());
+  const result = pages[pageIndex] || null;
   const recipe = result ? recipeFromResult(result) : null;
   const recipeFingerprint = recipe
     ? JSON.stringify({ ...recipe, purpose: purpose.trim() })
@@ -119,15 +129,43 @@ export function Discovery({
     if (busy || query.trim().length < 2) return;
     setBusy('search');
     setFailure('');
-    setResult(null);
     try {
-      setResult(
-        await api<DiscoveryResult>(
-          `/products/${product.id}/discover?provider=${provider}&q=${encodeURIComponent(query.trim())}${provider === 'workspace' ? `&mode=${matchMode}` : ''}`,
-        ),
+      const found = await api<DiscoveryResult>(
+        discoveryPath(product.id, {
+          provider,
+          query: query.trim(),
+          match_mode: matchMode,
+        }),
       );
+      setPages([found]);
+      setPageIndex(0);
     } catch (e) {
       setFailure((e as Error).message);
+    } finally {
+      setBusy('');
+    }
+  }
+  async function nextPage() {
+    if (busy || !result) return;
+    setFailure('');
+    if (pageIndex + 1 < pages.length) {
+      setPageIndex(pageIndex + 1);
+      resultsHeading.current?.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (!result.next_cursor) return;
+    setBusy('page');
+    try {
+      const found = await api<DiscoveryResult>(
+        discoveryPath(product.id, result, result.next_cursor),
+      );
+      setPages(appendDiscoveryPage(pages, found));
+      setPageIndex(pageIndex + 1);
+      resultsHeading.current?.scrollIntoView({ block: 'nearest' });
+    } catch (error) {
+      setFailure(
+        `The next page could not be loaded. Your current results are retained. ${(error as Error).message}`,
+      );
     } finally {
       setBusy('');
     }
@@ -251,7 +289,8 @@ export function Discovery({
             setQuery(angle.query);
             setProvider(angle.provider);
             setMatchMode('all');
-            setResult(null);
+            setPages([]);
+            setPageIndex(0);
             setFailure('');
             searchInput.current?.focus();
             searchInput.current?.scrollIntoView({
@@ -263,15 +302,21 @@ export function Discovery({
       )}
       {result && (
         <>
-          <div className="search-result-heading">
+          <div className="search-result-heading" ref={resultsHeading}>
             <span>
               <b>
                 {result.items.length}
-                {result.total != null && result.total > result.items.length
+                {result.provider === 'workspace' &&
+                result.total != null &&
+                result.total > result.items.length
                   ? ` of ${result.total}`
                   : ''}
               </b>{' '}
-              results for “{result.query}” ·{' '}
+              results
+              {result.provider !== 'workspace'
+                ? ` on page ${result.page_number || 1}`
+                : ''}{' '}
+              for “{result.query}” ·{' '}
               {result.provider === 'workspace'
                 ? 'Team knowledge'
                 : result.provider === 'fedlex'
@@ -319,13 +364,15 @@ export function Discovery({
               </p>
             </form>
           )}
-          {result.total != null && result.total > result.items.length && (
-            <output className="search-scope block">
-              Showing up to 20 topics, 20 questions and 20 contributions. Add
-              another word or choose Exact phrase to narrow these {result.total}{' '}
-              matches.
-            </output>
-          )}
+          {result.provider === 'workspace' &&
+            result.total != null &&
+            result.total > result.items.length && (
+              <output className="search-scope block">
+                Showing up to 20 topics, 20 questions and 20 contributions. Add
+                another word or choose Exact phrase to narrow these{' '}
+                {result.total} matches.
+              </output>
+            )}
           <div className="discovery-results">
             {result.items.map((hit) => (
               <article className="discovery-hit" key={`${hit.kind}:${hit.id}`}>
@@ -410,12 +457,90 @@ export function Discovery({
           {!result.items.length && (
             <div className="work-empty">
               <Search size={27} />
-              <h3>No results in this source</h3>
+              <h3>
+                {(result.page_number || 1) > 1
+                  ? 'No results on this page'
+                  : 'No results in this source'}
+              </h3>
               <p>
                 Try a more specific phrase or another source. This search does
                 not establish that no relevant information exists.
               </p>
             </div>
+          )}
+          {result.provider !== 'workspace' && (
+            <>
+              <Pagination
+                className="discovery-pagination"
+                aria-label="Source result pages"
+              >
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button
+                      variant="outline"
+                      disabled={!!busy || pageIndex === 0}
+                      onClick={() => {
+                        setPageIndex(pageIndex - 1);
+                        setFailure('');
+                        resultsHeading.current?.scrollIntoView({
+                          block: 'nearest',
+                        });
+                      }}
+                    >
+                      <ArrowLeft size={16} />
+                      Previous results
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <output className="discovery-page-count">
+                      Page {result.page_number || 1} ·{' '}
+                      {result.total == null
+                        ? 'Total unavailable'
+                        : `${result.total.toLocaleString()} source matches`}
+                    </output>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      variant="outline"
+                      disabled={
+                        !!busy ||
+                        (pageIndex + 1 >= pages.length && !result.next_cursor)
+                      }
+                      onClick={() => void nextPage()}
+                    >
+                      {busy === 'page' ? (
+                        <LoaderCircle size={16} className="spin" />
+                      ) : (
+                        <ArrowRight size={16} />
+                      )}
+                      Next results
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+              {!!result.omitted_records && (
+                <p className="search-scope">
+                  {result.omitted_records} source records were omitted because
+                  their identifiers were unusable or duplicated.
+                </p>
+              )}
+              {result.continuation_unavailable && (
+                <p className="search-scope">
+                  The source reports more matches but did not provide a usable
+                  next page. Refine your query or try the search again.
+                </p>
+              )}
+              {result.limit_reached && (
+                <p className="search-scope">
+                  You reached the 1,000-record limit for one interactive search.
+                  Add a more specific term to continue your research.
+                </p>
+              )}
+              <p className="search-scope">
+                Previous results are the pages already loaded in this view.
+                Press Search for a fresh search.
+              </p>
+            </>
           )}
           <p className="search-scope">{result.coverage}</p>
           {onCreate && (

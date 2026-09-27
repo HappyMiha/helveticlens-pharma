@@ -392,6 +392,12 @@ export interface DiscoveryResult extends SearchRecipe {
   checked_at: string;
   coverage: string;
   total?: number | null;
+  next_cursor?: string | null;
+  page_number?: number;
+  page_size?: number;
+  omitted_records?: number;
+  limit_reached?: boolean;
+  continuation_unavailable?: boolean;
 }
 export interface SearchAngle {
   label: string;
