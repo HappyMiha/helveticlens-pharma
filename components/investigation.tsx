@@ -469,7 +469,11 @@ export function DossierInvestigation({
           </output>
           {value.monitoring_trigger && (
             <aside className="monitoring-research-status">
-              <strong>Started by a new monitoring signal</strong>
+              <strong>
+                {value.monitoring_trigger.source_kind === 'watched_page'
+                  ? 'Started by a saved page change'
+                  : 'Started by a new monitoring signal'}
+              </strong>
               <p>{value.monitoring_trigger.source.title}</p>
               <a href={`#monitoring-trigger-${value.monitoring_trigger.id}`}>
                 Why it started and which settings applied

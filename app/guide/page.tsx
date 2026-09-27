@@ -90,8 +90,8 @@ export default function Guide() {
               </p>
               <p>
                 Choose one to six research starts per UTC day; the default is
-                three. Each start uses one saved event-metadata excerpt and at
-                most two model requests: extraction and comparison with earlier
+                three. Each start uses one saved evidence excerpt and at most
+                two model requests: extraction and comparison with earlier
                 private findings. Explicit retries count toward the daily limit.
                 Duplicate signal delivery starts no extra research, and
                 interrupted paid requests are not repeated automatically.
@@ -110,9 +110,27 @@ export default function Guide() {
                 inspectable. This mode performs no external discovery, makes no
                 public contribution and adds no email subscription. Existing
                 source admission, exclusions, dossier permissions and personal
-                notification choices still apply. Automatic watched-page
-                research and recurring open-web discovery are separate
-                capabilities still to come.
+                notification choices still apply. Recurring open-web discovery
+                remains a separate capability still to come.
+              </p>
+              <h3>Let saved page changes update your research.</h3>
+              <p>
+                In a dossier shared with your workspace, select Include changes
+                to saved source pages. Existing automatic-research settings stay
+                topic-only until you choose this scope. Only future versions
+                from linked active daily page watches are considered.
+                Members-only dossiers continue to use topic matches; they do not
+                create workspace page watches.
+              </p>
+              <p>
+                Open Inspect the saved change to compare earlier and new text,
+                then read either retained version. The engine extracts a window
+                of up to 12,000 characters around the first difference and
+                compares the resulting findings independently. Other changes may
+                lie outside that window. Pages longer than 200,000 characters,
+                unavailable originals and unchanged text have an explicit
+                skipped reason. This checks already saved evidence; the page’s
+                acquisition schedule stays separate.
               </p>
             </section>
             <section

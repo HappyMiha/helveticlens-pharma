@@ -1151,6 +1151,14 @@ const monitoringPolicy = {
   checked_at: null,
   reason: 'Automatic research is off.',
   disclosure: 'Private saved metadata only; no external discovery.',
+  include_page_changes: false,
+  page_disclosure: 'Also analyse a bounded retained page excerpt.',
+  page_readiness: {
+    allowed: true,
+    linked: 1,
+    active: 1,
+    reason: 'One linked daily watch.',
+  },
   history: [],
 };
 
@@ -1218,4 +1226,83 @@ test('monitoring history is cleared on access errors and dossier changes', () =>
   assert.equal(currentMonitoring(value, 'Access changed', 'mine'), null);
   assert.equal(currentMonitoring(value, '', 'other'), null);
   assert.equal(currentMonitoring(null, '', 'mine'), null);
+});
+
+test('page research scope stays opt-in and explains members-only readiness', () => {
+  const normal = renderToStaticMarkup(
+    React.createElement(MonitoringPolicyForm, {
+      base: '/private',
+      policy: monitoringPolicy,
+      onSaved() {},
+    }),
+  );
+  assert.match(normal, /Include changes to saved source pages/);
+  assert.doesNotMatch(normal, /aria-checked="true"/);
+  const unavailable = renderToStaticMarkup(
+    React.createElement(MonitoringPolicyForm, {
+      base: '/private',
+      policy: {
+        ...monitoringPolicy,
+        page_readiness: {
+          allowed: false,
+          linked: 0,
+          active: 0,
+          reason:
+            'Workspace page watches are unavailable in members-only dossiers.',
+        },
+      },
+      onSaved() {},
+    }),
+  );
+  assert.match(unavailable, /members-only dossiers/);
+  assert.match(
+    unavailable,
+    /role="checkbox"[^>]*disabled|disabled[^>]*role="checkbox"/,
+  );
+});
+
+test('saved page changes show escaped paired excerpts and exact retained-version actions', () => {
+  const item = {
+    id: 'page-trigger',
+    source_kind: 'watched_page',
+    source_identifier: 'watch:version',
+    source_revision: '2',
+    policy_revision: 3,
+    matched_at: '2026-09-28T00:00:00Z',
+    state: 'started',
+    reason: 'A retained version changed.',
+    source: {
+      title: 'Original page',
+      url: 'https://example.ch/source',
+      sha256: 'a'.repeat(64),
+    },
+    investigation: { id: 'run', status: 'completed' },
+    page: {
+      document_id: 'law',
+      version_id: 'new',
+      revision: 2,
+      previous: { version_id: 'old', revision: 1 },
+      first_difference: 300,
+      excerpt_start: 120,
+      before: '<script>old</script>',
+      after: 'New captured text',
+      partial: true,
+      preview_partial: false,
+    },
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(MonitoringTriggerRow, {
+      item,
+      dossierId: 'dossier',
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /Saved page change/);
+  assert.match(html, /Inspect the saved change/);
+  assert.match(html, /Read earlier version/);
+  assert.match(html, /Read new version/);
+  assert.match(html, /character 301/);
+  assert.match(html, /more changes may appear elsewhere/);
+  assert.match(html, /&lt;script&gt;old/);
+  assert.doesNotMatch(html, /<script>|signal matched the dossier/);
 });

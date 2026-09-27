@@ -10,6 +10,7 @@ import type {
 import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import { DossierSection } from './research-blocks';
+import { DocumentHistory } from './document-history';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
@@ -78,13 +79,19 @@ export function MonitoringResearchPanel({
           </div>
           {!page.items.length && (
             <p>
-              No recorded signals on this page. Only signals matched after
-              automatic research was enabled are considered.
+              No recorded signals on this page. New evidence saved after
+              automatic research was enabled is considered within its chosen
+              scope.
             </p>
           )}
           <ol className="monitoring-research-history">
             {page.items.map((item) => (
-              <MonitoringTriggerRow key={item.id} item={item} onOpen={onOpen} />
+              <MonitoringTriggerRow
+                key={item.id}
+                item={item}
+                dossierId={dossierId}
+                onOpen={onOpen}
+              />
             ))}
           </ol>
           <div className="evolution-tools">
@@ -114,6 +121,10 @@ export function MonitoringResearchPanel({
                   <p className="source-meta">
                     {date(item.at)} · Settings revision {item.revision} ·{' '}
                     {item.daily_limit} starts per UTC day
+                    {' · '}
+                    {item.include_page_changes
+                      ? 'Topic matches and saved page changes'
+                      : 'Topic matches only'}
                   </p>
                 </li>
               ))}
@@ -138,6 +149,14 @@ export function MonitoringPolicyStatus({
           : 'Automatic research off'}
       </strong>
       <p>{policy.reason}</p>
+      <p>
+        {policy.include_page_changes
+          ? 'Topic matches and saved page changes'
+          : 'Topic matches only'}
+      </p>
+      {policy.page_readiness && (
+        <p className="investigation-muted">{policy.page_readiness.reason}</p>
+      )}
       <p className="source-meta">
         {policy.used_today} of {policy.daily_limit} starts used today · Resets
         at 00:00 UTC
@@ -145,7 +164,7 @@ export function MonitoringPolicyStatus({
       <p className="source-meta">Last checked: {date(policy.checked_at)}</p>
       {policy.starts_on && (
         <p className="source-meta">
-          Signals matched after {date(policy.starts_on)}
+          New evidence after {date(policy.starts_on)}
         </p>
       )}
       <p className="investigation-muted">
@@ -160,11 +179,18 @@ export function MonitoringPolicyStatus({
 export function MonitoringTriggerRow({
   item,
   onOpen,
+  dossierId,
 }: {
   item: MonitoringTrigger;
   onOpen: (id: string) => void;
+  dossierId?: string;
 }) {
   const source = sourceHref(item.source.url);
+  const [version, setVersion] = useState<{
+    id: string;
+    revision: number;
+  } | null>(null);
+  const page = item.page;
   return (
     <li id={`monitoring-trigger-${item.id}`}>
       <p className="source-meta">
@@ -173,6 +199,9 @@ export function MonitoringTriggerRow({
         {item.policy_revision}
       </p>
       <h4>{item.source.title || 'Monitoring signal'}</h4>
+      {item.source_kind === 'watched_page' && (
+        <p className="source-meta">Saved page change</p>
+      )}
       <p>{item.reason}</p>
       {item.investigation?.stop_reason && (
         <p>{item.investigation.stop_reason}</p>
@@ -197,15 +226,27 @@ export function MonitoringTriggerRow({
       </div>
       <details>
         <summary>Why this signal?</summary>
-        <p>
-          This signal matched the dossier’s native monitoring topics while
-          ongoing private research was enabled. The investigation uses the saved
-          event metadata; the linked document may contain additional
-          information.
-        </p>
-        <p className="source-meta">Signal: {item.match_id}</p>
+        {item.source_kind === 'watched_page' ? (
+          <p>
+            A linked page watch retained a new text version while page research
+            was enabled. Only the new excerpt enters extraction. Earlier
+            findings are compared in a separate step. A text change alone does
+            not establish that a conclusion changed.
+          </p>
+        ) : (
+          <p>
+            This signal matched the dossier’s native monitoring topics while
+            ongoing private research was enabled. The investigation uses the
+            saved event metadata; the linked document may contain additional
+            information.
+          </p>
+        )}
         <p className="source-meta monitoring-fingerprint">
-          Evidence identity: {item.evaluation_fingerprint}
+          Signal: {item.source_identifier || item.match_id}
+        </p>
+        <p className="source-meta monitoring-fingerprint">
+          Evidence identity:{' '}
+          {item.source_revision || item.evaluation_fingerprint}
         </p>
         {item.source.sha256 && (
           <p className="source-meta monitoring-fingerprint">
@@ -213,6 +254,65 @@ export function MonitoringTriggerRow({
           </p>
         )}
       </details>
+      {page && (
+        <details className="monitoring-page-change">
+          <summary>Inspect the saved change</summary>
+          <p className="investigation-muted">
+            Excerpts around the first textual difference, at character{' '}
+            {page.first_difference + 1}.{' '}
+            {page.partial || page.preview_partial
+              ? 'This is a partial view; more changes may appear elsewhere.'
+              : 'Both saved texts are shown in full.'}
+          </p>
+          <div className="monitoring-page-excerpts">
+            <section>
+              <h5>Earlier saved text</h5>
+              <p className="snapshot-text">
+                {page.before || 'No text in this part of the earlier version.'}
+              </p>
+              {dossierId && (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setVersion({
+                      id: page.previous.version_id,
+                      revision: page.previous.revision,
+                    })
+                  }
+                >
+                  Read earlier version
+                </Button>
+              )}
+            </section>
+            <section>
+              <h5>New saved text</h5>
+              <p className="snapshot-text">
+                {page.after || 'No text in this part of the new version.'}
+              </p>
+              {dossierId && (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setVersion({ id: page.version_id, revision: page.revision })
+                  }
+                >
+                  Read new version
+                </Button>
+              )}
+            </section>
+          </div>
+        </details>
+      )}
+      {page && version && dossierId && (
+        <DocumentHistory
+          key={version.id}
+          dossierId={dossierId}
+          documentId={page.document_id}
+          name={item.source.title}
+          initialPage={{ ...version, offset: 0 }}
+          onClose={() => setVersion(null)}
+        />
+      )}
     </li>
   );
 }
@@ -228,6 +328,7 @@ export function MonitoringPolicyForm({
 }) {
   const id = useId();
   const [limit, setLimit] = useState(policy.daily_limit);
+  const [pages, setPages] = useState(policy.include_page_changes || false);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -247,6 +348,7 @@ export function MonitoringPolicyForm({
       expected_revision: policy.revision,
       enabled,
       daily_limit: limit,
+      include_page_changes: pages,
       standing_authority_confirmed: enabled && confirm,
     };
     const fingerprint = JSON.stringify(body);
@@ -279,6 +381,24 @@ export function MonitoringPolicyForm({
       >
         <fieldset disabled={busy}>
           <p>{policy.disclosure}</p>
+          <label className="evolution-checkbox" htmlFor={`${id}-pages`}>
+            <Checkbox
+              id={`${id}-pages`}
+              checked={pages}
+              disabled={!policy.page_readiness?.allowed}
+              onCheckedChange={(value) => {
+                setPages(value === true);
+                setConfirm(false);
+              }}
+            />
+            Include changes to saved source pages
+          </label>
+          {policy.page_readiness && (
+            <p className="investigation-muted">
+              {policy.page_readiness.reason}
+            </p>
+          )}
+          {pages && <p>{policy.page_disclosure}</p>}
           <label htmlFor={`${id}-limit`}>
             Maximum research starts per UTC day
           </label>
@@ -306,8 +426,9 @@ export function MonitoringPolicyForm({
               checked={confirm}
               onCheckedChange={(value) => setConfirm(value === true)}
             />
-            Allow ongoing private analysis of future saved monitoring signals,
-            including while I am signed out.
+            Allow ongoing private analysis of future topic matches
+            {pages ? ' and saved page changes' : ''}, including while I am
+            signed out.
           </label>
           <p className="investigation-muted">
             Saving settings ends pending work from the previous settings.
