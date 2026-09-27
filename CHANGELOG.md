@@ -1,5 +1,11 @@
 # Changes
 
+## 1.13.0 — dossier-only guests and Brandbook v1.0
+
+Invite a registered account with a verified email directly to a dossier. Guest Viewers, Contributors and Editors accept in their own account and find accepted dossiers in Shared with you. Scoped originals, evidence, exports, assignment choices and research run through current grant/session checks. Guests receive no native workspace membership, ownership, monitoring configuration or source administration. Invitations expire in seven days; no email is sent.
+
+Brandbook v1.0 aligns both products with a dark Carbon/Obsidian canvas, Frost text, geometric H identity, Inter-compatible typography, structural glass and a single 560ms Lens transition. Existing light/system theme choices and reduced-motion behavior remain available. Living public research, private semantic indexing, recurring web discovery, cross-investigation reconciliation and native visual migration remain open.
+
 ## 1.12.0 — private team monitoring
 
 Choose the monitoring audience when starting a dossier: accepted team members or everyone in the workspace. New setup defaults to the invited team; existing activated dossiers keep their audience. Private monitoring covers native topics, matching evidence, dossier research, current-recipient feeds and consented digests. Removing a member closes future access and redacts private topic content from previously saved digest views in the product. Already delivered email cannot be recalled.

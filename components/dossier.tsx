@@ -68,6 +68,7 @@ export function Dossier({
     c = p.config;
   const canContribute = d.access?.can_contribute ?? canEdit;
   const canMonitor = d.access?.can_monitor ?? canEdit;
+  const canConfigure = d.access?.can_configure ?? canEdit;
   const [focusInvestigation, setFocusInvestigation] = useState<
     { id: string; tick: number } | undefined
   >();
@@ -89,14 +90,10 @@ export function Dossier({
     [refreshTick, setRefreshTick] = useState(0);
   useEffect(() => {
     let active = true;
-    Promise.all(
-      p.topic_ids.map((id: string) =>
-        api<Match[]>(`/monitoring-topics/${id}/matches?limit=100`),
-      ),
-    )
-      .then((groups) => {
+    api<Match[]>(`${ROOT}/${d.id}/matches`)
+      .then((results) => {
         if (active) {
-          setMatches(groups.flat());
+          setMatches(results);
           setMatchError('');
         }
       })
@@ -106,7 +103,7 @@ export function Dossier({
     return () => {
       active = false;
     };
-  }, [p.topic_ids, refreshTick]);
+  }, [d.id, p.topic_ids, refreshTick]);
   const entries = [
       ...d.entries,
       ...older.filter((x) => !d.entries.some((y) => y.id === x.id)),
@@ -165,7 +162,7 @@ export function Dossier({
           {p.status === 'draft' ? (
             <Button
               variant="outline"
-              disabled={!canEdit || !!busy}
+              disabled={!canConfigure || !!busy}
               onClick={onSetup}
             >
               Monitoring setup
@@ -823,7 +820,7 @@ export function Dossier({
                     />
                   </Field>
                   <Button
-                    disabled={!canEdit || !!busy}
+                    disabled={!canConfigure || !!busy}
                     onClick={() =>
                       run('Preparing an AI refinement', async () => {
                         await api(`${ROOT}/${d.id}/improve`, {

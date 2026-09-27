@@ -6,9 +6,26 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.12.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.13.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
+
+## Dossier-only guests
+
+Owners can invite an existing account by its verified email address as a Viewer,
+Contributor or Editor. The recipient accepts the account-bound invitation within
+seven days, then opens the dossier from **Shared with you**. No workspace
+membership, session switch or automatic email is created. Guests can read scoped
+sources, original files, evidence and exports; their role controls contributions
+and research. Monitoring setup, ownership, publication and source administration
+stay with the host workspace. Native feeds and personal digest preferences stay
+with each user's own workspace. Revoked grants or sessions stop subsequent reads
+and discard late investigation results.
+
+The [Brandbook v1.0](https://github.com/HappyMiha/helvetic-lens/blob/main/docs/BRANDBOOK_V1.md)
+now governs both clients: Carbon/Obsidian/Frost, a geometric H, restrained glass,
+neutral type and one short source-analysis transition, with light/system theme
+choices and reduced-motion support.
 
 ## Private team monitoring
 

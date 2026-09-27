@@ -12,14 +12,15 @@ import { UniversalAskSearch } from './universal-ask-search';
 
 type Theme = 'system' | 'light' | 'dark';
 export function ResearchEnvironment({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setTheme] = useState<Theme>('dark');
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
-      let selected: Theme = 'system';
+      let selected: Theme = 'dark';
       try {
         const stored = localStorage.getItem('helvetic-lens-theme');
-        if (stored === 'dark' || stored === 'light') selected = stored;
+        if (stored === 'dark' || stored === 'light' || stored === 'system')
+          selected = stored;
       } catch {
         /* Device preferences are optional. */
       }

@@ -304,11 +304,12 @@ export default function Guide() {
               <p>
                 Open a saved research draft or active dossier and expand Dossier
                 team. The original creator can enable team management, then
-                invite an existing workspace colleague as an editor, contributor
-                or viewer. The invitation appears in the colleague’s Dossier
-                invitations and expires after seven days. It is tied to that
-                account; a copied link grants nobody else access. No email is
-                sent.
+                invite a workspace colleague or a guest by their verified email
+                address as an editor, contributor or viewer. Guests must already
+                have an account. The invitation appears in the colleague’s
+                Dossier invitations and expires after seven days. It is tied to
+                that account; a copied link grants nobody else access. No email
+                is sent.
               </p>
               <p>
                 Owners manage people and publication. Editors edit the dossier
@@ -326,8 +327,12 @@ export default function Guide() {
                 follow current membership. Removing a role closes future access,
                 including retained digest history in the product. In a workspace
                 dossier, inherited workspace access remains. Existing dossiers
-                keep their audience; invitations outside the workspace are not
-                available yet.
+                keep their audience. Accepted guests find the dossier in Shared
+                with you without joining its workspace or changing their own
+                workspace. Guest access includes sources, original files,
+                research and exports. Ownership, publication, monitoring setup
+                and source administration remain with the host workspace. Guest
+                feeds and email preferences stay in their own workspace.
               </p>
               <p>
                 Revoke a pending invitation or change an accepted member’s role

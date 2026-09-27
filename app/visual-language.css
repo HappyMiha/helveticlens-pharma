@@ -10,13 +10,13 @@ h1,
 .public-article h1,
 .public-intro h1 {
   font-size: var(--type-page);
-  font-weight: 550;
-  line-height: 1.08;
+  font-weight: 600;
+  line-height: 1.167;
   letter-spacing: -0.045em;
 }
 h2 {
   font-size: var(--type-section);
-  font-weight: 550;
+  font-weight: 600;
   letter-spacing: -0.03em;
 }
 a,
@@ -53,8 +53,8 @@ button[data-slot='button'] {
 }
 .brandmark {
   border-radius: var(--radius-small);
-  background: var(--text-primary);
-  color: var(--background);
+  background: transparent;
+  color: var(--text-primary);
 }
 .brand small,
 .nav-label {
@@ -89,7 +89,7 @@ button[data-slot='button'] {
   font-size: var(--type-label);
 }
 .product-main {
-  max-width: 1400px;
+  max-width: 1440px;
   padding: var(--space-4) clamp(1.25rem, 4vw, 4rem) 9rem;
   margin: 0 auto;
 }
@@ -376,7 +376,7 @@ button[data-slot='button'] {
   font-size: var(--type-section);
   line-height: 1.15;
   letter-spacing: -0.025em;
-  font-weight: 550;
+  font-weight: 600;
 }
 .dossier-section-body {
   min-width: 0;
@@ -434,7 +434,7 @@ button[data-slot='button'] {
 }
 .transparency-panel > summary {
   font-size: 1.125rem;
-  font-weight: 550;
+  font-weight: 600;
 }
 .transparency-panel p {
   margin-block: var(--space-2);
@@ -525,7 +525,7 @@ button[data-slot='button'] {
 .lens-progress output {
   display: block;
   font-size: 1.125rem;
-  font-weight: 550;
+  font-weight: 600;
 }
 .lens-progress p {
   color: var(--text-secondary);
@@ -550,8 +550,7 @@ button[data-slot='button'] {
   backdrop-filter: blur(var(--lens-distortion));
   box-shadow: inset var(--lens-chromatic-offset) 0 var(--lens-edge);
   opacity: var(--lens-refraction-strength);
-  animation: lens-focus calc(var(--motion-lens) * 3) ease-in-out infinite
-    alternate;
+  animation: lens-focus var(--motion-lens) var(--hl-ease) 1 both;
 }
 .lens-overlay[data-lens-state='reading'] .lens-optic {
   animation-name: lens-read;
@@ -931,4 +930,41 @@ button[data-slot='button'] {
   .team-person-actions {
     align-items: stretch;
   }
+}
+
+/* Brandbook v1.0: spectrum belongs to the active evidence surface only. */
+.lens-optic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  border-inline-start-color: var(--hl-refraction-cyan);
+  border-block-end-color: var(--hl-refraction-violet);
+  opacity: 0.65;
+}
+.brandmark {
+  min-width: 28px;
+  min-height: 28px;
+}
+.brand b {
+  display: block;
+  min-width: 120px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.public-intro h1 {
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  line-height: 1.0833;
+}
+.team-invite-kind {
+  max-width: 420px;
+  margin-block: 24px 16px;
+}
+.shared-dossiers {
+  margin-block: 24px 48px;
+}
+.shared-dossiers .team-people {
+  margin-bottom: 16px;
 }

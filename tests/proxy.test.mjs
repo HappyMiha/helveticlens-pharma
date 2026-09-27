@@ -866,3 +866,45 @@ test('dossier invitation gateway preserves account cookies and restricts product
   }
   assert.equal(calls.length, 2);
 });
+
+test('guest readers retain account scope and cannot select another product or workspace', async () => {
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=guest');
+    assert.equal(init.headers.get('x-organization-id'), null);
+    return Response.json({ items: [], total: 0 });
+  };
+  for (const route of [
+    `products/${product.id}/shared-dossiers`,
+    `products/${product.id}/dossiers/fixture/matches`,
+    `products/${product.id}/dossiers/fixture/assignees`,
+  ]) {
+    const response = await proxy(
+      new Request(`https://product.test/api/${route}`, {
+        headers: {
+          cookie: 'helvetic_lens_session=guest; other=drop',
+          'x-organization-id': 'forged',
+        },
+      }),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  for (const route of [
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/shared-dossiers`,
+    `products/${product.id}/shared-dossiers/forged`,
+  ]) {
+    assert.equal(
+      (
+        await proxy(
+          new Request(`https://product.test/api/${route}`),
+          context(route),
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(calls, 3);
+});

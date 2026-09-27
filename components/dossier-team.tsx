@@ -1,6 +1,5 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { Users } from 'lucide-react';
 import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
@@ -13,6 +12,7 @@ import type {
   TeamMember,
 } from '@/lib/dossier-team';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   NativeSelect,
   NativeSelectOption,
@@ -26,7 +26,9 @@ export function TeamAudience({ access }: { access: DossierAccess }) {
       <p>{audienceDescription(access.audience)}</p>
       <p className="source-meta">
         Your role: {access.role ? ROLES[access.role] : 'No access'}. Invitations
-        apply to this dossier in the current workspace.
+        apply only to this dossier.{' '}
+        {access.is_guest &&
+          'Guest access keeps your own workspace unchanged; monitoring setup stays with the host workspace.'}
       </p>
     </div>
   );
@@ -88,6 +90,7 @@ function MemberRow({
         </strong>
         <p className="source-meta">
           {member.active ? ROLES[member.role] : 'Inactive account'}
+          {member.is_guest ? ' · Guest' : ''}
         </p>
       </div>
       {canManage ? (
@@ -98,11 +101,13 @@ function MemberRow({
             onChange={(e) => setRole(e.target.value as DossierRole)}
             disabled={busy}
           >
-            {Object.entries(ROLES).map(([key, label]) => (
-              <NativeSelectOption key={key} value={key}>
-                {label}
-              </NativeSelectOption>
-            ))}
+            {Object.entries(ROLES)
+              .filter(([key]) => !member.is_guest || key !== 'OWNER')
+              .map(([key, label]) => (
+                <NativeSelectOption key={key} value={key}>
+                  {label}
+                </NativeSelectOption>
+              ))}
           </NativeSelect>
           <Button
             variant="outline"
@@ -144,6 +149,8 @@ export function DossierTeamPanel({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [recipient, setRecipient] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [inviteKind, setInviteKind] = useState<'workspace' | 'guest'>('guest');
   const [role, setRole] = useState<DossierInvitation['role']>('CONTRIBUTOR');
   const pending = useRef<{ fingerprint: string; key: string } | null>(null);
   const generation = useRef({ value: 0 });
@@ -216,8 +223,9 @@ export function DossierTeamPanel({
   }
   async function invite(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!team?.can_manage || !recipient || busy) return;
-    const fingerprint = `${recipient}:${role}`;
+    const selected = inviteKind === 'guest' ? guestEmail.trim() : recipient;
+    if (!team?.can_manage || !selected || busy) return;
+    const fingerprint = `${inviteKind}:${selected}:${role}`;
     if (pending.current?.fingerprint !== fingerprint)
       pending.current = { fingerprint, key: uid() };
     setBusy(true);
@@ -227,13 +235,16 @@ export function DossierTeamPanel({
     try {
       await api(base + '/invitations', {
         request_key: pending.current.key,
-        user_id: recipient,
+        ...(inviteKind === 'guest'
+          ? { email: selected }
+          : { user_id: selected }),
         role,
         expected_revision: team.revision,
       });
       if (attempt !== generation.current.value) return;
       pending.current = null;
       setRecipient('');
+      setGuestEmail('');
       await load();
       await onChanged();
       setNotice(
@@ -304,31 +315,72 @@ export function DossierTeamPanel({
                 In a private dossier, removing a role removes future access. In
                 a workspace dossier, inherited workspace access remains.
               </p>
+              <div className="team-invite-kind">
+                <label htmlFor={`team-invite-kind-${dossierId}`}>
+                  Invitation access
+                </label>
+                <NativeSelect
+                  id={`team-invite-kind-${dossierId}`}
+                  value={inviteKind}
+                  disabled={busy}
+                  onChange={(e) =>
+                    setInviteKind(e.target.value as 'workspace' | 'guest')
+                  }
+                >
+                  <NativeSelectOption value="guest">
+                    Guest — this dossier only
+                  </NativeSelectOption>
+                  <NativeSelectOption value="workspace">
+                    Existing workspace colleague
+                  </NativeSelectOption>
+                </NativeSelect>
+              </div>
               <form className="team-invite" onSubmit={invite}>
-                <div>
-                  <label htmlFor={`team-colleague-${dossierId}`}>
-                    Invite a workspace colleague
-                  </label>
-                  <NativeSelect
-                    id={`team-colleague-${dossierId}`}
-                    required
-                    value={recipient}
-                    disabled={busy}
-                    onChange={(e) => setRecipient(e.target.value)}
-                  >
-                    <NativeSelectOption value="">
-                      Choose a colleague
-                    </NativeSelectOption>
-                    {team.colleagues.map((person) => (
-                      <NativeSelectOption
-                        key={person.user_id}
-                        value={person.user_id}
+                {inviteKind === 'guest' ? (
+                  <div>
+                    <label htmlFor={`team-guest-${dossierId}`}>
+                      Guest email address
+                    </label>
+                    <Input
+                      id={`team-guest-${dossierId}`}
+                      type="email"
+                      maxLength={320}
+                      required
+                      autoComplete="off"
+                      value={guestEmail}
+                      disabled={busy}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      placeholder="colleague@example.org"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label htmlFor={`team-colleague-${dossierId}`}>
+                        Invite a workspace colleague
+                      </label>
+                      <NativeSelect
+                        id={`team-colleague-${dossierId}`}
+                        required
+                        value={recipient}
+                        disabled={busy}
+                        onChange={(e) => setRecipient(e.target.value)}
                       >
-                        {person.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </div>
+                        <NativeSelectOption value="">
+                          Choose a colleague
+                        </NativeSelectOption>
+                        {team.colleagues.map((person) => (
+                          <NativeSelectOption
+                            key={person.user_id}
+                            value={person.user_id}
+                          >
+                            {person.name}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                  </>
+                )}
                 <div>
                   <label htmlFor={`team-invite-role-${dossierId}`}>
                     Dossier role
@@ -350,14 +402,23 @@ export function DossierTeamPanel({
                     )}
                   </NativeSelect>
                 </div>
-                <Button type="submit" disabled={busy || !recipient}>
+                <Button
+                  type="submit"
+                  disabled={
+                    busy ||
+                    !(inviteKind === 'guest' ? guestEmail.trim() : recipient)
+                  }
+                >
                   Create invitation
                 </Button>
               </form>
               <p className="source-meta">
                 Invitations expire after seven days and work only for the
-                selected account. People outside this workspace must first join
-                through <Link href="/?view=team">Workspace team</Link>.
+                selected account. Guests must already have an account with a
+                verified email address. They accept explicitly and gain no
+                access to other dossiers or workspace settings. Guests cannot
+                become owners. No email is sent; copy the invitation link to
+                share it.
               </p>
               {!!team.invitations.length && (
                 <ul className="team-people" aria-label="Pending invitations">
@@ -366,7 +427,9 @@ export function DossierTeamPanel({
                       <div>
                         <strong>{item.recipient_name}</strong>
                         <p className="source-meta">
-                          {ROLES[item.role]} · expires {date(item.expires_at)}
+                          {ROLES[item.role]}
+                          {item.is_guest ? ' · Guest' : ''} · expires{' '}
+                          {date(item.expires_at)}
                         </p>
                       </div>
                       <div className="team-person-actions">

@@ -131,7 +131,9 @@ export function ActionDialog({
     });
   useEffect(() => {
     let live = true;
-    void api<Member[]>('/organization/members')
+    void api<Member[]>(
+      `/products/${product.id}/dossiers/${dossierId}/assignees`,
+    )
       .then((x) => {
         if (live) setMembers(x);
       })
@@ -141,7 +143,7 @@ export function ActionDialog({
     return () => {
       live = false;
     };
-  }, []);
+  }, [dossierId]);
   async function save() {
     const shared = {
       title: form.title,

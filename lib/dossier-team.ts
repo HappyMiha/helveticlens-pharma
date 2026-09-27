@@ -1,6 +1,8 @@
 export type DossierRole = 'OWNER' | 'EDITOR' | 'CONTRIBUTOR' | 'VIEWER';
 export type DossierAccess = {
   managed: boolean;
+  is_guest?: boolean;
+  can_configure?: boolean;
   revision: number;
   role: DossierRole | null;
   audience: 'author' | 'invited_team' | 'team' | 'workspace';
@@ -15,6 +17,7 @@ export type DossierAccess = {
 };
 export type TeamMember = {
   user_id: string;
+  is_guest?: boolean;
   name: string;
   role: DossierRole;
   active: boolean;
@@ -22,6 +25,7 @@ export type TeamMember = {
 };
 export type DossierInvitation = {
   id: string;
+  is_guest?: boolean;
   role: Exclude<DossierRole, 'OWNER'>;
   recipient_name: string;
   recipient_user_id: string;
@@ -47,5 +51,5 @@ export function audienceDescription(audience: DossierAccess['audience']) {
       ? 'Only accepted dossier members can read this dossier, its monitoring topics and matched evidence. Removing a role removes future access.'
       : audience === 'invited_team'
         ? 'Only the accepted dossier team can read this draft. At activation, choose team-only monitoring or explicitly share with the workspace.'
-        : 'Only the creator can read this draft. Enable team management to invite workspace colleagues.';
+        : 'Only the creator can read this draft. Enable team management to invite colleagues or guests to this dossier.';
 }

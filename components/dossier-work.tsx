@@ -80,7 +80,9 @@ export function DossierWork({
     data: membersData,
     error: memberError,
     refresh: loadMembers,
-  } = useResource<Member[]>('/organization/members');
+  } = useResource<Member[]>(
+    `/products/${product.id}/dossiers/${dossier.id}/assignees`,
+  );
   const members = membersData || [],
     failure = actionError || memberError;
   async function saved() {

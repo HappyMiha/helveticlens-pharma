@@ -1,5 +1,6 @@
 'use client';
 import { DossierInvitationInbox } from './dossier-team';
+import { SharedDossiers } from './shared-dossiers';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -11,7 +12,6 @@ import {
   BookOpen,
   Check,
   ChevronRight,
-  Cross,
   FolderOpen,
   Globe,
   LoaderCircle,
@@ -19,7 +19,6 @@ import {
   LogOut,
   Plus,
   RefreshCw,
-  Scale,
   Search,
   ShieldCheck,
   Sparkles,
@@ -81,14 +80,15 @@ export const emptyConfig = (): ProfileConfig => ({
   delivery_consent: false,
 });
 export function Brand() {
-  const Icon = product.id === 'pharma' ? Cross : Scale;
   return (
     <span className="brand">
       <span className="brandmark">
-        <Icon size={20} />
+        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+          <path fill="currentColor" d="M3 3h5v9h12V3h5v22h-5v-9H8v9H3z" />
+        </svg>
       </span>
       <span>
-        <b>HelveticLens</b>
+        <b>Helvetic Lens</b>
         <small>{product.name}</small>
       </span>
     </span>
@@ -619,6 +619,13 @@ export default function Workspace() {
                     await refresh();
                     await openDossier(id);
                   }}
+                />
+              )}
+              {identity && (view === 'research' || view === 'dossiers') && (
+                <SharedDossiers
+                  key={`${identity.user.id}:${identity.organization.id}`}
+                  refreshToken={refreshToken}
+                  onOpen={openDossier}
                 />
               )}
               {view === 'research' && (
