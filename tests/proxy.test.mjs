@@ -390,3 +390,48 @@ test('research preview and reviewed generation preserve private input identity w
   );
   assert.equal(calls.length, 2);
 });
+
+test('saved document readers retain scoped cursors, revision conflicts and private caching', async () => {
+  const root = `products/${product.id}/dossiers/topic/documents/page/versions`;
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: new URL(url), init });
+    return Response.json(
+      { detail: 'Saved revision changed.' },
+      { status: 409 },
+    );
+  };
+  for (const [path, query] of [
+    [root, '?cursor=cutoff%2B%2F%3D'],
+    [`${root}/saved`, '?offset=16000&expected_revision=7'],
+  ]) {
+    const response = await proxy(
+      new Request(`https://product.test/api/${path}${query}`, {
+        headers: { cookie: 'helvetic_lens_session=private; unrelated=secret' },
+      }),
+      context(path),
+    );
+    assert.equal(response.status, 409);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+    assert.match((await response.json()).detail, /revision changed/);
+  }
+  assert.equal(calls[0].url.searchParams.get('cursor'), 'cutoff+/=');
+  assert.equal(calls[1].url.searchParams.get('expected_revision'), '7');
+  assert.equal(calls[1].url.searchParams.get('offset'), '16000');
+  assert.equal(
+    calls[1].init.headers.get('cookie'),
+    'helvetic_lens_session=private',
+  );
+  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const denied = root.replace(`products/${product.id}/`, `products/${other}/`);
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${denied}`),
+        context(denied),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(calls.length, 2);
+});

@@ -1,5 +1,50 @@
 import type { LucideIcon } from 'lucide-react';
 export type Localized = Record<string, string>;
+export interface SavedPageVersion {
+  id: string;
+  title: string;
+  evidence_revision: number;
+  content_hash: string;
+  content_type: string;
+  filename: string;
+  source_url: string | null;
+  origin: string;
+  synthetic: boolean;
+  declared_date: string | null;
+  date_provenance: string | null;
+  created_at: string;
+  characters: number;
+  passage_count: number;
+  selection_provenance: {
+    scope: string | null;
+    official_version_date: string | null;
+    articles: { number: string; heading: string }[];
+  };
+}
+export interface DocumentHistory {
+  document: { id: string; name: string; url: string };
+  items: SavedPageVersion[];
+  total: number;
+  as_of: string;
+  limit: number;
+  first_cursor: string;
+  next_cursor: string | null;
+}
+export interface SavedPage extends SavedPageVersion {
+  document: DocumentHistory['document'];
+  language: string | null;
+  passages: { id: string | null; text: string; page: number | null }[];
+  omitted_passages: number;
+  plain_text: string | null;
+  pagination: {
+    offset: number;
+    end: number;
+    total: number;
+    mode: 'text' | 'passages';
+    next_offset: number | null;
+    previous_offset: number | null;
+  };
+}
 export interface Identity {
   authenticated: boolean;
   role: 'organization_admin' | 'viewer';

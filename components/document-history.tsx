@@ -1,0 +1,397 @@
+'use client';
+
+import { useState } from 'react';
+import { ArrowLeft, ArrowUpRight, BookOpen, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { date } from '@/lib/api';
+import { product } from '@/lib/product';
+import { useResource } from '@/lib/use-resource';
+import {
+  adjacentSnapshot,
+  historyPath,
+  newerHistory,
+  olderHistory,
+  snapshotPath,
+} from '@/lib/document-history';
+import type { HistoryPosition, PagePosition } from '@/lib/document-history';
+import type {
+  DocumentHistory as History,
+  SavedPage,
+  SavedPageVersion,
+} from '@/lib/contracts';
+
+function sourceUrl(value: string | null) {
+  try {
+    return value && ['https:', 'http:'].includes(new URL(value).protocol)
+      ? value
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function Provenance({ version }: { version: SavedPageVersion }) {
+  const scope = version.selection_provenance;
+  return (
+    <div className="snapshot-provenance">
+      <p>
+        Saved {date(version.created_at)} ·{' '}
+        {version.origin === 'live'
+          ? 'Page capture'
+          : `Origin: ${version.origin || 'not recorded'}`}{' '}
+        · revision {version.evidence_revision}
+      </p>
+      <p>
+        Declared document date: {version.declared_date || 'Not recorded'}
+        {version.date_provenance ? ` (${version.date_provenance})` : ''}
+      </p>
+      {version.synthetic && (
+        <p className="source-health-warning">
+          <b>Synthetic saved version.</b> This is not a verified live-source
+          capture.
+        </p>
+      )}
+      {(scope.scope ||
+        scope.official_version_date ||
+        scope.articles.length > 0) && (
+        <details className="snapshot-scope">
+          <summary>
+            Saved selection ·{' '}
+            {scope.scope || `${scope.articles.length} selected articles`}
+          </summary>
+          <p>
+            This capture may cover only selected parts of the source. Official
+            version date: {scope.official_version_date || 'Not recorded'}.
+          </p>
+          {scope.articles.map((article, i) => (
+            <p key={`${article.number}:${i}`}>
+              Art. {article.number} · {article.heading}
+            </p>
+          ))}
+        </details>
+      )}
+    </div>
+  );
+}
+
+function HistoryList({
+  root,
+  position,
+  onMove,
+  onRead,
+  onReset,
+}: {
+  root: string;
+  position: HistoryPosition;
+  onMove: (position: HistoryPosition) => void;
+  onRead: (version: SavedPageVersion, firstCursor: string) => void;
+  onReset: () => void;
+}) {
+  const { data, error, loading, refresh } = useResource<History>(
+    historyPath(root, position.cursor),
+  );
+  const [retrying, setRetrying] = useState(false);
+  async function retry() {
+    setRetrying(true);
+    try {
+      await refresh();
+    } finally {
+      setRetrying(false);
+    }
+  }
+  return (
+    <>
+      <div className="snapshot-actions">
+        <Button variant="outline" onClick={onReset}>
+          <RefreshCw size={15} /> Refresh history
+        </Button>
+      </div>
+      {loading && <output>Loading saved versions…</output>}
+      {error && (
+        <div className="banner error" role="alert">
+          <span>{error}</span>
+          <Button
+            variant="outline"
+            disabled={retrying}
+            onClick={() => void retry()}
+          >
+            Retry history
+          </Button>
+        </div>
+      )}
+      {!error && data && (
+        <>
+          <p className="muted">
+            {data.total.toLocaleString()} saved versions · saved by{' '}
+            {date(data.as_of)}. Refresh to include newer saves. Later
+            corrections or backdated imports can change this list.
+          </p>
+          {!data.items.length && (
+            <p className="work-empty">
+              No saved versions are available on this page. Refresh history to
+              check the current list.
+            </p>
+          )}
+          <div className="snapshot-history-list">
+            {data.items.map((version) => (
+              <article key={version.id}>
+                <h3>{version.title || data.document.name}</h3>
+                <Provenance version={version} />
+                <p className="muted">
+                  {version.characters.toLocaleString()} characters ·{' '}
+                  {version.passage_count.toLocaleString()} text passages ·{' '}
+                  {version.content_type}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => onRead(version, data.first_cursor)}
+                >
+                  <BookOpen size={15} /> Read saved text
+                </Button>
+              </article>
+            ))}
+          </div>
+          <nav className="snapshot-actions" aria-label="Saved version history">
+            <Button
+              variant="outline"
+              disabled={!position.previous.length}
+              onClick={() => {
+                const next = newerHistory(position);
+                if (next) onMove(next);
+              }}
+            >
+              Newer versions
+            </Button>
+            <span className="muted">Page {position.previous.length + 1}</span>
+            <Button
+              variant="outline"
+              disabled={!data.next_cursor}
+              onClick={() => {
+                const next = olderHistory(position, data);
+                if (next) onMove(next);
+              }}
+            >
+              Older versions
+            </Button>
+          </nav>
+        </>
+      )}
+    </>
+  );
+}
+
+function SnapshotReader({
+  root,
+  position,
+  onMove,
+  onReload,
+}: {
+  root: string;
+  position: PagePosition;
+  onMove: (position: PagePosition) => void;
+  onReload: () => void;
+}) {
+  const { data, error, loading, refresh } = useResource<SavedPage>(
+    snapshotPath(root, position),
+  );
+  const [retrying, setRetrying] = useState(false);
+  async function retry() {
+    setRetrying(true);
+    try {
+      await refresh();
+    } finally {
+      setRetrying(false);
+    }
+  }
+  const original = sourceUrl(data?.source_url || data?.document.url || null);
+  return (
+    <>
+      <div className="snapshot-actions">
+        <Button variant="outline" onClick={onReload}>
+          <RefreshCw size={15} /> Reload current revision from start
+        </Button>
+      </div>
+      {loading && <output>Loading saved text…</output>}
+      {error && (
+        <div className="banner error" role="alert">
+          <span>{error}</span>
+          <Button
+            variant="outline"
+            disabled={retrying}
+            onClick={() => void retry()}
+          >
+            Retry this page
+          </Button>
+        </div>
+      )}
+      {!error && data && (
+        <>
+          <h3>{data.title || data.document.name}</h3>
+          <Provenance version={data} />
+          <p className="muted">
+            {data.language ? `Language: ${data.language} · ` : ''}
+            {data.content_type}. This is saved extracted text; the original page
+            may have changed.
+          </p>
+          {original && (
+            <a
+              className="source-link break-url"
+              href={original}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open original source <ArrowUpRight size={14} />
+            </a>
+          )}
+          <div className="snapshot-page-label">
+            {data.pagination.total > 0 ? (
+              <span>
+                {data.pagination.mode === 'text' ? 'Characters' : 'Passages'}{' '}
+                {(data.pagination.offset + 1).toLocaleString()}–
+                {data.pagination.end.toLocaleString()} of{' '}
+                {data.pagination.total.toLocaleString()}
+              </span>
+            ) : (
+              <span>No extracted text is saved for this version.</span>
+            )}
+          </div>
+          {data.omitted_passages > 0 && (
+            <p className="source-health-warning">
+              {data.omitted_passages} passage records on this page contain no
+              readable text. Their positions remain included in the total.
+            </p>
+          )}
+          {data.pagination.mode === 'text' ? (
+            <div className="snapshot-text">{data.plain_text}</div>
+          ) : (
+            <div className="snapshot-passages">
+              {data.passages.map((part, i) => (
+                <section key={`${part.id}:${i}`}>
+                  <p className="muted">
+                    {part.id || 'Saved passage'}
+                    {part.page ? ` · source page ${part.page}` : ''}
+                  </p>
+                  <div className="snapshot-text">
+                    {part.text || 'This passage has no extracted text.'}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+          <nav className="snapshot-actions" aria-label="Saved text pages">
+            <Button
+              variant="outline"
+              disabled={data.pagination.previous_offset === null}
+              onClick={() => {
+                const next = adjacentSnapshot(data, 'previous');
+                if (next) onMove(next);
+              }}
+            >
+              Previous text
+            </Button>
+            <Button
+              variant="outline"
+              disabled={data.pagination.next_offset === null}
+              onClick={() => {
+                const next = adjacentSnapshot(data, 'next');
+                if (next) onMove(next);
+              }}
+            >
+              Next text
+            </Button>
+          </nav>
+        </>
+      )}
+    </>
+  );
+}
+
+export function DocumentHistory({
+  dossierId,
+  documentId,
+  name,
+  onClose,
+}: {
+  dossierId: string;
+  documentId: string;
+  name: string;
+  onClose: () => void;
+}) {
+  const root = `/products/${product.id}/dossiers/${encodeURIComponent(dossierId)}/documents/${encodeURIComponent(documentId)}/versions`;
+  const [position, setPosition] = useState<HistoryPosition>({
+    cursor: '',
+    previous: [],
+  });
+  const [page, setPage] = useState<PagePosition | null>(null);
+  const [generation, setGeneration] = useState(0);
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="snapshot-dialog">
+        <DialogHeader>
+          <DialogTitle>
+            {page ? 'Saved source text' : 'Saved source history'}
+          </DialogTitle>
+          <DialogDescription>
+            {name}. Inspect captured evidence without starting a new source
+            check.
+          </DialogDescription>
+        </DialogHeader>
+        {page ? (
+          <>
+            <Button
+              className="snapshot-back"
+              variant="ghost"
+              onClick={() => setPage(null)}
+            >
+              <ArrowLeft size={15} /> Back to saved versions
+            </Button>
+            <SnapshotReader
+              key={`${page.id}:${page.offset}:${page.revision}:${generation}`}
+              root={root}
+              position={page}
+              onMove={setPage}
+              onReload={() => {
+                setPage({ id: page.id, offset: 0 });
+                setGeneration((n) => n + 1);
+              }}
+            />
+          </>
+        ) : (
+          <HistoryList
+            key={`${position.cursor}:${generation}`}
+            root={root}
+            position={position}
+            onMove={setPosition}
+            onRead={(version, cursor) => {
+              setPosition((current) => ({
+                ...current,
+                cursor: current.cursor || cursor,
+              }));
+              setPage({
+                id: version.id,
+                offset: 0,
+                revision: version.evidence_revision,
+              });
+            }}
+            onReset={() => {
+              setPosition({ cursor: '', previous: [] });
+              setGeneration((n) => n + 1);
+            }}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

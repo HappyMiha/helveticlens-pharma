@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   ArrowUpRight,
   Clock3,
@@ -12,8 +13,10 @@ import { Button } from '@/components/ui/button';
 import type { DocumentWatch, Run } from '@/lib/contracts';
 import { api, date } from '@/lib/api';
 import { pageWatchResult, pageWatchStatus } from '@/lib/page-watch';
+import { DocumentHistory } from './document-history';
 
 export function PageWatches({
+  dossierId,
   documents,
   canEdit,
   busy,
@@ -21,6 +24,7 @@ export function PageWatches({
   reload,
   notify,
 }: {
+  dossierId: string;
   documents: DocumentWatch[];
   canEdit: boolean;
   busy: string;
@@ -28,6 +32,7 @@ export function PageWatches({
   reload: () => Promise<void>;
   notify: (message: string) => void;
 }) {
+  const [reading, setReading] = useState<DocumentWatch | null>(null);
   async function settings(
     watch: DocumentWatch,
     values: { active?: boolean; auto_check_enabled?: boolean },
@@ -151,6 +156,9 @@ export function PageWatches({
               )}
             </div>
             <div className="watch-actions">
+              <Button variant="outline" onClick={() => setReading(watch)}>
+                Read saved versions
+              </Button>
               <Button
                 variant="outline"
                 disabled={!canEdit || !!busy || !state.canCheck}
@@ -226,6 +234,14 @@ export function PageWatches({
           No individual page watches connected. Scheduled source collections
           continue through the selected topics.
         </p>
+      )}
+      {reading && (
+        <DocumentHistory
+          dossierId={dossierId}
+          documentId={reading.id}
+          name={reading.name}
+          onClose={() => setReading(null)}
+        />
       )}
     </section>
   );

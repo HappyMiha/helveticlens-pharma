@@ -450,6 +450,7 @@ export function Dossier({
             </div>
           )}
           <PageWatches
+            dossierId={d.id}
             documents={d.documents}
             canEdit={canEdit}
             busy={busy}
