@@ -169,6 +169,7 @@ export default function Guide() {
             <section id="evidence" aria-labelledby="evidence-title">
               <span className="guide-step">05 / EVIDENCE</span>
               <h2 id="evidence-title">Review an AI research note.</h2>
+              <p>To share your findings with everyone, open the dossier’s <strong>Public version</strong> tab. Write a separate public title, summary, text and source links, preview the exact version and confirm publication. Read published versions at <Link href="/public-dossiers">Public dossiers</Link> without an account. Changes need a new preview; withdrawing removes the public version here. Private files and discussions stay in the workspace. Public replies are not available yet.</p>
               <p>
                 Review saved-source decisions with a reason: include a URL for
                 new AI research, exclude it or return it to unreviewed. Source

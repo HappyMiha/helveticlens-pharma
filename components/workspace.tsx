@@ -473,6 +473,7 @@ export default function Workspace() {
             ))}
           </nav>
           <div className="sidebar-note">
+            <Link href="/public-dossiers">Public dossiers <Globe size={14} /></Link>
             <div className="mini-cross">+</div>
             <p>{product.description}</p>
             <a href="/guide" target="_blank" rel="noreferrer">
@@ -553,6 +554,7 @@ export default function Workspace() {
             </b>
           </div>
           <div className="header-actions">
+            <Link href="/public-dossiers">Public dossiers</Link>
             <span className="private-note">
               <LockKeyhole size={13} />
               Private by workspace

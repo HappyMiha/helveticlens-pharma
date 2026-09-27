@@ -1,5 +1,11 @@
 # Changes
 
+## 1.3.0 — Public dossier publication
+
+Authors can prepare a separate public version of a private dossier, preview its exact text and source links, then explicitly publish it. Anonymous readers can search the public catalogue and open permanent server-rendered pages. Updates require a new preview; withdrawal immediately removes the version from application reads. Revisions and publication consent are retained in the private audit. Existing files, client context, discussions and monitoring settings remain private.
+
+Publication has revision-conflict protection and retry identity. This cycle adds no public replies, subscription emails, automatic publication, external web provider or semantic ranking. Exact production activation is recorded separately in the shared release evidence.
+
 ## 1.2.0 — 27 September 2026
 
 This release develops the professional monitoring loop around a shared question: discover sources, inspect evidence, develop an answer together and return to it when the underlying material changes. The product guide at `/guide` explains the complete workflow and common recovery paths using this product's own subject and examples.

@@ -44,6 +44,7 @@ import { Discussion } from './discussion';
 import { DossierWork } from './dossier-work';
 import { ActionDialog } from './action-dialog';
 import { PageWatches } from './page-watches';
+import { PublicationEditor } from './publication-editor';
 
 export function Dossier({
   dossier: d,
@@ -195,6 +196,7 @@ export function Dossier({
               ['notes', `Notes · ${notes.length}`, MessageSquare],
               ['files', `Files · ${files.length}`, FileText],
               ['learning', 'Improve monitoring', Sparkles],
+              ['publication', 'Public version', Globe],
             ] as NavigationItem[]
           ).map(([value, label, Icon]) => (
             <TabsTrigger value={value} key={value}>
@@ -229,6 +231,9 @@ export function Dossier({
             reload={refreshed}
             notify={notify}
           />
+        </TabsContent>
+        <TabsContent value="publication">
+          <PublicationEditor key={d.id} dossierId={d.id} canEdit={canEdit} />
         </TabsContent>
         <TabsContent value="overview">
           <div className="detail-columns">

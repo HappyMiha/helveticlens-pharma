@@ -31,6 +31,20 @@ function context(path) {
   return { params: Promise.resolve({ path: path.split('/') }) };
 }
 
+test('public catalogue and reader are bounded to this product', async () => {
+  let called = 0;
+  globalThis.fetch = async () => { called++; return Response.json({ items: [], total: 0 }); };
+  for (const route of [`products/${product.id}/public-dossiers`, `products/${product.id}/public-dossiers/11111111-1111-1111-1111-111111111111`]) {
+    const result = await proxy(new Request('https://product.test/api/' + route), context(route));
+    assert.equal(result.status, 200);
+    assert.equal(result.headers.get('cache-control'), 'private, no-store');
+  }
+  for (const route of ['products/other/public-dossiers', `products/${product.id}/public-dossiers/private/export`]) {
+    assert.equal((await proxy(new Request('https://product.test/api/' + route), context(route))).status, 404);
+  }
+  assert.equal(called, 2);
+});
+
 test('forwards only platform cookies and preserves session cookie separation', async () => {
   globalThis.fetch = async (url, init) => {
     assert.equal(new URL(url).origin, 'https://helveticlens.ch');
