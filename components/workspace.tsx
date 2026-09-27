@@ -475,6 +475,9 @@ export default function Workspace() {
           <div className="sidebar-note">
             <div className="mini-cross">+</div>
             <p>{product.description}</p>
+            <a href="/guide" target="_blank" rel="noreferrer">
+              Product guide <ArrowUpRight size={14} />
+            </a>
             <a href="https://helveticlens.ch" target="_blank" rel="noreferrer">
               Open full platform <ArrowUpRight size={14} />
             </a>

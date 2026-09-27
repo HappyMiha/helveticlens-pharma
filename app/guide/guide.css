@@ -1,0 +1,213 @@
+.guide-shell {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.guide-header,
+.guide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 28px 0;
+}
+.guide-header {
+  border-bottom: 1px solid var(--border);
+}
+.guide-shell a {
+  color: var(--primary);
+  text-underline-offset: 4px;
+}
+.guide-shell a:hover {
+  text-decoration: underline;
+}
+.guide-shell a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 5px;
+  border-radius: 3px;
+}
+.guide-header a,
+.guide-footer a,
+.guide-contents > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.guide-header .guide-brand {
+  color: var(--foreground);
+  font-weight: 650;
+  font-size: 1.1rem;
+  letter-spacing: -0.025em;
+}
+.guide-brand span {
+  color: var(--primary);
+}
+.guide-hero {
+  padding: 72px 0 52px;
+  max-width: 860px;
+}
+.guide-eyebrow {
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.guide-hero h1 {
+  font-size: clamp(2.3rem, 5vw, 4.1rem);
+  letter-spacing: -0.05em;
+  line-height: 1.07;
+  margin: 22px 0;
+  font-weight: 620;
+}
+.guide-hero > p {
+  max-width: 710px;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+.guide-summary {
+  margin-top: 28px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.guide-summary svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--primary);
+}
+.guide-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+.guide-contents {
+  position: sticky;
+  top: 24px;
+  padding: 22px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.guide-contents b {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+.guide-contents ol {
+  padding-left: 20px;
+  list-style: decimal;
+  margin: 18px 0 24px;
+}
+.guide-contents li {
+  margin: 10px 0;
+  padding-left: 4px;
+}
+.guide-contents li a {
+  color: var(--foreground);
+}
+.guide-chapters section {
+  border-top: 1px solid var(--border);
+  padding: 26px 0 36px;
+  scroll-margin-top: 24px;
+}
+.guide-step {
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+.guide-chapters h2 {
+  font-size: 1.7rem;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  font-weight: 600;
+  margin: 12px 0 20px;
+}
+.guide-chapters p,
+.guide-chapters dd {
+  font-size: 0.95rem;
+  line-height: 1.85;
+  margin: 14px 0;
+}
+.guide-chapters blockquote {
+  margin: 24px 0;
+  border-left: 3px solid var(--primary);
+  padding: 14px 20px;
+  background: var(--secondary);
+  border-radius: 0 6px 6px 0;
+}
+.guide-chapters blockquote b {
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+.guide-chapters blockquote p {
+  margin: 8px 0;
+}
+.guide-chapters aside {
+  padding: 16px 18px;
+  background: var(--secondary);
+  border-radius: 6px;
+  font-size: 0.83rem;
+  line-height: 1.75;
+  margin: 20px 0 0;
+}
+.guide-recovery > div + div {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+.guide-recovery dt {
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+.guide-recovery dd {
+  color: var(--muted-foreground);
+  margin-bottom: 22px;
+}
+.guide-footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin-top: 30px;
+}
+@media (max-width: 820px) {
+  .guide-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .guide-contents {
+    position: static;
+  }
+  .guide-contents ol {
+    columns: 2;
+    column-gap: 28px;
+  }
+  .guide-contents li {
+    break-inside: avoid;
+  }
+}
+@media (max-width: 520px) {
+  .guide-shell {
+    padding: 0 20px;
+  }
+  .guide-header {
+    font-size: 0.8rem;
+  }
+  .guide-hero {
+    padding-top: 44px;
+  }
+  .guide-contents ol {
+    columns: 1;
+  }
+  .guide-chapters h2 {
+    font-size: 1.5rem;
+  }
+}
