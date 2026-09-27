@@ -1,5 +1,9 @@
 # Changes
 
+## 1.6.0 — Federated semantic discovery
+
+Public-query web discovery now combines Google, Bing and, in Pharma, Europe PMC. Jev and pinned local multilingual Laya share a validated decision interface; automatic failure fallback and explicit comparison use the same retrieved candidates. Hybrid semantic/BM25/index ranking, measured latency, honest usage/cost fields and private relevance-label evaluation make ordering inspectable. Bounded source reading finds relevant passages and outgoing links for further research. Private saved results, replay identity, explicit disclosure, source provenance, account erasure and quotas protect the complete journey. Jev needs funded TypeSafe access; unavailable providers are shown, not simulated. Production activation is recorded separately.
+
 ## 1.5.0 — Personal following and private working copies
 
 Personal following now has a private paginated library, public-change markers, explicit acknowledgement and withdrawal/deletion handling. Reviewed private reuse creates a native author-private draft with the complete public snapshot, attribution, source links and origin preserved. Exact signed previews, current membership, CSRF, revisions and durable retry tombstones protect the operation. No monitoring, fetching, publication or email starts implicitly. Exact production activation is verified separately.

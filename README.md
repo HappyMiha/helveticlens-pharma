@@ -6,7 +6,7 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.3.1 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.6.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 
@@ -55,16 +55,49 @@ rights remain with their owners. Native setup and delivery consent still apply.
 Signed previews expire after 30 minutes and bind exact content, user, workspace
 and session. Durable retry receipts prevent duplicate drafts, including retries
 after deletion. Account erasure removes personal follows and reuse receipts.
-Open-web discovery, multilingual semantic retrieval and new recurring search/delivery
-remain separate cycles. Production activation requires the exact release receipts.
+Open-web discovery and multilingual decision ranking are described below. New recurring
+query monitoring and semantic workspace indexing remain separate cycles.
 
 ## Public discussion
 
-Each published dossier has an anonymous reader and public contribution stream. Current native account members, including workspace viewers, can publish personal contributions after reviewing their display name, text and HTTPS links. Authors edit/remove their own work; dossier administrators moderate visibility with reasons. Hidden text is visible only to its author and the dossier administrators. Existing private workspace permissions are unchanged. Public following and private reuse are described below. Open-web/semantic discovery remains a subsequent direction.
+Each published dossier has an anonymous reader and public contribution stream. Current native account members, including workspace viewers, can publish personal contributions after reviewing their display name, text and HTTPS links. Authors edit/remove their own work; dossier administrators moderate visibility with reasons. Hidden text is visible only to its author and the dossier administrators. Existing private workspace permissions are unchanged. Public following and private reuse are described below. Open-web semantic discovery is described below; public reading does not submit a query.
+
+## Open-web semantic discovery
+
+Use **Open web · Jev + Laya** in Find sources. Review a public query, choose
+Quick (8 candidates), Broad (24) or Deep (36), and confirm disclosure before
+searching. Google and Bing provide independent web results; Pharma also includes
+Europe PMC literature in Broad/Deep modes. A multilingual Laya decision model or
+hosted Jev judges query–source relevance. Reciprocal-rank fusion combines that
+ranking with BM25 exact-term matching and the search indexes. This discovers
+sources beyond the scheduled Swiss catalogue; it is bounded retrieval, not a
+complete index of the internet or semantic search of private workspace files.
+
+Auto uses Jev when configured and falls back to local Laya on provider failure.
+Compare ranks the same candidates with both configured engines. Decision latency,
+model identity, available token usage, cost estimates and confidence remain
+inspectable. Relevance labels produce agreement/accuracy and Brier score on your
+reviewed sample; unreviewed accuracy and unavailable cost stay unknown. Laya mode
+keeps decisions local but still sends the explicit query to remote search indexes.
+Provider credentials belong to the shared core, never the client.
+
+The last 50 searches per account/product/workspace remain private. Reopening a
+result does not repeat paid retrieval or renew its 30-minute source-import window.
+Searches and labels are removed with account erasure. The platform defaults to
+25 searches/day across all accounts; unavailable credits or engines are visible.
+Jev activation requires a funded TypeSafe account; a configured adapter alone is
+not proof of live availability.
+
+**Read public source** explicitly fetches up to three results per search, respects
+robots and access restrictions, and shows up to three extracted passages with
+capture time/hash and up to 20 outgoing links. Following a topic link prepares an
+editable new query. Links are not certified citations, and relevant snippets are
+not factual verification. Saving a source uses the existing signed provenance
+and review workflow; creating a monitor still requires the normal setup steps.
 
 ## Architecture
 
-This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f7c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
+This repository owns the product interface and a bounded, same-origin API gateway. The Apache-2.0 [HelveticLens platform](https://github.com/HappyMiha/helvetic-lens) owns identity, PostgreSQL, encrypted provider settings, persistent evidence, workers, source collection and email delivery. Backend implementation: `services/api/helvetic_lens/product_api.py`, `product_research.py`, `product_operations.py` and `product_models.py`; schema through migration `f9c495bef124`. The two products share that core while their dossier lists are separated by product and organization.
 
 No production records, credentials, provider keys or uploaded files are stored in this repository. The browser never chooses the upstream origin. The gateway forwards only HelveticLens session/CSRF cookies, preserves HttpOnly cookies, checks mutation origins, bounds streamed uploads and sends private responses with `no-store`.
 

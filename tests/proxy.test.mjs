@@ -733,3 +733,53 @@ test('personal following and reviewed reuse use only native product routes', asy
   );
   assert.equal(called, 5);
 });
+
+test('decision search gateway forwards exact public query and allows only bounded same-product routes', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const base = `products/${product.id}/discover`;
+  const body = JSON.stringify({
+    query: 'Public query',
+    mode: 'compare',
+    public_query_confirmed: true,
+  });
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(init.headers.get('authorization'), null);
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(new TextDecoder().decode(init.body), body);
+    assert.match(new URL(url).pathname, new RegExp(`^/api/${base}/`));
+    return Response.json({ ok: true });
+  };
+  const request = () =>
+    new Request('https://product.test/api/' + base, {
+      method: 'POST',
+      body,
+      headers: {
+        origin: 'https://product.test',
+        'x-csrf-token': 'csrf',
+        authorization: 'untrusted',
+        'content-type': 'application/json',
+      },
+    });
+  for (const suffix of [
+    'engines',
+    'decision',
+    'runs',
+    `runs/${id}`,
+    `runs/${id}/labels`,
+    `runs/${id}/inspect`,
+  ]) {
+    const response = await proxy(request(), context(`${base}/${suffix}`));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  for (const route of [
+    `${base}/runs/${id}/delete`,
+    `${base}/runs/${id}/inspect/extra`,
+    `${base}/provider-key`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/decision`,
+  ])
+    assert.equal((await proxy(request(), context(route))).status, 404);
+  assert.equal(calls, 6);
+});

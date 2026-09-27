@@ -1320,3 +1320,186 @@
   height: auto;
   min-height: 36px;
 }
+
+/* Decision search extends the product workspace's existing palette. */
+.decision-tabs {
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+.decision-form {
+  display: grid;
+  gap: 1rem;
+}
+.decision-form > label:first-child {
+  display: grid;
+  gap: 0.55rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.decision-controls,
+.decision-scores {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+.decision-consent {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+.decision-consent input {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.25rem;
+  accent-color: var(--primary);
+}
+.decision-setup,
+.decision-history {
+  margin-top: 1.25rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.decision-discovery summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.decision-discovery details p {
+  margin: 0.7rem 0;
+}
+.decision-comparison {
+  margin: 1.5rem 0;
+}
+.decision-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.decision-engine {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 10px;
+  padding: 1.15rem;
+  background: var(--background);
+  overflow-wrap: anywhere;
+}
+.decision-engine h4 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  font-size: 1rem;
+  margin: 0 0 0.65rem;
+}
+.decision-engine dl {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+.decision-engine dl div {
+  display: grid;
+  gap: 0.2rem;
+}
+.decision-engine dt {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+.decision-engine dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+}
+.decision-engine details {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.decision-hit {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.decision-hit h3 {
+  font-size: 1.15rem;
+  margin: 0.45rem 0 0.65rem;
+}
+.decision-hit h3 a {
+  color: var(--primary);
+}
+.decision-hit p {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 0.8rem;
+}
+.decision-scores {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0.75rem 0;
+}
+.decision-history-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.decision-history-row button {
+  white-space: normal;
+  height: auto;
+  text-align: left;
+}
+.decision-history-row span {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.decision-hit .search-hit-actions {
+  align-items: center;
+}
+
+.decision-lanes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1.2rem;
+  font-size: 0.9rem;
+}
+.decision-inspection {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--muted);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+.decision-inspection blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--primary);
+  background: var(--background);
+}
+.decision-inspection cite {
+  font-size: 0.875rem;
+  font-style: normal;
+  color: var(--muted-foreground);
+}
+.decision-inspection ul {
+  padding-left: 1.2rem;
+}
+.decision-inspection li {
+  padding: 0.4rem 0;
+}
+.decision-inspection a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.decision-tabs {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}

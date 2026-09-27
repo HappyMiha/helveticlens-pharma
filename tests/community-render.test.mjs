@@ -221,3 +221,70 @@ test('public personal surfaces wait for native identity without rendering privat
   assert.match(list, /Checking sign-in/);
   assert.doesNotMatch(list, /No followed dossiers yet|New public changes/);
 });
+
+const { SearchComparison, DecisionDiscovery } = require(
+  resolve('components/decision-search.tsx'),
+);
+test('comparison renders measured zero accuracy, unknown cost and unlabelled accuracy distinctly', () => {
+  const metric = {
+    engine: 'laya',
+    models: ['<unsafe-model>'],
+    error: null,
+    latency_ms: 100,
+    input_tokens: null,
+    output_tokens: null,
+    estimated_cost_usd: null,
+    mean_selected_probability: 0.8,
+    mean_confidence: 0.6,
+    evaluation: {
+      accuracy: 0,
+      labelled_count: 2,
+      candidate_count: 8,
+      brier_score: 0.7,
+      basis: 'User labels only.',
+    },
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(SearchComparison, {
+      result: {
+        selected_engine: 'laya',
+        engines: [
+          metric,
+          {
+            ...metric,
+            engine: 'jev',
+            models: [],
+            error: 'not_configured',
+            evaluation: {
+              ...metric.evaluation,
+              accuracy: null,
+              labelled_count: 0,
+            },
+          },
+        ],
+      },
+    }),
+  );
+  assert.match(html, /0\.0% · 2\/8 reviewed/);
+  assert.match(html, /Not measured · 0\/8 reviewed/);
+  assert.match(html, /Unknown/);
+  assert.match(html, /Connection needed/);
+  assert.match(html, /&lt;unsafe-model&gt;/);
+  assert.doesNotMatch(html, /<unsafe-model>/);
+  assert.match(html, /Local compute cost/);
+  assert.match(html, /Labels stay private/);
+});
+test('web search initially requires explicit disclosure, with no invented results or viewer write access', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(DecisionDiscovery, {
+      initialQuery: '<script>private</script>',
+      canSearch: false,
+    }),
+  );
+  assert.match(html, /Public web query/);
+  assert.match(html, /No private dossier text is added/);
+  assert.match(html, /workspace administrator can run web searches/);
+  assert.match(html, /<button(?=[^>]*type="submit")(?=[^>]*disabled="")/);
+  assert.doesNotMatch(html, /checked=""|Results for|<script>private/);
+  assert.match(html, /up to 36 sources/);
+});

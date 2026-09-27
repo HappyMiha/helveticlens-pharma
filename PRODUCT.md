@@ -71,8 +71,10 @@ rights remain with their owners. Native setup and delivery consent still apply.
 Signed previews expire after 30 minutes and bind exact content, user, workspace
 and session. Durable retry receipts prevent duplicate drafts, including retries
 after deletion. Account erasure removes personal follows and reuse receipts.
-Open-web discovery, multilingual semantic retrieval and new recurring search/delivery
-remain separate cycles. Production activation requires the exact release receipts.
+Open-web discovery now uses federated indexes and Jev/Laya query–source decisions,
+with explicit source inspection and link exploration; see README for limits and
+evaluation. Semantic private-corpus indexing and recurring query discovery remain
+separate cycles. Production activation requires exact release receipts.
 
 ## Public collective discussion
 

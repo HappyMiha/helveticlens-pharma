@@ -37,8 +37,45 @@ import type {
 import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { SearchPlanView } from './search-plan';
+import { DecisionDiscovery } from './decision-search';
 import { recipeFromResult } from '@/lib/search-recipes';
 import { appendDiscoveryPage, discoveryPath } from '@/lib/discovery-pages';
+
+type DiscoveryProps = Parameters<typeof CatalogueDiscovery>[0];
+export function Discovery(props: DiscoveryProps) {
+  const [tab, setTab] = useState(props.initialRecipe ? 'catalogues' : 'web');
+  return (
+    <div>
+      <fieldset
+        className="filters decision-tabs"
+        aria-label="Search collection"
+      >
+        <Button
+          variant={tab === 'web' ? 'secondary' : 'ghost'}
+          onClick={() => setTab('web')}
+        >
+          Open web · Jev + Laya
+        </Button>
+        <Button
+          variant={tab === 'catalogues' ? 'secondary' : 'ghost'}
+          onClick={() => setTab('catalogues')}
+        >
+          Team & source catalogues
+        </Button>
+      </fieldset>
+      {tab === 'web' ? (
+        <DecisionDiscovery
+          initialQuery={props.initialQuery}
+          canSearch={!!props.canPlan}
+          onSave={props.onSave}
+          onCreate={props.onCreate}
+        />
+      ) : (
+        <CatalogueDiscovery {...props} />
+      )}
+    </div>
+  );
+}
 
 export function monitoringSeed(query: string, hit?: SearchHit): Preset {
   return {
@@ -64,7 +101,7 @@ export function monitoringSeed(query: string, hit?: SearchHit): Preset {
   };
 }
 
-export function Discovery({
+function CatalogueDiscovery({
   initialQuery = '',
   initialRecipe,
   onOpen,

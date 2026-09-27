@@ -91,6 +91,23 @@ export default function Guide() {
               <span className="guide-step">02 / DISCOVERY</span>
               <h2 id="discover-title">Find and keep sources.</h2>
               <p>
+                Choose <strong>Open web · Jev + Laya</strong> to investigate a
+                public question beyond the source catalogue. Quick, Broad and
+                Deep select up to 8, 24 or 36 sources. Confirm which query may
+                leave your workspace. Auto uses Jev with local Laya fallback;
+                Compare evaluates the same candidates with both available
+                engines.
+              </p>
+              <p>
+                Review the original links, then mark relevance to measure
+                quality on your own sample. Open{' '}
+                <strong>Read public source</strong> for extracted passages and
+                links to investigate next. Your saved search keeps the result
+                without repeating retrieval. Import sources into a dossier
+                within 30 minutes, or start reviewed monitoring setup. Search
+                snippets and model confidence do not establish truth.
+              </p>
+              <p>
                 Start with team knowledge. Workspace discovery searches visible
                 topics, questions and contributions; the source library helps
                 retrieve older saved references. Inside a topic, question search
