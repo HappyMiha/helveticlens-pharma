@@ -328,3 +328,65 @@ test('source review conflicts preserve the explanation and exact revision throug
   assert.match((await response.json()).detail, /while you were working/);
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
 });
+
+test('research preview and reviewed generation preserve private input identity within this product', async () => {
+  const route = `products/${product.id}/dossiers/topic/discussion/question`;
+  const expected = {
+    expected_revision: 2,
+    expected_evidence: 'a'.repeat(64),
+    request_key: 'request-id',
+  };
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: new URL(url), init });
+    return Response.json(
+      init.method === 'GET'
+        ? { input: { sources: ['private excerpt'] } }
+        : { detail: 'Evidence changed; refresh the preview.' },
+      { status: init.method === 'GET' ? 200 : 409 },
+    );
+  };
+  const read = await proxy(
+    new Request(`https://product.test/api/${route}/research-preview`, {
+      headers: { cookie: 'helvetic_lens_session=test; unrelated=secret' },
+    }),
+    context(`${route}/research-preview`),
+  );
+  assert.equal(read.status, 200);
+  assert.equal(read.headers.get('cache-control'), 'private, no-store');
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}/research`, {
+      method: 'POST',
+      headers: {
+        origin: 'https://product.test',
+        'content-type': 'application/json',
+        'x-csrf-token': 'csrf',
+      },
+      body: JSON.stringify(expected),
+    }),
+    context(`${route}/research`),
+  );
+  assert.equal(response.status, 409);
+  assert.match((await response.json()).detail, /Evidence changed/);
+  assert.deepEqual(
+    JSON.parse(new TextDecoder().decode(calls[1].init.body)),
+    expected,
+  );
+  assert.equal(
+    calls[0].init.headers.get('cookie'),
+    'helvetic_lens_session=test',
+  );
+  assert.equal(calls[1].init.headers.get('x-csrf-token'), 'csrf');
+  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const denied = route.replace(`products/${product.id}/`, `products/${other}/`);
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${denied}/research-preview`),
+        context(`${denied}/research-preview`),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(calls.length, 2);
+});

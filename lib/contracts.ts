@@ -72,6 +72,42 @@ export interface DiscoveryProvenance {
   record: Omit<SearchHit, 'discovery_receipt' | 'dossier_id' | 'thread_id'>;
 }
 export type SourceDecision = 'include' | 'exclude' | 'unreviewed';
+export interface ResearchSource {
+  id: string;
+  key: string;
+  kind: string;
+  entry_kind?: string;
+  title: string;
+  text: string;
+  url: string;
+  date: string;
+  sha256: string;
+}
+export interface ResearchPreview {
+  dossier_id: string;
+  question_id: string;
+  expected_revision: number;
+  profile_revision: number;
+  evidence_fingerprint: string;
+  prepared_at: string;
+  provider: string;
+  model: string;
+  input: {
+    title: string;
+    context: string;
+    monitoring_goal: string | null;
+    sources: ResearchSource[];
+  };
+  selection: {
+    team_candidate_limit: number;
+    linked_page_limit: number;
+    topic_limit: number;
+    matches_per_topic: number;
+    snapshot_limit: number;
+    excerpt_char_limit: number;
+    excluded_urls: number;
+  };
+}
 export interface EntryData {
   decision?: SourceDecision;
   reference_id?: string;
@@ -95,16 +131,9 @@ export interface EntryData {
   }[];
   unknowns?: string[];
   search_queries?: string[];
-  sources?: {
-    id: string;
-    key: string;
-    kind: string;
-    title: string;
-    text: string;
-    url: string;
-    date: string;
-    sha256: string;
-  }[];
+  preview_fingerprint?: string | null;
+  input_fingerprint?: string;
+  sources?: ResearchSource[];
 }
 export interface Entry {
   id: string;

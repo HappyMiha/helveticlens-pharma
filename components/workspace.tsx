@@ -909,9 +909,12 @@ export default function Workspace() {
                   run={run}
                   onBack={() => go('research')}
                   reload={async () => {
-                    setSelected(
-                      await api<DossierRecord>(`${ROOT}/${selected.id}`),
+                    const attempt = navigation.current.value;
+                    const fresh = await api<DossierRecord>(
+                      `${ROOT}/${selected.id}`,
                     );
+                    if (attempt !== navigation.current.value) return;
+                    setSelected(fresh);
                     await refresh();
                   }}
                   notify={setNotice}

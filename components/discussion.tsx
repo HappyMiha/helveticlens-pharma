@@ -47,6 +47,7 @@ import { ActionDialog, WorkField } from './action-dialog';
 import { Discovery } from './discovery';
 import { ResearchFollowups } from './research-followups';
 import { SavedSearches } from './saved-searches';
+import { ResearchPreview } from './research-preview';
 
 function safeSource(url: string) {
   try {
@@ -210,11 +211,11 @@ export function Discussion({
     [discoveryQuery, setDiscoveryQuery] = useState<string | null>(null),
     [discoveryRecipe, setDiscoveryRecipe] = useState<SearchRecipe | null>(null),
     [savedSearchesOpen, setSavedSearchesOpen] = useState(false),
+    [previewQuestion, setPreviewQuestion] = useState<string | null>(null),
     [actionSeed, setActionSeed] = useState<ResearchActionSeed | null>(null),
     [editingAction, setEditingAction] = useState<WorkAction | null>(null),
     [actionsRefresh, setActionsRefresh] = useState(0);
   const sourceKeys = useRef(new Map<string, string>());
-  const researchKeys = useRef(new Map<string, string>());
   const root = `/products/${product.id}/dossiers/${dossier.id}`;
   const {
     data,
@@ -498,28 +499,11 @@ export function Discussion({
             <div className="thread-actions">
               <Button
                 variant="outline"
-                disabled={!canEdit || !!busy}
-                onClick={() =>
-                  void run('Researching saved evidence', async () => {
-                    const requestId = `${selected.id}:${selected.revision}`;
-                    let key = researchKeys.current.get(requestId);
-                    if (!key) {
-                      key = uid();
-                      researchKeys.current.set(requestId, key);
-                    }
-                    await api(`${root}/discussion/${selected.id}/research`, {
-                      expected_revision: selected.revision,
-                      request_key: key,
-                    });
-                    await changed(selected.id);
-                    notify(
-                      'AI research note saved. Check its evidence and open questions before accepting.',
-                    );
-                  })
-                }
+                disabled={!!busy}
+                onClick={() => setPreviewQuestion(selected.id)}
               >
                 <Sparkles size={16} />
-                Research with AI
+                Review AI inputs
               </Button>
               <Button
                 variant="outline"
@@ -785,6 +769,21 @@ export function Discussion({
             </p>
           )}
         </>
+      )}
+      {previewQuestion && (
+        <ResearchPreview
+          key={previewQuestion}
+          dossierId={dossier.id}
+          questionId={previewQuestion}
+          canEdit={canEdit}
+          onClose={() => setPreviewQuestion(null)}
+          onSaved={async () => {
+            await changed(previewQuestion);
+            notify(
+              'AI research note saved. Check its evidence and open questions before accepting.',
+            );
+          }}
+        />
       )}
       <Dialog
         open={adding}
