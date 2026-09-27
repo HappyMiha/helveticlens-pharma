@@ -2121,3 +2121,30 @@ code {
     scroll-behavior: auto !important;
   }
 }
+
+
+.source-review-dialog {
+  width: min(720px, calc(100vw - 2rem));
+  max-width: min(720px, calc(100vw - 2rem));
+  overflow-wrap: anywhere;
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+.source-review-status {
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+.source-review-history {
+  border-top: 1px solid var(--border);
+}
+.source-review-dialog form {
+  display: grid;
+  gap: 14px;
+}
+
+.source-review-dialog .banner {
+  display: grid;
+}
+.source-review-dialog nav ul {
+  flex-wrap: wrap;
+}

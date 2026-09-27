@@ -290,3 +290,37 @@ test('discovery imports preserve the exact signed body and CSRF only within this
   }
   assert.equal(calls, 1);
 });
+
+test('source review conflicts preserve the explanation and exact revision through the private gateway', async () => {
+  const route = `products/${product.id}/dossiers/topic/sources/reference/reviews`;
+  const input = {
+    request_key: 'same-request',
+    expected_review_id: 'previous-review',
+    decision: 'exclude',
+    reason: 'Not relevant to this question',
+  };
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).pathname, `/api/${route}`);
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.deepEqual(JSON.parse(await new Response(init.body).text()), input);
+    return Response.json(
+      { detail: 'The team reviewed this URL while you were working.' },
+      { status: 409 },
+    );
+  };
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+      headers: {
+        origin: 'https://product.test',
+        'content-type': 'application/json',
+        'x-csrf-token': 'csrf',
+      },
+    }),
+    context(route),
+  );
+  assert.equal(response.status, 409);
+  assert.match((await response.json()).detail, /while you were working/);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+});

@@ -1,4 +1,5 @@
 'use client';
+import { SourceReviews, SourceReviewStatus } from '@/components/source-reviews';
 import { SourceProvenance } from '@/components/source-provenance';
 import { useEffect, useState } from 'react';
 import {
@@ -58,6 +59,7 @@ export function Dossier({
   const p = d.profile,
     c = p.config;
   const [tab, setTab] = useState('discussion'),
+    [reviewingSource, setReviewingSource] = useState<Entry | null>(null),
     [actionEvidence, setActionEvidence] = useState<Match | null>(null),
     [note, setNote] = useState(''),
     [reference, setReference] = useState({ title: '', url: '', body: '' }),
@@ -118,6 +120,28 @@ export function Dossier({
   }
   return (
     <>
+      {reviewingSource && (
+        <SourceReviews
+          key={reviewingSource.id}
+          dossierId={d.id}
+          reference={reviewingSource}
+          canEdit={canEdit}
+          onClose={() => setReviewingSource(null)}
+          onSaved={async (review) => {
+            await reload();
+            setOlder((items) =>
+              items.map((entry) =>
+                entry.kind === 'reference' && entry.url === review.url
+                  ? { ...entry, source_review: review }
+                  : entry,
+              ),
+            );
+            notify(
+              'Source decision saved. New AI research will use the current source choices.',
+            );
+          }}
+        />
+      )}
       <div className="detail-top">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={16} />
@@ -335,6 +359,7 @@ export function Dossier({
                               reference: 'Source added',
                               file: 'File attached',
                               feedback: 'Relevance reviewed',
+                              source_review: 'Source decision recorded',
                               proposal: 'AI refinement proposed',
                               improvement: 'Monitoring refined',
                               monitor: 'Page watch connected',
@@ -460,6 +485,14 @@ export function Dossier({
                 </a>
                 <p>{r.body}</p>
                 <SourceProvenance value={r.data.discovery} />
+                <SourceReviewStatus review={r.source_review} />
+                <Button
+                  variant="outline"
+                  disabled={!!busy}
+                  onClick={() => setReviewingSource(r)}
+                >
+                  {canEdit ? 'Review source' : 'Review history'}
+                </Button>
               </div>
               {d.documents.some((s) => s.url === r.url) ? (
                 <span className="tag good">Connected</span>

@@ -71,7 +71,11 @@ export interface DiscoveryProvenance {
   page_number: number;
   record: Omit<SearchHit, 'discovery_receipt' | 'dossier_id' | 'thread_id'>;
 }
+export type SourceDecision = 'include' | 'exclude' | 'unreviewed';
 export interface EntryData {
+  decision?: SourceDecision;
+  reference_id?: string;
+  expected_review_id?: string | null;
   discovery?: DiscoveryProvenance;
   relevance?: string;
   law_id?: string;
@@ -104,6 +108,7 @@ export interface EntryData {
 }
 export interface Entry {
   id: string;
+  source_review?: Entry | null;
   kind:
     | 'note'
     | 'reference'
@@ -118,7 +123,8 @@ export interface Entry {
     | 'question'
     | 'discussion'
     | 'research'
-    | 'saved_search';
+    | 'saved_search'
+    | 'source_review';
   title: string;
   body: string;
   url: string;

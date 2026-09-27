@@ -562,10 +562,11 @@ export function Discussion({
               {selected.answer_needs_review && (
                 <div className="answer-review">
                   <div>
-                    <b>New material since this answer was accepted</b>
+                    <b>New material or source decisions need review</b>
                     <p>
-                      Review the topic’s new contributions, source snapshots and
-                      matching events before relying on the working answer.
+                      Review the topic’s new contributions, source decisions,
+                      snapshots and matching events before relying on the
+                      working answer.
                     </p>
                   </div>
                   {canEdit && (
