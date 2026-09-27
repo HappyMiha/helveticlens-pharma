@@ -288,3 +288,95 @@ test('web search initially requires explicit disclosure, with no invented result
   assert.doesNotMatch(html, /checked=""|Results for|<script>private/);
   assert.match(html, /up to 36 sources/);
 });
+
+const { QueryBundleFields } = require(resolve('components/query-bundle.tsx'));
+const { SourceProvenance } = require(
+  resolve('components/source-provenance.tsx'),
+);
+const bundleProps = {
+  question: 'A public research question',
+  alternatives: ['', ''],
+  draft: null,
+  disabled: false,
+  planning: false,
+  onChange() {},
+  onPlan() {},
+  onUse() {},
+};
+test('query draft starts with empty editable alternatives and requires deliberate disclosure', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(QueryBundleFields, bundleProps),
+  );
+  assert.match(html, /Alternative query 1/);
+  assert.match(html, /Alternative query 2/);
+  assert.match(html, /daily query budget/);
+  assert.match(
+    html,
+    /<button(?=[^>]*disabled="")(?=[^>]*type="button")[^>]*>Draft alternatives/,
+  );
+  assert.doesNotMatch(html, /checked=""|Use draft in editable fields/);
+});
+test('planner drafts render as escaped review text without replacing fields or applying a stale question', () => {
+  const draft = {
+    question: bundleProps.question,
+    model: '<unsafe-model>',
+    model_provider: 'test',
+    searched: false,
+    alternatives: [
+      {
+        language: 'de',
+        query: '<script>Öffentliche Frage</script>',
+        reason: '<img src=x>',
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(QueryBundleFields, { ...bundleProps, draft }),
+  );
+  assert.match(html, /Review the suggested queries/);
+  assert.match(html, /Use draft in editable fields/);
+  assert.match(html, /&lt;script&gt;Öffentliche Frage/);
+  assert.match(html, /&lt;img src=x&gt;/);
+  assert.match(html, /&lt;unsafe-model&gt;/);
+  assert.match(html, /No sources have been searched/);
+  assert.doesNotMatch(html, /<script>|<img src=x|value="&lt;script/);
+  const stale = renderToStaticMarkup(
+    React.createElement(QueryBundleFields, {
+      ...bundleProps,
+      question: 'A changed question',
+      draft,
+    }),
+  );
+  assert.doesNotMatch(stale, /Use draft in editable fields|Öffentliche Frage/);
+});
+test('saved source provenance escapes exact queries and supports records predating bundles', () => {
+  const value = {
+    query: 'Main question',
+    retrieved_at: '2026-09-27T12:00:00Z',
+    page_number: 1,
+    record: {
+      id: 'source',
+      provider: 'Search1API',
+      title: 'Source title',
+      retrieval_queries: ['Arzneimittelsicherheit', '<script>query</script>'],
+    },
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(SourceProvenance, { value }),
+  );
+  assert.match(html, /Main question/);
+  assert.match(html, /Retrieved by these exact queries/);
+  assert.match(html, /Arzneimittelsicherheit/);
+  assert.match(html, /&lt;script&gt;query/);
+  assert.doesNotMatch(html, /<script>/);
+  const legacy = renderToStaticMarkup(
+    React.createElement(SourceProvenance, {
+      value: {
+        ...value,
+        record: { ...value.record, retrieval_queries: undefined },
+      },
+    }),
+  );
+  assert.match(legacy, /Source title/);
+  assert.doesNotMatch(legacy, /Retrieved by these exact queries/);
+});

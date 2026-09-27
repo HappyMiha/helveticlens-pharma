@@ -1503,3 +1503,41 @@
   padding: 0;
   min-width: 0;
 }
+
+.query-bundle {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.query-bundle summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.query-bundle p {
+  margin: 0.65rem 0;
+}
+.query-alternatives {
+  display: grid;
+  gap: 0.8rem;
+}
+.query-alternatives label {
+  display: grid;
+  gap: 0.35rem;
+}
+.query-planner {
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+}
+.query-draft {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+}
+.query-draft li + li {
+  margin-top: 0.8rem;
+}
+.query-draft li,
+.decision-lanes li {
+  overflow-wrap: anywhere;
+}

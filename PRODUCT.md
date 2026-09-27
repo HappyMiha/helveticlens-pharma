@@ -72,8 +72,9 @@ Signed previews expire after 30 minutes and bind exact content, user, workspace
 and session. Durable retry receipts prevent duplicate drafts, including retries
 after deletion. Account erasure removes personal follows and reuse receipts.
 Open-web discovery now uses federated indexes and Jev/Laya query–source decisions,
-with explicit source inspection and link exploration; see README for limits and
-evaluation. Semantic private-corpus indexing and recurring query discovery remain
+with explicit source inspection and link exploration. Reviewed multilingual query
+bundles broaden discovery and retain exact per-source query provenance; see README
+for limits and evaluation. Semantic private-corpus indexing and recurring query discovery remain
 separate cycles. Production activation requires exact release receipts.
 
 ## Public collective discussion
@@ -94,7 +95,8 @@ No adoption, time-saving, accuracy or clinical/legal validation numbers are inve
 
 ## Next product gates
 
-After observing real use: tune source retrieval and notifications; add demand-led provider coverage with explicit rights/readiness; evaluate semantic retrieval on a labelled private benchmark; consider a contributor role and followed-question digests. Public publication now has explicit author consent and a dedicated reader. Public discussion and reasoned moderation are now available. Following, private reuse and subscriptions remain subsequent slices. These are future gates, not shipped claims.
+After observing real use: tune source retrieval and notifications; add demand-led provider coverage with explicit rights/readiness; evaluate semantic retrieval on a labelled private benchmark; consider a contributor role and followed-question digests. Public publication now has explicit author consent and a dedicated reader. Public discussion and reasoned moderation are now available. Personal following and reviewed private reuse are available. Scheduled search
+rediscovery and followed-question digests remain subsequent slices. These are future gates, not shipped claims.
 
 ## Design references
 

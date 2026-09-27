@@ -739,6 +739,7 @@ test('decision search gateway forwards exact public query and allows only bounde
   const base = `products/${product.id}/discover`;
   const body = JSON.stringify({
     query: 'Public query',
+    alternatives: ['Öffentliche Frage', 'Question publique'],
     mode: 'compare',
     public_query_confirmed: true,
   });
@@ -764,6 +765,7 @@ test('decision search gateway forwards exact public query and allows only bounde
     });
   for (const suffix of [
     'engines',
+    'expand',
     'decision',
     'runs',
     `runs/${id}`,
@@ -779,7 +781,8 @@ test('decision search gateway forwards exact public query and allows only bounde
     `${base}/runs/${id}/inspect/extra`,
     `${base}/provider-key`,
     `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/decision`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/expand`,
   ])
     assert.equal((await proxy(request(), context(route))).status, 404);
-  assert.equal(calls, 6);
+  assert.equal(calls, 7);
 });

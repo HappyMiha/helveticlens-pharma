@@ -93,10 +93,24 @@ export default function Guide() {
               <p>
                 Choose <strong>Open web · Jev + Laya</strong> to investigate a
                 public question beyond the source catalogue. Quick, Broad and
-                Deep select up to 8, 24 or 36 sources. Confirm which query may
+                Deep select up to 8, 24 or 36 sources. Confirm which queries may
                 leave your workspace. Auto uses Jev with local Laya fallback;
                 Compare evaluates the same candidates with both available
                 engines.
+              </p>
+              <p>
+                Open <strong>Broaden the search</strong> for two alternative
+                queries using other terms or languages. You can ask AI to draft
+                suggestions in English, German, French, Italian or Ukrainian.
+                Review the suggestions, apply them to the editable fields, then
+                confirm and run the search. Results share one source limit and
+                are assessed against your main question. Each source records the
+                exact queries that found it, including after import.
+              </p>
+              <p>
+                Every query uses one daily query unit; a bundle uses one to
+                three. A failed retrieval lane stays visible, and manual
+                alternatives remain available if AI drafting fails.
               </p>
               <p>
                 Review the original links, then mark relevance to measure

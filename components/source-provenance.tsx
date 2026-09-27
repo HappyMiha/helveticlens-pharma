@@ -12,6 +12,16 @@ export function SourceProvenance({ value }: { value?: DiscoveryProvenance }) {
         <b>Retrieved:</b> {new Date(value.retrieved_at).toLocaleString()} · page{' '}
         {value.page_number}
       </p>
+      {!!value.record.retrieval_queries?.length && (
+        <div>
+          <b>Retrieved by these exact queries:</b>
+          <ul>
+            {value.record.retrieval_queries.map((query) => (
+              <li key={query}>{query}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p className="break-url">
         <b>Catalogue record:</b> {value.record.id}
       </p>

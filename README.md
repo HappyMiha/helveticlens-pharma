@@ -6,7 +6,7 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.6.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.7.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 
@@ -73,20 +73,32 @@ ranking with BM25 exact-term matching and the search indexes. This discovers
 sources beyond the scheduled Swiss catalogue; it is bounded retrieval, not a
 complete index of the internet or semantic search of private workspace files.
 
+Open **Broaden the search** to add two editable alternatives: synonyms, official
+terminology or another language. **Ask AI for editable alternatives** drafts one
+or two queries in English, German, French, Italian or Ukrainian after explicit
+question/language disclosure. Review the draft before placing it into the fields.
+Only pressing Search retrieves sources. The main question drives relevance
+judgments, with one shared result limit across at most five retrieval lanes.
+Each source shows the exact queries that found it; signed imports preserve those
+queries in the dossier, printable brief and JSON export. Failed lanes are visible.
+
 Auto uses Jev when configured and falls back to local Laya on provider failure.
 Compare ranks the same candidates with both configured engines. Decision latency,
 model identity, available token usage, cost estimates and confidence remain
 inspectable. Relevance labels produce agreement/accuracy and Brier score on your
 reviewed sample; unreviewed accuracy and unavailable cost stay unknown. Laya mode
-keeps decisions local but still sends the explicit query to remote search indexes.
+keeps decisions local but still sends the main question and alternatives to remote
+search indexes.
 Provider credentials belong to the shared core, never the client.
 
 The last 50 searches per account/product/workspace remain private. Reopening a
 result does not repeat paid retrieval or renew its 30-minute source-import window.
 Searches and labels are removed with account erasure. The platform defaults to
-25 searches/day across all accounts; unavailable credits or engines are visible.
-Jev activation requires a funded TypeSafe account; a configured adapter alone is
-not proof of live availability.
+25 query units/day across all accounts: a main query plus two alternatives uses
+three units, and an identical request retry is counted once. This bounds requested
+queries, not exact provider billing. Unavailable credits or engines are visible.
+Hosted Jev and local Laya are active in the verified 1.6.0 production release;
+configuration alone never establishes continued availability.
 
 **Read public source** explicitly fetches up to three results per search, respects
 robots and access restrictions, and shows up to three extracted passages with

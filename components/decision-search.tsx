@@ -11,11 +11,13 @@ import {
 import { api, date, uid } from '@/lib/api';
 import type { Preset, SearchHit } from '@/lib/contracts';
 import { product } from '@/lib/product';
+import { QueryBundleFields } from './query-bundle';
 import { useResource } from '@/lib/use-resource';
 import {
   type DecisionMode,
   type DecisionReadiness,
   type DecisionRun,
+  type QueryBundleDraft,
   engineIssue,
   percent,
 } from '@/lib/decision-search';
@@ -139,6 +141,8 @@ export function DecisionDiscovery({
   const [query, setQuery] = useState(initialQuery),
     [mode, setMode] = useState<DecisionMode>('auto'),
     [depth, setDepth] = useState('balanced');
+  const [alternatives, setAlternatives] = useState<string[]>(['', '']);
+  const [draft, setDraft] = useState<QueryBundleDraft | null>(null);
   const [confirmed, setConfirmed] = useState(false),
     [busy, setBusy] = useState(''),
     [failure, setFailure] = useState('');
@@ -174,12 +178,19 @@ export function DecisionDiscovery({
   }
   async function search() {
     if (!confirmed || !canSearch) return;
-    const fingerprint = JSON.stringify({ query: query.trim(), mode, depth });
+    const reviewed = alternatives.map((v) => v.trim()).filter(Boolean);
+    const fingerprint = JSON.stringify({
+      query: query.trim(),
+      alternatives: reviewed,
+      mode,
+      depth,
+    });
     if (attempt.current?.fingerprint !== fingerprint)
       attempt.current = { fingerprint, key: uid() };
     const found = await api<DecisionRun>(`${base}/decision`, {
       request_key: attempt.current.key,
       query: query.trim(),
+      alternatives: reviewed,
       mode,
       depth,
       public_query_confirmed: true,
@@ -196,6 +207,14 @@ export function DecisionDiscovery({
       setResult(found);
       setSaved([]);
     }
+  }
+  async function plan(languages: string[]) {
+    const proposed = await api<QueryBundleDraft>(`${base}/expand`, {
+      question: query.trim(),
+      languages,
+      public_question_confirmed: true,
+    });
+    if (active.current) setDraft(proposed);
   }
   async function inspect(sourceId: string) {
     if (!result) return;
@@ -244,6 +263,23 @@ export function DecisionDiscovery({
             }
           />
         </label>
+        <QueryBundleFields
+          question={query}
+          alternatives={alternatives}
+          draft={draft}
+          disabled={!!busy || !canSearch}
+          planning={busy === 'plan'}
+          onChange={(values) => {
+            setAlternatives(values);
+            setConfirmed(false);
+          }}
+          onPlan={(languages) => void perform('plan', () => plan(languages))}
+          onUse={() => {
+            if (draft?.question !== query.trim()) return;
+            setAlternatives(draft.alternatives.map((value) => value.query));
+            setConfirmed(false);
+          }}
+        />
         <div className="decision-controls">
           <NativeSelect
             aria-label="Decision engine"
@@ -310,10 +346,11 @@ export function DecisionDiscovery({
             onChange={(e) => setConfirmed(e.target.checked)}
           />
           <span>
-            This query is suitable for public web search. Send it to the
-            selected web indexes and public catalogues
+            My main question and all entered alternatives are suitable for
+            public web search. Send them to the selected web indexes and public
+            catalogues
             {mode !== 'laya'
-              ? ' and to Jev together with returned source snippets'
+              ? '; send the main question and returned source snippets to Jev'
               : '; evaluate the returned snippets locally with Laya'}
             . No private dossier text is added.
           </span>
@@ -347,7 +384,8 @@ export function DecisionDiscovery({
             <p>{readiness.data.privacy}</p>
             <p>
               {readiness.data.retention} Platform daily limit:{' '}
-              {readiness.data.daily_limit} searches.
+              {readiness.data.daily_limit} query units.{' '}
+              {readiness.data.budget_unit}
             </p>
           </>
         ) : (
@@ -387,6 +425,16 @@ export function DecisionDiscovery({
           >
             Refresh saved result
           </Button>
+          {(result.queries?.length || 0) > 1 && (
+            <details className="query-bundle">
+              <summary>Queries used for this search</summary>
+              <ol>
+                {result.queries?.map((value) => (
+                  <li key={value}>{value}</li>
+                ))}
+              </ol>
+            </details>
+          )}
           {result.coverage && <p className="search-scope">{result.coverage}</p>}
           {result.retrieval && (
             <p className="muted">
@@ -409,6 +457,7 @@ export function DecisionDiscovery({
                   {lane.status === 'complete'
                     ? `${lane.count} candidates`
                     : 'unavailable'}
+                  {lane.query && <span className="muted"> — {lane.query}</span>}
                 </li>
               ))}
             </ul>
@@ -441,6 +490,16 @@ export function DecisionDiscovery({
                   {hit.summary ||
                     'No snippet supplied. Open the source to assess it.'}
                 </p>
+                {!!hit.retrieval_queries?.length && (
+                  <details>
+                    <summary>Queries that found this source</summary>
+                    <ul>
+                      {hit.retrieval_queries.map((value) => (
+                        <li key={value}>{value}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 <div className="decision-scores">
                   {result.engines
                     ?.filter((e) => e.scores[hit.id])
@@ -596,6 +655,8 @@ export function DecisionDiscovery({
                                   disabled={!!busy}
                                   onClick={() => {
                                     setQuery(link.title.slice(0, 300));
+                                    setAlternatives(['', '']);
+                                    setDraft(null);
                                     setConfirmed(false);
                                   }}
                                 >

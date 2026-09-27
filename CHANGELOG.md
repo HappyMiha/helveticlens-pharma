@@ -1,5 +1,9 @@
 # Changes
 
+## 1.7.0 — Reviewed multilingual search
+
+The public question can now include two editable alternative queries. An optional text-model draft supports English, German, French, Italian and Ukrainian; users review and explicitly apply suggestions before searching. Retrieval uses at most five visible lanes and one deduplicated candidate pool. Jev/Laya still judge relevance against the main question, while exact found-by queries survive signed import, brief and export. Daily limits count query units and retries preserve their original identity. Manual queries remain usable when the draft model is unavailable. Private corpus indexing and scheduled rediscovery remain separate work.
+
 ## 1.6.0 — Federated semantic discovery
 
 Public-query web discovery now combines Google, Bing and, in Pharma, Europe PMC. Jev and pinned local multilingual Laya share a validated decision interface; automatic failure fallback and explicit comparison use the same retrieved candidates. Hybrid semantic/BM25/index ranking, measured latency, honest usage/cost fields and private relevance-label evaluation make ordering inspectable. Bounded source reading finds relevant passages and outgoing links for further research. Private saved results, replay identity, explicit disclosure, source provenance, account erasure and quotas protect the complete journey. Jev needs funded TypeSafe access; unavailable providers are shown, not simulated. Production activation is recorded separately.

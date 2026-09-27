@@ -1,5 +1,17 @@
 import type { SearchHit } from './contracts';
 
+export interface QueryBundleDraft {
+  question: string;
+  alternatives: {
+    language: 'en' | 'de' | 'fr' | 'it' | 'uk';
+    query: string;
+    reason: string;
+  }[];
+  generated_at: string;
+  model_provider: string;
+  model: string;
+  searched: false;
+}
 export type DecisionMode = 'auto' | 'jev' | 'laya' | 'compare';
 export interface EngineMeasurement {
   engine: 'jev' | 'laya';
@@ -31,6 +43,7 @@ export interface EngineMeasurement {
 export interface DecisionRun {
   id: string;
   query: string;
+  queries?: string[];
   mode: DecisionMode;
   status: 'running' | 'interrupted' | 'complete' | 'failed';
   revision: number;
@@ -67,7 +80,7 @@ export interface DecisionRun {
     omitted_records: number;
     candidate_limit: number;
     ordering?: string;
-    lanes?: { name: string; status: string; count: number }[];
+    lanes?: { name: string; query?: string; status: string; count: number }[];
   };
 }
 export interface DecisionReadiness {
@@ -75,6 +88,7 @@ export interface DecisionReadiness {
   laya_configured: boolean;
   search_configured: boolean;
   daily_limit: number;
+  budget_unit?: string;
   privacy: string;
   retention: string;
 }

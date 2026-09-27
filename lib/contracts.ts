@@ -110,7 +110,7 @@ export interface Profile {
   updated_at: string;
 }
 export interface DiscoveryProvenance {
-  provider: 'fedlex' | 'europepmc';
+  provider: 'fedlex' | 'europepmc' | 'web';
   query: string;
   retrieved_at: string;
   page_number: number;
@@ -487,6 +487,7 @@ export interface ThreadDetail extends ResearchThread {
   accepted: Entry | null;
 }
 export interface SearchHit {
+  retrieval_queries?: string[];
   discovery_receipt?: string;
   id: string;
   kind: string;
