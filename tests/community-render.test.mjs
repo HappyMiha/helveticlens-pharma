@@ -1135,3 +1135,87 @@ test('later evidence status is separate from the original supported claim and it
   assert.match(html, /href="#evidence-changes"/);
   assert.match(html, /Exact quotation/);
 });
+
+const {
+  MonitoringPolicyStatus,
+  MonitoringPolicyForm,
+  MonitoringTriggerRow,
+} = require(resolve('components/monitoring-research.tsx'));
+const { currentMonitoring } = require(resolve('lib/monitoring-research.ts'));
+const monitoringPolicy = {
+  enabled: false,
+  revision: 0,
+  daily_limit: 3,
+  used_today: 0,
+  starts_on: null,
+  checked_at: null,
+  reason: 'Automatic research is off.',
+  disclosure: 'Private saved metadata only; no external discovery.',
+  history: [],
+};
+
+test('monitoring research settings disclose standing scope and do not pre-consent', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MonitoringPolicyForm, {
+      base: '/products/pharma/dossiers/example/monitoring-research',
+      policy: monitoringPolicy,
+      onSaved() {},
+    }),
+  );
+  assert.match(html, /while I am signed out/);
+  assert.match(html, /Maximum research starts per UTC day/);
+  assert.match(html, /Explicit retries also count/);
+  assert.match(html, /pending work from the previous settings/);
+  assert.match(html, /type="submit"[^>]*disabled/);
+  assert.doesNotMatch(html, /aria-checked="true"/);
+});
+
+test('monitoring status only reports saved checks and actual capacity', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MonitoringPolicyStatus, { policy: monitoringPolicy }),
+  );
+  assert.match(html, /Automatic research off/);
+  assert.match(html, /0 of 3 starts used today/);
+  assert.match(html, /Not checked yet/);
+  assert.match(html, /candidate signal/);
+  assert.doesNotMatch(html, /lens-overlay|Live coverage|Evidence verified/);
+});
+
+test('monitoring trigger preserves escaped source cause and investigation links', () => {
+  const item = {
+    id: 'trigger-1',
+    match_id: 'match-1',
+    evaluation_fingerprint: 'e'.repeat(64),
+    policy_revision: 2,
+    matched_at: '2026-09-27T20:00:00Z',
+    state: 'started',
+    reason: 'Saved signal initiated research.',
+    source: {
+      title: '<script>bad()</script>',
+      url: 'javascript:alert(1)',
+      sha256: 'a'.repeat(64),
+    },
+    investigation: {
+      id: 'run-1',
+      status: 'completed',
+      stop_reason: 'Bounded research complete.',
+    },
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(MonitoringTriggerRow, { item, onOpen() {} }),
+  );
+  assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /Open investigation/);
+  assert.match(html, /href="#evidence-changes"/);
+  assert.match(html, /Settings revision 2/);
+  assert.match(html, /saved event metadata/);
+  assert.doesNotMatch(html, /href="javascript:|<script>/);
+});
+
+test('monitoring history is cleared on access errors and dossier changes', () => {
+  const value = { dossier_id: 'mine', policy: monitoringPolicy, items: [] };
+  assert.equal(currentMonitoring(value, '', 'mine'), value);
+  assert.equal(currentMonitoring(value, 'Access changed', 'mine'), null);
+  assert.equal(currentMonitoring(value, '', 'other'), null);
+  assert.equal(currentMonitoring(null, '', 'mine'), null);
+});

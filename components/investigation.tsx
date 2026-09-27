@@ -467,6 +467,15 @@ export function DossierInvestigation({
               ? connection || 'Waiting for the next saved checkpoint…'
               : value.stop_reason}
           </output>
+          {value.monitoring_trigger && (
+            <aside className="monitoring-research-status">
+              <strong>Started by a new monitoring signal</strong>
+              <p>{value.monitoring_trigger.source.title}</p>
+              <a href={`#monitoring-trigger-${value.monitoring_trigger.id}`}>
+                Why it started and which settings applied
+              </a>
+            </aside>
+          )}
           {value.original && (
             <OriginalContribution
               original={value.original}

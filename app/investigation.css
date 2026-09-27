@@ -321,3 +321,38 @@
     font-size: 1.125rem;
   }
 }
+
+.monitoring-research-status {
+  padding-block: var(--space-4, 1.5rem);
+}
+.monitoring-research-status > strong {
+  font-size: 1.25rem;
+}
+.monitoring-research-history {
+  list-style: none;
+  padding: 0;
+}
+.monitoring-research-history > li {
+  padding-block: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.monitoring-research-history h4 {
+  font-size: 1.125rem;
+  overflow-wrap: anywhere;
+}
+.monitoring-fingerprint {
+  overflow-wrap: anywhere;
+}
+.monitoring-research-settings {
+  margin-block: 1.5rem;
+}
+.monitoring-research-settings fieldset {
+  border: 0;
+  padding: 1rem 0;
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.monitoring-research-settings label {
+  font-size: 1rem;
+}

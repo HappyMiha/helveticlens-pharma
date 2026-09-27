@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 const chapters = [
   ['interface', 'Ask, read and trace evidence'],
   ['public-research', 'Develop a living public dossier'],
+  ['ongoing-research', 'Keep research current automatically'],
   ['changes-over-time', 'Compare evidence over time'],
   ['start', 'Frame a useful question'],
   ['investigate', 'Ask this dossier'],
@@ -72,6 +73,48 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section
+              id="ongoing-research"
+              aria-labelledby="ongoing-research-title"
+            >
+              <span className="guide-step">ONGOING RESEARCH</span>
+              <h2 id="ongoing-research-title">
+                Let new monitoring signals update the evidence.
+              </h2>
+              <p>
+                In an active dossier, open Keep this dossier current. A dossier
+                editor with workspace monitoring permission can enable private
+                analysis of future saved topic matches. The permission continues
+                while that person is signed out, and stops if their access or
+                monitoring settings change.
+              </p>
+              <p>
+                Choose one to six research starts per UTC day; the default is
+                three. Each start uses one saved event-metadata excerpt and at
+                most two model requests: extraction and comparison with earlier
+                private findings. Explicit retries count toward the daily limit.
+                Duplicate signal delivery starts no extra research, and
+                interrupted paid requests are not repeated automatically.
+              </p>
+              <p>
+                New signals wait if research is already active or the daily
+                limit has been reached. The feed is checked about once a minute.
+                Inspect each signal’s source, settings revision and
+                investigation, then read Changes over time for paired
+                quotations. A matching event is not automatically a material
+                change, and event metadata is not the full document.
+              </p>
+              <p>
+                Turn the mode off at any time. Changing settings cancels pending
+                work under the previous settings; completed evidence remains
+                inspectable. This mode performs no external discovery, makes no
+                public contribution and adds no email subscription. Existing
+                source admission, exclusions, dossier permissions and personal
+                notification choices still apply. Automatic watched-page
+                research and recurring open-web discovery are separate
+                capabilities still to come.
+              </p>
+            </section>
             <section
               id="changes-over-time"
               aria-labelledby="changes-over-time-title"

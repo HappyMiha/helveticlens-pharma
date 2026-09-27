@@ -3,6 +3,7 @@ import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
 import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
+import { MonitoringResearchPanel } from './monitoring-research';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useEffect, useState } from 'react';
 import {
@@ -232,6 +233,11 @@ export function Dossier({
         canEdit={canEdit}
         canContribute={canContribute}
         userId={userId}
+      />
+      <MonitoringResearchPanel
+        key={`${d.id}:${userId || ''}`}
+        dossierId={d.id}
+        onOpen={openInvestigation}
       />
       <details
         className="dossier-tools"

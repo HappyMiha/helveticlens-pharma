@@ -1,3 +1,4 @@
+import type { MonitoringTrigger } from './monitoring-research';
 export type ContributionOriginal = {
   id: string;
   kind: string;
@@ -35,6 +36,7 @@ export type EvidenceLink = {
   locator: string;
 };
 export type Investigation = InvestigationSummary & {
+  monitoring_trigger?: MonitoringTrigger | null;
   original?: ContributionOriginal | null;
   plans: {
     id: string;
