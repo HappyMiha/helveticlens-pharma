@@ -1,5 +1,16 @@
 # Changes
 
+## 1.8.0 — durable dossier investigations
+
+The primary dossier view now starts with **Ask this dossier**. One submitted question queues native, persistent research using the existing search, Jev/Laya routing, source reader and configured workspace AI. Available sources shape the plan; a source-grounded entity can create another branch and a new plan version. No agent roster or model selection is required.
+
+Claims link to exact validated quotes, locations and source hashes. Contradicting evidence preserves the earlier statement and status history. Entity mentions remain unresolved identities; model extraction is not independent factual verification. Saved sources, branches and structured activity survive restarts. Pause, resume and cancel operate on the durable job generation. In-flight paid searches are not automatically repeated after interruption. Native permissions are rechecked before and after external operations and during event streams.
+
+Research has explicit bounds: up to three public branches with three inspected sources each, plus three saved evidence snapshots. Daily public queries share the existing operator budget. Unavailable capabilities and failed steps remain visible. Discussion, files, monitoring, actions and explicit public publication remain under **Discussion, monitoring & dossier tools**.
+
+This release is the first working stage of the supplied dynamic dossier specification. Per-dossier invitations, human-readable living public URLs, automatic file extraction and contribution/monitoring-triggered investigation are still open; this release does not silently publish private research.
+
+
 ## 1.7.0 — Reviewed multilingual search
 
 The public question can now include two editable alternative queries. An optional text-model draft supports English, German, French, Italian and Ukrainian; users review and explicitly apply suggestions before searching. Retrieval uses at most five visible lanes and one deduplicated candidate pool. Jev/Laya still judge relevance against the main question, while exact found-by queries survive signed import, brief and export. Daily limits count query units and retries preserve their original identity. Manual queries remain usable when the draft model is unavailable. Private corpus indexing and scheduled rediscovery remain separate work.

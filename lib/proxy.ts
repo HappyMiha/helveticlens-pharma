@@ -37,6 +37,7 @@ export async function proxy(
     'content-type',
     'accept',
     'accept-language',
+    'last-event-id',
     'x-csrf-token',
   ]) {
     const value = request.headers.get(name);

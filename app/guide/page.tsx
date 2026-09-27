@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 const chapters = [
   ['start', 'Frame a useful question'],
+  ['investigate', 'Ask this dossier'],
   ['discover', 'Find and keep sources'],
   ['monitor', 'Connect monitoring'],
   ['collaborate', 'Develop it together'],
@@ -85,6 +86,49 @@ export default function Guide() {
                   ? 'medicine or active substance, programme, markets and lifecycle stage'
                   : 'client or organisation, matter reference, jurisdictions and practice area'}
                 . Name the next review date and responsible person.
+              </p>
+            </section>
+            <section id="investigate" aria-labelledby="investigate-title">
+              <span className="guide-step">LIVING RESEARCH</span>
+              <h2 id="investigate-title">Ask this dossier.</h2>
+              <p>
+                Open a dossier, enter a question and choose{' '}
+                <strong>Investigate</strong>. The system selects available
+                sources, reads permitted excerpts and records claims with exact
+                source quotes. New entities found in public evidence can open
+                another research branch. The plan history shows the triggering
+                source and why the plan changed.
+              </p>
+              <p>
+                The submitted question and newly found public entity names go to
+                public search. Keep confidential details out of that field.
+                Existing saved dossier evidence can be analysed by the
+                configured workspace AI; its contents are never added to
+                external search queries.
+              </p>
+              <p>
+                Research continues in the native job queue and saves each
+                checkpoint. Pause, resume or cancel from the dossier.
+                Interrupted requests are recorded without automatically
+                repeating paid work. A source or model failure remains visible
+                while other branches can finish.
+              </p>
+              <p>
+                <strong>Supported</strong> means a source supports the
+                statement, not that it has been independently established.{' '}
+                <strong>Contested</strong>
+                preserves both supporting and contradicting evidence. Inspect
+                the quotes, source captures and claim history before relying on
+                a finding. Entity mentions do not resolve identity from a
+                matching name.
+              </p>
+              <p>
+                Each investigation is bounded to three public branches, three
+                inspected sources per branch and three saved evidence snapshots.
+                Authenticated archives, scanned-image OCR and original file
+                extraction are not available in this workflow yet. Existing
+                public publication and monitoring controls stay in{' '}
+                <strong>Discussion, monitoring &amp; dossier tools</strong>.
               </p>
             </section>
             <section id="discover" aria-labelledby="discover-title">

@@ -6,11 +6,13 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.7.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.8.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 
 ## What works
+
+- **Ask this dossier** starts durable research from one question. The coordinator selects available search/read capabilities, checks saved evidence, and follows new public-source entities through versioned plans. Captured excerpts, evidence-linked claims, contradictions, unresolved entity mentions and relationships remain inspectable. Pause/resume/cancel and a live event stream use native authorization and persisted checkpoints. The question and public entity names go to external search; private saved material is never converted into external queries.
 
 - Public dossiers at `/public-dossiers`: anonymous catalogue, literal search, paginated results and server-rendered readers. Administrators explicitly author and preview a separate public version, confirm publication, update it or withdraw it; private material is not copied automatically.
 

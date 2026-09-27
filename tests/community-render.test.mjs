@@ -380,3 +380,111 @@ test('saved source provenance escapes exact queries and supports records predati
   assert.match(legacy, /Source title/);
   assert.doesNotMatch(legacy, /Retrieved by these exact queries/);
 });
+
+const { InvestigationFindings } = require(
+  resolve('components/investigation-findings.tsx'),
+);
+const { DossierInvestigation } = require(
+  resolve('components/investigation.tsx'),
+);
+const { sourceHref } = require(resolve('lib/investigation.ts'));
+
+test('living research shows evidence, contested history and escaped source text', () => {
+  const value = {
+    evidence_basis: 'Source support is not independent verification.',
+    claims: [
+      {
+        id: 'claim-one',
+        statement: '<script>claim()</script>',
+        status: 'CONTESTED',
+        revision: 2,
+        history: [
+          {
+            revision: 1,
+            from: 'UNVERIFIED',
+            to: 'SUPPORTED',
+            at: '2026-09-27T12:00:00Z',
+            basis: 'Source evidence',
+          },
+          {
+            revision: 2,
+            from: 'SUPPORTED',
+            to: 'CONTESTED',
+            at: '2026-09-27T12:00:00Z',
+            basis: 'Contradicting source',
+          },
+        ],
+      },
+    ],
+    evidence: [
+      {
+        id: 'evidence-one',
+        claim_id: 'claim-one',
+        source_id: 'source-one',
+        quote: '<img src=x onerror=alert(1)>',
+        locator: 'p1',
+        relation: 'CONTRADICTS',
+      },
+    ],
+    sources: [
+      {
+        id: 'source-one',
+        kind: 'public_source',
+        title: 'Original source',
+        url: 'https://example.org/record',
+        sha256: 'a'.repeat(64),
+        created_at: '2026-09-27T12:00:00Z',
+        snapshot: {
+          scope: 'Bounded source excerpt',
+          excerpts: [{ text: '<img src=x onerror=alert(1)>', passage: 'p1' }],
+        },
+      },
+    ],
+    entities: [],
+    relationships: [],
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(InvestigationFindings, { value }),
+  );
+  assert.match(html, /Contested/);
+  assert.match(html, /Contradicts/);
+  assert.match(html, /Claim history/);
+  assert.match(html, /Supported → Contested/);
+  assert.match(html, /href="#source-source-one"/);
+  assert.match(html, /id="claim-claim-one"/);
+  assert.match(html, /SHA-256/);
+  assert.match(html, /&lt;script&gt;claim/);
+  assert.doesNotMatch(html, /<script>|<img src=x/);
+  assert.match(html, /rel="noopener noreferrer nofollow ugc"/);
+});
+
+test('the primary dossier form discloses external search and exposes no engine controls', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(DossierInvestigation, {
+      dossierId: 'test',
+      canEdit: true,
+    }),
+  );
+  assert.match(html, /Ask this dossier/);
+  assert.match(html, /Investigate sends this question/);
+  assert.match(html, /Keep confidential details out of this field/);
+  assert.doesNotMatch(html, /Choose.*engine|Agent count|Select model/);
+  const viewer = renderToStaticMarkup(
+    React.createElement(DossierInvestigation, {
+      dossierId: 'test',
+      canEdit: false,
+    }),
+  );
+  assert.match(viewer, /workspace administrator/);
+  assert.match(viewer, /disabled/);
+});
+
+test('evidence source links reject active content and credential URLs', () => {
+  assert.equal(sourceHref('javascript:alert(1)'), null);
+  assert.equal(sourceHref('https://user:secret@example.org'), null);
+  assert.equal(sourceHref('http://example.org'), null);
+  assert.equal(
+    sourceHref('https://example.org/evidence'),
+    'https://example.org/evidence',
+  );
+});

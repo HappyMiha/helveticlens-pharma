@@ -786,3 +786,36 @@ test('decision search gateway forwards exact public query and allows only bounde
     assert.equal((await proxy(request(), context(route))).status, 404);
   assert.equal(calls, 7);
 });
+
+test('investigation activity streams without buffering and forwards its reconnect cursor', async () => {
+  let controller;
+  globalThis.fetch = async (url, init) => {
+    assert.equal(init.headers.get('last-event-id'), '12');
+    assert.match(url, /investigations\/run\/events\?after=10$/);
+    return new Response(
+      new ReadableStream({
+        start(value) {
+          controller = value;
+          value.enqueue(
+            new TextEncoder().encode('id: 13\nevent: activity\ndata: {}\n\n'),
+          );
+        },
+      }),
+      { headers: { 'content-type': 'text/event-stream' } },
+    );
+  };
+  const route = `products/${product.id}/dossiers/dossier/investigations/run/events`;
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}?after=10`, {
+      headers: { 'Last-Event-ID': '12', accept: 'text/event-stream' },
+    }),
+    context(route),
+  );
+  const reader = response.body.getReader();
+  const first = await reader.read();
+  assert.equal(first.done, false);
+  assert.match(new TextDecoder().decode(first.value), /id: 13/);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  controller.close();
+  assert.equal((await reader.read()).done, true);
+});

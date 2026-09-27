@@ -1,0 +1,323 @@
+.dossier-investigation {
+  margin: 24px 0 36px;
+}
+.investigation-ask {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 14px;
+  background: var(--card);
+}
+.investigation-ask .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.investigation-ask label {
+  display: block;
+  font-size: 26px;
+  letter-spacing: -0.6px;
+  font-weight: 650;
+}
+.investigation-ask > p {
+  color: var(--muted-foreground);
+  margin: 6px 0 20px;
+}
+.investigation-ask textarea {
+  background: var(--background);
+  font-size: 16px;
+  padding: 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.investigation-submit {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.investigation-submit small {
+  max-width: 680px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.investigation-submit button {
+  flex-shrink: 0;
+}
+.investigation-history {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 24px 0;
+}
+.investigation-history label {
+  font-size: 13px;
+  font-weight: 650;
+}
+.investigation-history select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--card);
+  max-width: 650px;
+  width: 100%;
+  min-width: 0;
+}
+.investigation-run-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin: 28px 0 6px;
+}
+.investigation-run-heading h2 {
+  font-size: 23px;
+  line-height: 1.35;
+  margin: 10px 0;
+  letter-spacing: -0.4px;
+}
+.investigation-controls {
+  display: flex;
+  gap: 6px;
+}
+.investigation-muted {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.investigation-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  background: var(--muted);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+.investigation-status[data-status='CONTESTED'],
+.investigation-status[data-status='failed'] {
+  background: #fff1e4;
+  color: #8c3e08;
+}
+.investigation-status[data-status='SUPPORTED'],
+.investigation-status[data-status='completed'] {
+  background: #e6f4ed;
+  color: #22583e;
+}
+.investigation-status[data-status='running'],
+.investigation-status[data-status='queued'] {
+  background: #e7effb;
+  color: #284e8c;
+}
+.investigation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 330px);
+  gap: 28px;
+  margin-top: 28px;
+  align-items: start;
+}
+.investigation-findings {
+  display: grid;
+  gap: 30px;
+  min-width: 0;
+}
+.investigation-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.investigation-section-title span {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.investigation-layout h3 {
+  font-size: 16px;
+  font-weight: 650;
+  margin: 0 0 10px;
+}
+.investigation-claim,
+.investigation-source,
+.investigation-connections {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 14px;
+  background: var(--card);
+  scroll-margin-top: 85px;
+}
+.investigation-layout h4 {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 10px 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.investigation-layout a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 13px;
+}
+.investigation-layout blockquote {
+  border-left: 2px solid var(--border);
+  padding: 5px 0 5px 14px;
+  margin: 6px 0 10px;
+  font-size: 14px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.investigation-relation {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 18px;
+}
+.investigation-layout details {
+  margin-top: 18px;
+  font-size: 13px;
+}
+.investigation-layout summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.investigation-layout details ol {
+  padding: 12px 0 0 18px;
+}
+.investigation-layout details li {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+.investigation-layout code {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  padding-top: 10px;
+  color: var(--muted-foreground);
+}
+.investigation-connections ul {
+  list-style: none;
+  padding: 0;
+}
+.investigation-connections li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.investigation-connections li span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.investigation-relationship {
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.investigation-progress {
+  background: var(--muted);
+  border-radius: 12px;
+  padding: 22px;
+  min-width: 0;
+}
+.investigation-branches {
+  list-style: none;
+  margin: 20px 0;
+  padding: 0;
+}
+.investigation-branches > li {
+  border-top: 1px solid var(--border);
+  padding: 18px 0;
+}
+.investigation-branches h4 {
+  font-size: 14px;
+}
+.investigation-branches p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.investigation-branches small,
+.investigation-plan small,
+.investigation-activity small {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.investigation-plan {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.investigation-plan p {
+  line-height: 1.6;
+  margin: 7px 0;
+}
+.investigation-activity {
+  max-height: 450px;
+  overflow: auto;
+}
+.investigation-empty {
+  padding: 28px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.8;
+  margin-top: 16px;
+}
+.investigation-error {
+  font-size: 13px;
+  color: #8c3e08;
+  padding: 12px;
+  background: #fff6ec;
+  border-radius: 8px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.dossier-tools {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+.dossier-tools > summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+@media (max-width: 1000px) {
+  .investigation-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .investigation-ask {
+    padding: 20px;
+  }
+  .investigation-submit,
+  .investigation-run-heading,
+  .investigation-history {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .investigation-run-heading h2 {
+    font-size: 20px;
+  }
+  .investigation-controls {
+    justify-content: flex-start;
+  }
+  .investigation-claim,
+  .investigation-source {
+    padding: 16px;
+  }
+}
