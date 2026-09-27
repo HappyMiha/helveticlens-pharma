@@ -21,6 +21,8 @@ import { InvestigationFindings } from './investigation-findings';
 export function DossierInvestigation({
   dossierId,
   canEdit,
+  canContribute = false,
+  userId,
   title = 'this dossier',
   focusRequest,
 }: {
@@ -28,6 +30,8 @@ export function DossierInvestigation({
   focusRequest?: { id: string; tick: number };
   dossierId: string;
   canEdit: boolean;
+  canContribute?: boolean;
+  userId?: string;
 }) {
   const base = `/products/${product.id}/dossiers/${dossierId}/investigations`;
   const { register } = useAskSearch();
@@ -36,6 +40,14 @@ export function DossierInvestigation({
   const [selected, setSelected] = useState('');
   const [stored, setValue] = useState<Investigation | null>(null);
   const value = stored?.id === selected ? stored : null;
+  const canControl =
+    canEdit ||
+    !!(
+      canContribute &&
+      userId &&
+      value?.trigger_entry_id &&
+      value.created_by_user_id === userId
+    );
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -328,7 +340,8 @@ export function DossierInvestigation({
         <p className="investigation-muted">{PUBLIC_QUERY_DISCLOSURE}</p>
         {!canEdit && (
           <p className="investigation-muted">
-            A workspace administrator can start or manage an investigation.
+            An owner or editor can start research. Contributors can analyse
+            their own submissions.
           </p>
         )}
       </div>
@@ -385,7 +398,7 @@ export function DossierInvestigation({
               <h2>{value.question}</h2>
             </div>
             <div className="investigation-controls">
-              {canEdit &&
+              {canControl &&
                 value.trigger_entry_id &&
                 ['completed', 'failed'].includes(value.status) &&
                 value.branches.some((branch) => branch.status === 'failed') && (
@@ -398,7 +411,7 @@ export function DossierInvestigation({
                   </Button>
                 )}
 
-              {canEdit && running && (
+              {canControl && running && (
                 <Button
                   variant="outline"
                   disabled={busy}
@@ -408,7 +421,7 @@ export function DossierInvestigation({
                   Pause
                 </Button>
               )}
-              {canEdit && value.status === 'paused' && (
+              {canControl && value.status === 'paused' && (
                 <Button
                   variant="outline"
                   disabled={
@@ -420,7 +433,7 @@ export function DossierInvestigation({
                   Resume
                 </Button>
               )}
-              {canEdit && (running || value.status === 'paused') && (
+              {canControl && (running || value.status === 'paused') && (
                 <Button
                   variant="ghost"
                   disabled={busy}

@@ -819,3 +819,50 @@ test('investigation activity streams without buffering and forwards its reconnec
   controller.close();
   assert.equal((await reader.read()).done, true);
 });
+
+test('dossier invitation gateway preserves account cookies and restricts product and action', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push([url, init]);
+    return Response.json({ dossier_id: id });
+  };
+  for (const suffix of ['', `/${id}/accept`]) {
+    const route = `products/${product.id}/dossier-invitations${suffix}`;
+    const result = await proxy(
+      new Request(`https://product.test/api/${route}`, {
+        method: suffix ? 'POST' : 'GET',
+        headers: {
+          cookie: 'helvetic_lens_session=fixture; unrelated=drop',
+          'x-csrf-token': 'fixture',
+          origin: 'https://product.test',
+        },
+        ...(suffix ? { body: '{}' } : {}),
+      }),
+      context(route),
+    );
+    assert.equal(result.status, 200);
+    assert.equal(result.headers.get('cache-control'), 'private, no-store');
+  }
+  assert.equal(
+    calls[1][1].headers.get('cookie'),
+    'helvetic_lens_session=fixture',
+  );
+  assert.equal(calls[1][1].headers.get('x-csrf-token'), 'fixture');
+  for (const route of [
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossier-invitations`,
+    `products/${product.id}/dossier-invitations/${id}/promote`,
+    `products/${product.id}/dossier-invitations/not-an-id/accept`,
+  ]) {
+    assert.equal(
+      (
+        await proxy(
+          new Request(`https://product.test/api/${route}`),
+          context(route),
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(calls.length, 2);
+});

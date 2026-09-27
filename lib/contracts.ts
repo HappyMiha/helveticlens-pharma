@@ -258,6 +258,7 @@ export interface DocumentWatch {
   checked_at?: string;
 }
 export interface DossierRecord {
+  access?: import('./dossier-team').DossierAccess;
   public_origin?: import('./public-following').PublicOrigin | null;
   id: string;
   product: string;
@@ -361,8 +362,11 @@ export interface WizardProps {
   onCancel: () => void;
   onSaved: (d: DossierRecord) => Promise<void>;
   onActivated: (id: string) => Promise<void>;
+  onOpenDraft: (id: string) => Promise<void>;
 }
 export interface DossierProps {
+  userId?: string;
+  onSetup: () => void;
   dossier: DossierRecord;
   initialQuestionId?: string | null;
   initialReferenceId?: string | null;

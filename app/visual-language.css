@@ -842,3 +842,93 @@ button[data-slot='button'] {
     grid-template-columns: 1fr;
   }
 }
+
+/* Dossier teams share the research typography and surface tokens. */
+.dossier-team {
+  margin-block: var(--space-4);
+  padding-block: var(--space-3);
+  border-block: 1px solid var(--border);
+}
+.dossier-team > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.team-content,
+.team-audience {
+  margin-top: var(--space-3);
+}
+.team-content {
+  display: grid;
+  gap: var(--space-3);
+}
+.team-people {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.team-person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  overflow-wrap: anywhere;
+}
+.team-person p {
+  margin-block: var(--space-1);
+}
+.team-person-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.team-role-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.team-role-guide dt {
+  font-weight: 600;
+}
+.team-role-guide dd {
+  margin: var(--space-1) 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+}
+.team-invite {
+  display: grid;
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+}
+.team-invite label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 0.9375rem;
+}
+.team-activation {
+  margin-block: var(--space-4);
+}
+.team-activation label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+@media (max-width: 760px) {
+  .team-role-guide,
+  .team-invite {
+    grid-template-columns: 1fr;
+  }
+  .team-person {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .team-person-actions {
+    align-items: stretch;
+  }
+}

@@ -262,7 +262,7 @@ export function DossierContributions({
         </form>
       ) : (
         <p className="investigation-muted">
-          A workspace administrator can add material for private analysis.
+          An owner, editor or contributor can add material for private analysis.
         </p>
       )}
       {error && (

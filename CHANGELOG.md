@@ -1,5 +1,10 @@
 # Changes
 
+## 1.11.0 — dossier teams and accountable invitations
+
+The original creator can enable Owner, Editor, Contributor and Viewer roles, invite existing workspace colleagues, revoke invitations and hand over ownership. Account-bound invitations expire in seven days and appear in an in-app inbox; no email is sent. Saved drafts open as research dossiers before monitoring activation. Contribution controls use dossier roles, and activation explicitly discloses sharing with the entire workspace. Active monitoring keeps its existing workspace audience. Members-only active monitoring and invitations outside the workspace remain future work.
+
+
 ## 1.10.0 — original contributions become private evidence
 
 One dossier composer saves comments, source URLs, files, corrections and research requests with original authorship and queues a durable private review. Exact text/file hashes and original downloads survive failed extraction or inference. Reviews serialize per dossier; failed steps can be retried without repeating completed work. Contribution research cannot send private material to public discovery or expand source entities into public queries. Existing explicit Ask remains available.

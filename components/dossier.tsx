@@ -1,4 +1,5 @@
 'use client';
+import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
 import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
@@ -55,6 +56,8 @@ export function Dossier({
   initialReferenceId,
   onReferenceChange,
   canEdit,
+  userId,
+  onSetup,
   busy,
   run,
   onBack,
@@ -63,6 +66,8 @@ export function Dossier({
 }: DossierProps) {
   const p = d.profile,
     c = p.config;
+  const canContribute = d.access?.can_contribute ?? canEdit;
+  const canMonitor = d.access?.can_monitor ?? canEdit;
   const [focusInvestigation, setFocusInvestigation] = useState<
     { id: string; tick: number } | undefined
   >();
@@ -157,32 +162,44 @@ export function Dossier({
         </div>
         <div className="dossier-actions">
           <Status status={p.status} />
-          <Button
-            variant="outline"
-            disabled={!canEdit || !!busy}
-            onClick={() =>
-              run('Updating topic monitoring', async () => {
-                await api(`/monitoring-profiles/${p.id}/status`, {
-                  expected_revision: p.revision,
-                  status: p.status === 'active' ? 'paused' : 'active',
-                });
-                await refreshed();
-                notify(
-                  'Topic monitoring updated. Shared source collection and document page watches keep their separate settings.',
-                );
-              })
-            }
-          >
-            {p.status === 'active' ? <Pause size={16} /> : <Play size={16} />}{' '}
-            {p.status === 'active' ? 'Pause topics' : 'Resume topics'}
-          </Button>
+          {p.status === 'draft' ? (
+            <Button
+              variant="outline"
+              disabled={!canEdit || !!busy}
+              onClick={onSetup}
+            >
+              Monitoring setup
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              disabled={!canMonitor || !!busy}
+              onClick={() =>
+                run('Updating topic monitoring', async () => {
+                  await api(`/monitoring-profiles/${p.id}/status`, {
+                    expected_revision: p.revision,
+                    status: p.status === 'active' ? 'paused' : 'active',
+                  });
+                  await refreshed();
+                  notify(
+                    'Topic monitoring updated. Shared source collection and document page watches keep their separate settings.',
+                  );
+                })
+              }
+            >
+              {p.status === 'active' ? <Pause size={16} /> : <Play size={16} />}{' '}
+              {p.status === 'active' ? 'Pause topics' : 'Resume topics'}
+            </Button>
+          )}
         </div>
       </div>
       <div className="dossier-byline">
         <span>
           <Users size={14} />
           {p.status === 'draft'
-            ? 'Private draft · only you'
+            ? d.access?.audience === 'invited_team'
+              ? 'Private draft · invited dossier team'
+              : 'Private draft · creator only'
             : 'Shared with your organization'}
         </span>
         <span>
@@ -191,11 +208,17 @@ export function Dossier({
         </span>
         <span>Created {date(p.created_at)}</span>
       </div>
+      <DossierTeamPanel
+        dossierId={d.id}
+        access={d.access}
+        onChanged={reload}
+        onLeave={onBack}
+      />
       <PublicCopyOrigin origin={d.public_origin} />
       <DossierContributions
         dossierId={d.id}
         entries={entries}
-        canEdit={canEdit}
+        canEdit={canContribute}
         onOpen={openInvestigation}
         onSaved={async () => {
           await reload();
@@ -207,6 +230,8 @@ export function Dossier({
         title={c.name}
         focusRequest={focusInvestigation}
         canEdit={canEdit}
+        canContribute={canContribute}
+        userId={userId}
       />
       <details
         className="dossier-tools"
@@ -265,7 +290,11 @@ export function Dossier({
             />
           </TabsContent>
           <TabsContent value="publication">
-            <PublicationEditor key={d.id} dossierId={d.id} canEdit={canEdit} />
+            <PublicationEditor
+              key={d.id}
+              dossierId={d.id}
+              canEdit={d.access?.can_publish ?? canEdit}
+            />
           </TabsContent>
           <TabsContent value="overview">
             <div className="detail-columns">
@@ -493,7 +522,7 @@ export function Dossier({
             <PageWatches
               dossierId={d.id}
               documents={d.documents}
-              canEdit={canEdit}
+              canEdit={canMonitor}
               busy={busy}
               run={run}
               reload={refreshed}
@@ -859,7 +888,7 @@ export function Dossier({
                         </Field>
                         <Button
                           variant="outline"
-                          disabled={!canEdit || !!busy || !!applied || stale}
+                          disabled={!canMonitor || !!busy || !!applied || stale}
                           onClick={() =>
                             run(
                               'Applying reviewed monitoring refinement',

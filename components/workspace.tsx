@@ -1,4 +1,5 @@
 'use client';
+import { DossierInvitationInbox } from './dossier-team';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -287,11 +288,7 @@ export default function Workspace() {
         if (resetView) setNavigationVersion((version) => version + 1);
         setQuestionId(sourceId ? null : threadId || null);
         setReferenceId(sourceId || null);
-        setView(
-          d.profile.status === 'draft' && !sourceId && !threadId
-            ? 'wizard'
-            : 'detail',
-        );
+        setView('detail');
         recordDossierNavigation(
           window.history,
           { id, questionId: threadId, referenceId: sourceId },
@@ -614,6 +611,16 @@ export default function Workspace() {
             </div>
           ) : (
             <>
+              {identity && (
+                <DossierInvitationInbox
+                  key={`${identity.user.id}:${identity.organization.id}`}
+                  refreshToken={refreshToken}
+                  onAccepted={async (id) => {
+                    await refresh();
+                    await openDossier(id);
+                  }}
+                />
+              )}
               {view === 'research' && (
                 <ResearchDesk
                   identity={identity}
@@ -867,6 +874,7 @@ export default function Workspace() {
                     setSelected(d);
                     await refresh();
                   }}
+                  onOpenDraft={openDossier}
                   onActivated={async (id: string) => {
                     await refresh();
                     await openDossier(id);
@@ -892,7 +900,9 @@ export default function Workspace() {
                     );
                   }}
                   dossier={selected}
-                  canEdit={canEdit}
+                  userId={identity?.user.id}
+                  onSetup={() => setView('wizard')}
+                  canEdit={selected.access?.can_edit ?? canEdit}
                   busy={busy}
                   run={run}
                   onBack={() => go('research')}

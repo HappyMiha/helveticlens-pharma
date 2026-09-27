@@ -52,6 +52,7 @@ export function Wizard({
   onCancel,
   onSaved,
   onActivated,
+  onOpenDraft,
 }: WizardProps) {
   const [doc, setDoc] = useState<DossierRecord | null>(initial),
     [config, setConfig] = useState<ProfileConfig>(
@@ -66,6 +67,7 @@ export function Wizard({
     [sourceUrl, setSourceUrl] = useState(''),
     [sourceName, setSourceName] = useState(''),
     [sourceAdvice, setSourceAdvice] = useState<SourceAdvice | null>(null);
+  const [shareConfirmed, setShareConfirmed] = useState(false);
   useEffect(() => {
     const before = (e: BeforeUnloadEvent) => {
       if (dirty) {
@@ -189,7 +191,10 @@ export function Wizard({
     const d = await save(4);
     const p = await api<Profile>(
       `/monitoring-profiles/${d.profile.id}/activate`,
-      { expected_revision: d.profile.revision },
+      {
+        expected_revision: d.profile.revision,
+        share_with_workspace_confirmed: shareConfirmed,
+      },
     );
     setDoc({ ...d, profile: p });
     for (const source of config.source_requests) {
@@ -832,6 +837,26 @@ export function Wizard({
               )}
             </>
           )}
+          {step === 4 && (
+            <div className="team-activation">
+              <label htmlFor="share-dossier-workspace">
+                <Checkbox
+                  id="share-dossier-workspace"
+                  checked={shareConfirmed}
+                  onCheckedChange={(checked) =>
+                    setShareConfirmed(checked === true)
+                  }
+                />
+                Make this dossier and its monitoring visible to everyone in this
+                workspace.
+              </label>
+              <p className="source-meta">
+                A draft can stay private for research and invited collaboration.
+                Starting shared monitoring requires the dossier owner and
+                workspace administrator rights.
+              </p>
+            </div>
+          )}
           <div className="wizard-footer">
             <Button
               variant="outline"
@@ -865,7 +890,13 @@ export function Wizard({
             ) : (
               <Button
                 className="primary-cta"
-                disabled={!!busy}
+                disabled={
+                  !!busy ||
+                  !shareConfirmed ||
+                  (doc?.access
+                    ? !doc.access.can_activate
+                    : identity.role !== 'organization_admin')
+                }
                 onClick={() =>
                   run(
                     'Activating monitoring and checking selected pages',
@@ -878,6 +909,19 @@ export function Wizard({
               </Button>
             )}
           </div>
+          <Button
+            variant="ghost"
+            disabled={!!busy}
+            onClick={() =>
+              void run('Saving research draft', async () => {
+                valid();
+                const saved = await save();
+                await onOpenDraft(saved.id);
+              })
+            }
+          >
+            Save and open research dossier
+          </Button>
         </section>
         <aside className="wizard-context">
           <div className="context-index">

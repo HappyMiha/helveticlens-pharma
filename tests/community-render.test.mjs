@@ -475,7 +475,7 @@ test('the primary dossier form discloses external search and exposes no engine c
       canEdit: false,
     }),
   );
-  assert.match(viewer, /workspace administrator/);
+  assert.match(viewer, /owner or editor/);
   assert.match(viewer, /disabled/);
 });
 
@@ -705,7 +705,7 @@ test('read-only dossier contribution surface does not expose write controls', ()
     }),
   );
   assert.doesNotMatch(html, /<form|<textarea|type="submit"/);
-  assert.match(html, /workspace administrator/);
+  assert.match(html, /owner, editor or contributor/);
 });
 
 test('original contributions preserve literal text, authorship and scoped download URLs', () => {
@@ -737,4 +737,41 @@ test('original contributions preserve literal text, authorship and scoped downlo
   );
   assert.doesNotMatch(html, /<script>/);
   assert.doesNotMatch(render('../another-dossier'), /href=/);
+});
+
+test('dossier audiences distinguish invited drafts from shared active monitoring', () => {
+  const { TeamAudience, TeamRoles } = require('../components/dossier-team.tsx');
+  const { audienceDescription } = require('../lib/dossier-team.ts');
+  const privateDraft = renderToStaticMarkup(
+    React.createElement(TeamAudience, {
+      access: { audience: 'invited_team', role: 'CONTRIBUTOR' },
+    }),
+  );
+  assert.match(privateDraft, /Only the accepted dossier team/);
+  assert.match(privateDraft, /Activating monitoring shares/);
+  assert.match(privateDraft, /Contributor/);
+  assert.match(audienceDescription('workspace'), /Everyone in this workspace/);
+  assert.match(
+    audienceDescription('workspace'),
+    /unless assigned a different dossier role/,
+  );
+  const roles = renderToStaticMarkup(React.createElement(TeamRoles));
+  for (const label of ['Owner', 'Editor', 'Contributor', 'Viewer'])
+    assert.match(roles, new RegExp(label));
+  assert.match(roles, /analyse those contributions/);
+});
+
+test('closed team panel never renders an editable roster or invitation form before access is loaded', () => {
+  const { DossierTeamPanel } = require('../components/dossier-team.tsx');
+  const html = renderToStaticMarkup(
+    React.createElement(DossierTeamPanel, {
+      dossierId: '11111111-1111-4111-8111-111111111111',
+      access: { audience: 'invited_team', role: 'VIEWER', can_manage: false },
+      async onChanged() {},
+      onLeave() {},
+    }),
+  );
+  assert.match(html, /Dossier team/);
+  assert.match(html, /Viewer/);
+  assert.doesNotMatch(html, /<form|<select|Make owner|Create invitation/);
 });

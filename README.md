@@ -171,3 +171,6 @@ Vendored UI primitives and the generated mobile hook retain their upstream sourc
 ## License
 
 Apache-2.0 for the project code, with preserved upstream attribution in [NOTICE](NOTICE). Third-party libraries and source documents retain their own terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+
+Dossier teams (1.11): enable explicit roles from a saved dossier, invite existing workspace colleagues, accept through the invitation inbox and hand over ownership. Draft collaboration stays within the accepted team; activation requires explicit workspace-sharing confirmation and native monitoring authority. Active dossiers retain workspace visibility. No automatic email or organization membership is created. See the in-product guide’s Dossier team chapter.

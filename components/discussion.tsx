@@ -226,6 +226,7 @@ export function Discussion({
   notify: (text: string) => void;
   onRefine: (question: string) => void;
 }) {
+  const canContribute = dossier.access?.can_contribute ?? canEdit;
   const [selected, setSelected] = useState<ThreadDetail | null>(null),
     [failure, setFailure] = useState(''),
     [selection, setSelection] = useState<QuestionSelection>(() =>
@@ -424,7 +425,7 @@ export function Discussion({
                 Saved searches
               </Button>
               <Button
-                disabled={!canEdit || !!busy}
+                disabled={!canContribute || !!busy}
                 onClick={() => setAdding(true)}
               >
                 <Plus size={16} />
@@ -626,7 +627,7 @@ export function Discussion({
                       Show all questions
                     </Button>
                   )}
-                  {canEdit && data.dossier_total === 0 && (
+                  {canContribute && data.dossier_total === 0 && (
                     <Button
                       disabled={waiting}
                       onClick={() => {
@@ -941,7 +942,7 @@ export function Discussion({
               </div>
             )}
           </div>
-          {canEdit ? (
+          {canContribute ? (
             <form
               className="reply-composer surface"
               onSubmit={(e) => {

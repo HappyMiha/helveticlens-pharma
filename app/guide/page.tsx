@@ -17,6 +17,7 @@ const chapters = [
   ['contributions', 'Add material for private analysis'],
   ['discover', 'Find and keep sources'],
   ['monitor', 'Connect monitoring'],
+  ['team-access', 'Invite your dossier team'],
   ['collaborate', 'Develop it together'],
   ['evidence', 'Review an AI research note'],
   ['review', 'Keep the answer current'],
@@ -292,6 +293,45 @@ export default function Guide() {
                 its URL; an index page can omit documents, and dynamic or
                 inaccessible pages can fail visibly.
               </aside>
+            </section>
+            <section id="team-access" aria-labelledby="team-access-title">
+              <span className="guide-kicker">Dossier team</span>
+              <h2 id="team-access-title">
+                Invite the right people to the evidence.
+              </h2>
+              <p>
+                Open a saved research draft or active dossier and expand Dossier
+                team. The original creator can enable team management, then
+                invite an existing workspace colleague as an editor, contributor
+                or viewer. The invitation appears in the colleague’s Dossier
+                invitations and expires after seven days. It is tied to that
+                account; a copied link grants nobody else access. No email is
+                sent.
+              </p>
+              <p>
+                Owners manage people and publication. Editors edit the dossier
+                and control research. Contributors add comments, URLs, files,
+                corrections and research requests, and analyse their own
+                contributions. Viewers can read and download retained evidence.
+                An owner can promote an accepted colleague to owner before
+                reducing their own role.
+              </p>
+              <p>
+                Invited team drafts are private to their accepted members.
+                Activation explicitly shares the dossier with the whole
+                workspace and still requires workspace administrator rights.
+                Active dossiers keep that workspace audience: removing a dossier
+                role restores inherited workspace access. Members-only active
+                monitoring and invitations outside the workspace are not
+                available yet.
+              </p>
+              <p>
+                Revoke a pending invitation or change an accepted member’s role
+                in Dossier team. Server checks apply to saved sources, exports,
+                native setup and every research step. Removing draft access
+                closes future reads and analysis; it cannot erase a copy someone
+                already downloaded.
+              </p>
             </section>
             <section id="collaborate" aria-labelledby="collaborate-title">
               <span className="guide-step">04 / COLLABORATION</span>

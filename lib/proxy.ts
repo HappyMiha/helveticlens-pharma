@@ -13,7 +13,7 @@ export async function proxy(
     !(
       allowed.test(route) ||
       new RegExp(
-        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-dossiers(?:/[0-9a-f-]{36}(?:/(?:discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/read)?|reuse(?:/preview)?))?)?|followed-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
+        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-dossiers(?:/[0-9a-f-]{36}(?:/(?:discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/read)?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|followed-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
       ).test(route)
     )
   )

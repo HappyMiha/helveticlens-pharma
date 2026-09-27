@@ -10,6 +10,7 @@ export type ContributionOriginal = {
   created_at: string;
 };
 export type InvestigationSummary = {
+  created_by_user_id?: string | null;
   id: string;
   trigger_entry_id?: string | null;
   external_discovery?: boolean;
