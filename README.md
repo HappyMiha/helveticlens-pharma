@@ -1,5 +1,11 @@
 # HelveticLens Pharma
 
+## Living public research
+
+Release 1.14 adds owner-opted public investigations using the same durable core engine. Enable **Living public research** while previewing the public version; a snapshot never opts in automatically. Verified public participants can contribute text, source URLs, corrections, research questions and supported files up to 2 MB, with explicit publication/analysis consent. Public findings never use private parent material. The anonymous directory and global Ask search typed public knowledge with literal word matching; this is not a claim of semantic/vector indexing.
+
+Public results are bound to exact publication and contribution revisions. Updating the public version starts a fresh research scope; withdrawal, moderation, source exclusion and erasure remove affected derived material from anonymous readers/search/streams. Original public files are downloaded as attachments after current access and integrity checks. Current authors/editors can control durable research. Existing private access and guest memberships are unchanged.
+
 [Production](https://pharma.helveticlens.ch) · [Apache License 2.0](LICENSE) · [Shared platform](https://github.com/HappyMiha/helvetic-lens)
 
 A dedicated pharmaceutical monitoring workspace based on the HelveticLens platform and the September 2026 Legal Hackathon workflow.

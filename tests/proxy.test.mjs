@@ -908,3 +908,30 @@ test('guest readers retain account scope and cannot select another product or wo
   }
   assert.equal(calls, 3);
 });
+
+
+test('public research gateway allows scoped readers and blocks unrelated private paths', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const run = '22222222-2222-4222-8222-222222222222';
+  let count = 0;
+  globalThis.fetch = async (url, init) => {
+    count++;
+    assert.equal(init.headers.get('x-organization-id'), null);
+    return Response.json({});
+  };
+  const paths = [
+    'public-knowledge', `public-dossiers/topic-${id}`, `public-dossiers/дослідження-${id}`,
+    `public-dossiers/${id}/research`, `public-dossiers/${id}/research/${run}`,
+    `public-dossiers/${id}/research/${run}/events`, `public-dossiers/${id}/research/${run}/workspace`,
+    `public-dossiers/${id}/files/${run}`,
+  ];
+  for (const path of paths) {
+    const route = `products/${product.id}/${path}`;
+    assert.equal((await proxy(new Request('https://product.test/api/' + route, {headers: {'x-organization-id': 'injected'}}), context(route))).status, 200);
+  }
+  for (const path of [`public-dossiers/${id}/research/${run}/private`, `public-dossiers/${id}/files/${run}/export`, 'public-knowledge/export']) {
+    const route = `products/${product.id}/${path}`;
+    assert.equal((await proxy(new Request('https://product.test/api/' + route), context(route))).status, 404);
+  }
+  assert.equal(count, paths.length);
+});

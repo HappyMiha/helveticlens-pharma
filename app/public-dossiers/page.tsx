@@ -11,6 +11,7 @@ import { product } from '@/lib/product';
 import { readPublicPage } from '@/lib/public-reader';
 import { publicHref, publicOffset, publicSearch } from '@/lib/publication';
 import { date } from '@/lib/api';
+import { PublicKnowledgeResults } from '@/components/public-knowledge-results';
 import './public.css';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +30,7 @@ export default async function PublicDossiers({
   const offset = publicOffset(params.offset);
   const invalid =
     new Set(query.toLowerCase().split(/\s+/).filter(Boolean)).size > 12;
-  const result = invalid ? null : await readPublicPage(query, offset);
+  const result = invalid || query ? null : await readPublicPage(query, offset);
   const data = result?.data;
   return (
     <main className="public-shell">
@@ -64,13 +65,16 @@ export default async function PublicDossiers({
           <Button type="submit">Search</Button>
         </div>
         <p>
-          Matches all search words across the title, summary and published text.
+          Search public dossiers, claims, entities, sources and research
+          questions.
         </p>
       </form>
       {invalid ? (
         <div role="alert" className="banner error">
           Use at most 12 search words.
         </div>
+      ) : query ? (
+        <PublicKnowledgeResults query={query} offset={offset} />
       ) : result?.error ? (
         <div role="alert" className="public-empty">
           <h2>Public dossiers are temporarily unavailable</h2>
@@ -89,13 +93,20 @@ export default async function PublicDossiers({
                 {data.items.map((item) => (
                   <article key={item.id}>
                     <h2>
-                      <Link href={publicHref(item.id)}>{item.title}</Link>
+                      <Link href={publicHref(item.slug || item.id)}>
+                        {item.title}
+                      </Link>
                     </h2>
                     <p>{item.summary}</p>
                     <div className="public-meta">
                       <span>{item.author_label}</span>
                       <span>Updated {date(item.updated_at)}</span>
                       <span>Revision {item.revision}</span>
+                      <span>
+                        {item.living_research
+                          ? 'Living public research'
+                          : 'Published snapshot'}
+                      </span>
                     </div>
                   </article>
                 ))}

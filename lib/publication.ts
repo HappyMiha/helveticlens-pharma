@@ -9,6 +9,8 @@ export interface PublicDossier extends PublicContent {
   id: string;
   product: 'pharma' | 'loyer';
   revision: number;
+  slug: string;
+  living_research: boolean;
   first_published_at: string;
   updated_at: string;
 }
@@ -20,6 +22,7 @@ export interface PublicationState {
   history: { revision: number; action: string; created_at: string }[];
 }
 export interface PublicationPreview {
+  living_research: boolean;
   expected_revision: number;
   content: PublicContent;
   preview_token: string;

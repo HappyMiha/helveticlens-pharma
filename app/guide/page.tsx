@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 const chapters = [
   ['interface', 'Ask, read and trace evidence'],
+  ['public-research', 'Develop a living public dossier'],
   ['start', 'Frame a useful question'],
   ['investigate', 'Ask this dossier'],
   ['contributions', 'Add material for private analysis'],
@@ -70,6 +71,52 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section
+              id="public-research"
+              aria-labelledby="public-research-title"
+            >
+              <span className="guide-step">PUBLIC RESEARCH</span>
+              <h2 id="public-research-title">
+                Develop a dossier together, in public.
+              </h2>
+              <p>
+                The owner can enable living public research in the Public
+                version preview. Existing publications remain snapshots until
+                the owner explicitly chooses this mode. Anyone can read the
+                published text, findings, sources and activity without an
+                account.
+              </p>
+              <p>
+                With a verified account, use Ask / Investigate or submit a
+                comment, URL, correction or original file under your chosen
+                public name. Confirm public analysis before publishing. Only an
+                explicitly submitted research question and entity names found in
+                public sources may enter external search; private dossier
+                material is excluded.
+              </p>
+              <p>
+                Public originals support TXT, Markdown, CSV, HTML and text PDF
+                up to 2 MB. Findings retain quotes, source hashes, uncertainty
+                and history. A submitted statement is candidate evidence, not an
+                established fact. Scanned-image OCR and authenticated archives
+                are unavailable.
+              </p>
+              <p>
+                Search public dossiers, claims, entities, sources and research
+                questions from Ask / Search or the public directory. Links to a
+                claim or source open its investigation. Research progress
+                updates automatically. Authors and current dossier editors can
+                pause, resume, cancel or retry unavailable steps.
+              </p>
+              <p>
+                Hiding or removing a contribution, withdrawing a publication or
+                excluding a source removes affected research from public readers
+                and search. Publishing an edited version starts a fresh public
+                research revision; old derived findings are retained privately.
+                Public copies or downloads made earlier cannot be recalled.
+              </p>
+              <Link href="/public-dossiers">Explore public dossiers</Link>
+            </section>
             <section id="interface" aria-labelledby="interface-title">
               <span className="guide-step">THE WORKSPACE</span>
               <h2 id="interface-title">Ask, read and trace evidence.</h2>

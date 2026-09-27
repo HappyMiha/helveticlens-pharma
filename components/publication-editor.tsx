@@ -78,7 +78,9 @@ export function PublicationEditor({
                     {' '}
                     ·{' '}
                     <a
-                      href={publicHref(data.publication.id)}
+                      href={publicHref(
+                        data.publication.slug || data.publication.id,
+                      )}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -151,6 +153,7 @@ function PublicationForm({
     publicContent(publication),
   );
   const [preview, setPreview] = useState<PublicationPreview | null>(null);
+  const [living, setLiving] = useState(publication?.living_research || false);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -175,6 +178,7 @@ function PublicationForm({
       const value = await api<PublicationPreview>(path + '/preview', {
         expected_revision: publication?.revision || 0,
         content,
+        living_research: living,
       });
       setPreview(value);
       publishKey.current = uid();
@@ -232,6 +236,26 @@ function PublicationForm({
       </p>
       <form onSubmit={prepare}>
         <fieldset disabled={!!busy}>
+          <label className="publication-consent" htmlFor={`${formId}-living`}>
+            <Checkbox
+              id={`${formId}-living`}
+              checked={living}
+              onCheckedChange={(value) => {
+                setLiving(value === true);
+                edit(content);
+              }}
+            />
+            <span>
+              Enable living public research. Future public questions, sources
+              and files can be analysed automatically, with findings visible to
+              everyone.
+            </span>
+          </label>
+          <p className="discussion-note">
+            Private workspace material is excluded. Publishing an edited version
+            starts a fresh public research revision; previous derived findings
+            stop being public.
+          </p>
           <label htmlFor={`${formId}-title`}>
             {'Public title'}
             <Input
@@ -384,6 +408,11 @@ function PublicationForm({
             expires {date(preview.preview_expires_at)}. Readers can retain a
             reviewed copy in their own workspace; withdrawing the original does
             not recall those copies.
+          </p>
+          <p className="public-reading-note">
+            {preview.living_research
+              ? 'Living public research enabled'
+              : 'Published snapshot · no automatic public research'}
           </p>
           <PublicContentView content={preview.content} />
           <label htmlFor={`${formId}-consent`} className="publication-consent">

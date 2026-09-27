@@ -1,9 +1,16 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
@@ -37,10 +44,12 @@ import type {
 export function PublicDiscussion({
   publicationId,
   publicationRevision,
+  living = false,
   initial,
 }: {
   publicationId: string;
   publicationRevision: number;
+  living?: boolean;
   initial: DiscussionPage | null;
 }) {
   const session = usePublicSession();
@@ -55,6 +64,16 @@ export function PublicDiscussion({
       ? `/products/${product.id}${discussionPath(publicationId, offset, !!identity)}`
       : null,
   );
+  const refreshDiscussion = resource.refresh;
+  useEffect(() => {
+    const update = () => void refreshDiscussion();
+    window.addEventListener('helvetic-public-research-changed', update);
+    const timer = setInterval(update, 15000);
+    return () => {
+      window.removeEventListener('helvetic-public-research-changed', update);
+      clearInterval(timer);
+    };
+  }, [refreshDiscussion]);
   // Only the anonymous projection is server-rendered. Private controls arrive
   // from the authenticated endpoint after current-session checks.
   const page = resource.error
@@ -66,6 +85,7 @@ export function PublicDiscussion({
     await resource.refresh();
   }
   async function saved(row: Contribution) {
+    window.dispatchEvent(new Event('helvetic-public-research-changed'));
     setNotice(
       row.status === 'visible'
         ? 'The contribution is public.'
@@ -160,6 +180,7 @@ export function PublicDiscussion({
                   <ContributionCard
                     key={`${item.id}:${item.revision}`}
                     item={item}
+                    living={living}
                     base={base}
                     publicationRevision={publicationRevision}
                     canContribute={current}
@@ -216,6 +237,7 @@ export function PublicDiscussion({
             <div className="new-contribution" key={identity.user.id}>
               <h3>Add a contribution</h3>
               <ContributionForm
+                living={living}
                 base={base}
                 publicationRevision={publicationRevision}
                 onSaved={async (row) => {
@@ -292,12 +314,14 @@ function ContributionCard({
   base,
   publicationRevision,
   canContribute,
+  living,
   onSaved,
 }: {
   item: Contribution;
   base: string;
   publicationRevision: number;
   canContribute: boolean;
+  living: boolean;
   onSaved: (row: Contribution) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
@@ -332,6 +356,28 @@ function ContributionCard({
         </p>
       )}
       {item.status !== 'removed' && <ContributionBody content={item} />}
+      {item.file_name &&
+        item.status !== 'hidden' &&
+        item.status !== 'removed' && (
+          <p>
+            <a
+              href={`/api${base.replace(/\/discussion$/, '')}/files/${item.id}`}
+            >
+              Download original · {item.file_name}
+            </a>{' '}
+            · {item.byte_size} bytes
+          </p>
+        )}
+      {item.research && (
+        <p>
+          <a
+            href={`?research=${item.research.id}#investigation-${item.research.id}`}
+          >
+            Read analysis · {item.research.status}
+          </a>{' '}
+          · Submitted material is candidate evidence.
+        </p>
+      )}
       <div className="contribution-controls">
         {item.can_edit && canContribute && (
           <Button variant="outline" onClick={() => setEditing(!editing)}>
@@ -358,6 +404,7 @@ function ContributionCard({
       </div>
       {editing && (
         <ContributionForm
+          living={living}
           base={base}
           publicationRevision={publicationRevision}
           item={item}
@@ -395,11 +442,13 @@ function ContributionCard({
 }
 
 function ContributionForm({
+  living,
   base,
   publicationRevision,
   item,
   onSaved,
 }: {
+  living: boolean;
   base: string;
   publicationRevision: number;
   item?: Contribution;
@@ -410,6 +459,10 @@ function ContributionForm({
     contributionDraft(item),
   );
   const [preview, setPreview] = useState<ContributionContent | null>(null);
+  const [kind, setKind] = useState<NonNullable<Contribution['kind']>>(
+    item?.kind || 'comment',
+  );
+  const [file, setFile] = useState<File | null>(null);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -427,18 +480,34 @@ function ContributionForm({
     setBusy(true);
     setError('');
     try {
-      const result = await api<{ contribution: Contribution }>(
-        base + (item ? `/${item.id}` : ''),
-        {
-          content: preview,
-          publication_revision: publicationRevision,
-          request_key: requestKey.current,
-          confirm_public: true,
-          ...(item ? { expected_revision: item.revision } : {}),
-        },
-      );
+      const command = {
+        content: preview,
+        publication_revision: publicationRevision,
+        request_key: requestKey.current,
+        confirm_public: true,
+        kind,
+        analyse_publicly: living,
+        public_query_confirmed: kind === 'research_request',
+        ...(item ? { expected_revision: item.revision } : {}),
+      };
+      let body: unknown = command;
+      let target = base + (item ? `/${item.id}` : '');
+      if (!item && kind === 'file') {
+        if (!file)
+          throw new Error('Choose the original file before publishing.');
+        const data = new FormData();
+        data.set('metadata', JSON.stringify(command));
+        data.set('file', file);
+        body = data;
+        target = base.replace(/\/discussion$/, '/files');
+      }
+      const result = await api<{ contribution: Contribution }>(target, body);
       await onSaved(result.contribution);
-      if (!item) change(contributionDraft());
+      if (!item) {
+        change(contributionDraft());
+        setFile(null);
+        setKind('comment');
+      }
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -458,6 +527,52 @@ function ContributionForm({
         }}
       >
         <fieldset disabled={busy}>
+          {living && !item && (
+            <div>
+              <label htmlFor={`${formId}-kind`}>Contribution</label>
+              <Select
+                value={kind}
+                onValueChange={(next) => {
+                  if (next) {
+                    setKind(next as NonNullable<Contribution['kind']>);
+                    change(draft);
+                  }
+                }}
+              >
+                <SelectTrigger id={`${formId}-kind`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="comment">Comment</SelectItem>
+                  <SelectItem value="url">Source URL</SelectItem>
+                  <SelectItem value="correction">Correction</SelectItem>
+                  <SelectItem value="research_request">
+                    Research request
+                  </SelectItem>
+                  <SelectItem value="file">Original file</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {living && kind === 'file' && !item && (
+            <label htmlFor={`${formId}-file`}>
+              Public original · up to 2 MB
+              <Input
+                id={`${formId}-file`}
+                type="file"
+                accept=".txt,.md,.csv,.html,.htm,.pdf"
+                required
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] || null);
+                  change(draft);
+                }}
+              />
+              <span>
+                TXT, Markdown, CSV, HTML or text PDF. The original and extracted
+                findings will be public.
+              </span>
+            </label>
+          )}
           <label htmlFor={`${formId}-name`}>
             Public display name
             <Input
@@ -477,7 +592,7 @@ function ContributionForm({
               id={`${formId}-body`}
               required
               minLength={10}
-              maxLength={12000}
+              maxLength={kind === 'research_request' ? 300 : 12000}
               rows={6}
               value={draft.body}
               onChange={(event) =>
@@ -575,6 +690,11 @@ function ContributionForm({
             <b>Public preview · {preview.author_label}</b>
           </p>
           <ContributionBody content={preview} />
+          {file && (
+            <p>
+              Public original: {file.name} · {file.size} bytes
+            </p>
+          )}
           <label className="publication-consent" htmlFor={`${formId}-consent`}>
             <Checkbox
               id={`${formId}-consent`}
@@ -584,7 +704,12 @@ function ContributionForm({
             />
             <span>
               I reviewed this contribution and confirm it can be published
-              publicly.
+              publicly.{' '}
+              {living &&
+                'I also authorize public analysis of this contribution and its sources.'}
+              {living &&
+                kind === 'research_request' &&
+                ' This question and entity names found in public sources may be sent to external search.'}
             </span>
           </label>
           {item?.status === 'hidden' && (

@@ -497,3 +497,35 @@
     align-items: stretch;
   }
 }
+
+.public-research {
+  margin-block: 4rem;
+}
+.public-ask {
+  max-width: 52rem;
+  margin-block: 2rem;
+}
+.public-ask fieldset {
+  display: grid;
+  gap: 1.25rem;
+}
+.public-ask label {
+  display: grid;
+  gap: 0.6rem;
+}
+.public-ask .publication-consent {
+  display: flex;
+}
+.public-search-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-block: 2rem;
+}
+.public-research .investigation-controls {
+  flex-wrap: wrap;
+  margin-block: 1rem;
+}
+.public-research [id] {
+  scroll-margin-block-start: 6rem;
+}

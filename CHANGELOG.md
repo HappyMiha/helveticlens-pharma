@@ -1,5 +1,11 @@
 # Changes
 
+## 1.14.0 — living public research
+
+Owners can explicitly enable living research in the signed publication preview. Stable title-based URLs lead to anonymous research readers with claims, exact quotes, source captures, entities, history and live activity. Verified participants can submit public questions, comments, corrections, URLs and original files. The same bounded native coordinator powers private and public research; private material never seeds a public run.
+
+Public knowledge search distinguishes dossiers, claims, entities, sources and investigations. Current publication/contribution revisions, moderation, source exclusions, session access and account erasure fence work and public readers. Editing a publication starts a fresh research revision. Original public downloads are bounded, integrity checked and served as attachments. Private semantic indexing, recurring discovery, cross-investigation reconciliation and native visual migration remain open.
+
 ## 1.13.0 — dossier-only guests and Brandbook v1.0
 
 Invite a registered account with a verified email directly to a dossier. Guest Viewers, Contributors and Editors accept in their own account and find accepted dossiers in Shared with you. Scoped originals, evidence, exports, assignment choices and research run through current grant/session checks. Guests receive no native workspace membership, ownership, monitoring configuration or source administration. Invitations expire in seven days; no email is sent.

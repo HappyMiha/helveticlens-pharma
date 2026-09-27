@@ -1,3 +1,4 @@
+import type { InvestigationSummary } from './investigation';
 import type { PublicContent } from './publication';
 
 export type ContributionContent = Pick<
@@ -5,6 +6,11 @@ export type ContributionContent = Pick<
   'author_label' | 'body' | 'sources'
 >;
 export interface Contribution extends ContributionContent {
+  kind?: 'comment' | 'url' | 'correction' | 'research_request' | 'file';
+  file_name?: string;
+  byte_size?: number;
+  sha256?: string;
+  research?: InvestigationSummary | null;
   id: string;
   revision: number;
   publication_revision: number;

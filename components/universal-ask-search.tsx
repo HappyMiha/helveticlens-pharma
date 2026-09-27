@@ -36,12 +36,11 @@ import { Button } from '@/components/ui/button';
 import { api, uid } from '@/lib/api';
 import type { Identity, DiscoveryResult, SearchHit } from '@/lib/contracts';
 import type { DecisionRun } from '@/lib/decision-search';
-import type { PublicPage } from '@/lib/publication';
+import type { PublicKnowledgePage } from '@/lib/public-research';
 import { product } from '@/lib/product';
 import { discoveryPath } from '@/lib/discovery-pages';
 import { discoveryTarget, dossierHref } from '@/lib/dossier-navigation';
 import { sourceHref } from '@/lib/investigation';
-import { publicHref } from '@/lib/publication';
 import { LensProgress } from './lens';
 
 export type AskScope = {
@@ -175,7 +174,8 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
     if (
       !ready ||
       (destination === 'workspace' && !identity) ||
-      ((destination === 'web' || destination === 'investigate') && !admin)
+      (destination === 'web' && !admin) ||
+      (destination === 'investigate' && !identity)
     )
       return;
     const question = query.trim();
@@ -200,15 +200,15 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
       let found: Result[];
       let description: string;
       if (destination === 'public') {
-        const page = await api<PublicPage>(
-          `/products/${product.id}/public-dossiers?${new URLSearchParams({ q: question })}`,
+        const page = await api<PublicKnowledgePage>(
+          `/products/${product.id}/public-knowledge?${new URLSearchParams({ q: question })}`,
         );
         found = page.items.map((item) => ({
-          title: item.title,
-          href: publicHref(item.id),
-          detail: item.summary,
+          title: item.label,
+          href: item.href,
+          detail: `${item.kind} · ${item.dossier_title} · ${item.text}`,
         }));
-        description = `${page.total} public dossiers match all search words. Showing the first ${page.items.length}. Only author-published material is searched.`;
+        description = `${page.total} public knowledge items match all search words. Showing the first ${page.items.length}. Only author-published material is searched.`;
       } else {
         let hits: SearchHit[];
         if (destination === 'workspace') {
@@ -327,7 +327,7 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
                     disabled={
                       !ready ||
                       checking ||
-                      !admin ||
+                      !identity ||
                       !scope.canInvestigate ||
                       scope.unavailable
                     }

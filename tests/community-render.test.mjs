@@ -845,3 +845,39 @@ test('activation review defaults to private monitoring and preserves existing wo
     /<[^>]+(?=[^>]*aria-label="Monitoring audience")(?=[^>]*data-disabled)[^>]*>/,
   );
 });
+
+
+test('living public reader renders attributed evidence and anchors without private controls', () => {
+  const { PublicResearchView } = require('../components/public-research.tsx');
+  const run = {
+    id: '11111111-1111-4111-8111-111111111111', question: 'Research a public question',
+    status: 'completed', revision: 4, plan_version: 1, event_sequence: 3,
+    stop_reason: 'Bounded accessible research.', sources: [], evidence: [], entities: [], relationships: [],
+    plans: [], branches: [], activity: [],
+    claims: [{ id: 'public-claim', statement: '<script>untrusted source statement</script>', status: 'UNVERIFIED', revision: 1, history: [] }],
+    evidence_basis: 'Source support is not independent truth.', coverage: 'Only explicitly public material.',
+    original: { id: 'public-contribution', kind: 'comment', body: 'The exact public submission.', author: 'Chosen public name' },
+  };
+  const html = renderToStaticMarkup(React.createElement(PublicResearchView, {
+    publicationId: '22222222-2222-4222-8222-222222222222', revision: 1,
+    initial: { items: [run], total: 1, offset: 0, page_size: 20, publication_revision: 1, living_research: true },
+    selectedId: run.id, initialValue: run,
+  }));
+  assert.match(html, /Chosen public name/);
+  assert.match(html, /Source support is not independent truth/);
+  assert.match(html, /id="claim-public-claim"/);
+  assert.match(html, /&lt;script&gt;untrusted source statement/);
+  assert.match(html, /Sign in to add a public question/);
+  assert.doesNotMatch(html, /<form|<script>|\/dossiers\/|>Pause<|>Resume<|>Cancel</);
+});
+
+test('changed public publication revision withholds old rendered findings', () => {
+  const { PublicResearchView } = require('../components/public-research.tsx');
+  const html = renderToStaticMarkup(React.createElement(PublicResearchView, {
+    publicationId: '22222222-2222-4222-8222-222222222222', revision: 2,
+    initial: { items: [], total: 0, offset: 0, page_size: 20, publication_revision: 3, living_research: true },
+    selectedId: 'old', initialValue: { id: 'old', question: 'WITHDRAWN-PUBLIC-TEXT' },
+  }));
+  assert.match(html, /published version changed/);
+  assert.doesNotMatch(html, /WITHDRAWN-PUBLIC-TEXT/);
+});

@@ -1,6 +1,12 @@
 import { cache } from 'react';
 import { product } from './product';
 import type { PublicDossier, PublicPage } from './publication';
+import { publicLocator } from './public-research';
+import type {
+  PublicKnowledgePage,
+  PublicResearchPage,
+  PublicResearch,
+} from './public-research';
 import type { DiscussionPage } from './community';
 
 const CORE = process.env.HELVETICLENS_API_ORIGIN || 'https://helveticlens.ch';
@@ -8,10 +14,13 @@ export type PublicResult<T> =
   | { data: T; error?: never; missing?: never }
   | { data?: never; error: string; missing: boolean };
 
-async function read<T>(path: string): Promise<PublicResult<T>> {
+async function read<T>(
+  path: string,
+  resource = 'public-dossiers',
+): Promise<PublicResult<T>> {
   try {
     const response = await fetch(
-      `${CORE}/api/products/${product.id}/public-dossiers${path}`,
+      `${CORE}/api/products/${product.id}/${resource}${path}`,
       {
         cache: 'no-store',
         redirect: 'manual',
@@ -41,7 +50,7 @@ async function read<T>(path: string): Promise<PublicResult<T>> {
 }
 // Per-render memoization; no identity cookies, private API routes or persistent cache.
 export const readPublicDossier = cache((id: string) =>
-  /^[0-9a-f-]{36}$/.test(id)
+  publicLocator(id)
     ? read<PublicDossier>(`/${encodeURIComponent(id)}`)
     : Promise.resolve<PublicResult<PublicDossier>>({
         error: 'Dossier unavailable.',
@@ -60,4 +69,24 @@ export function readPublicDiscussion(id: string) {
         error: 'Discussion unavailable.',
         missing: true,
       });
+}
+
+export function readPublicResearch(id: string) {
+  return read<PublicResearchPage>(`/${encodeURIComponent(id)}/research`);
+}
+export function readPublicInvestigation(id: string, investigation: string) {
+  return /^[0-9a-f-]{36}$/.test(investigation)
+    ? read<PublicResearch>(
+        `/${encodeURIComponent(id)}/research/${investigation}`,
+      )
+    : Promise.resolve<PublicResult<PublicResearch>>({
+        error: 'Public research unavailable.',
+        missing: true,
+      });
+}
+export function readPublicKnowledge(query: string, offset: number) {
+  return read<PublicKnowledgePage>(
+    `?${new URLSearchParams({ q: query, offset: String(offset) })}`,
+    'public-knowledge',
+  );
 }

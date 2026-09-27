@@ -83,7 +83,7 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
           </p>
           <ul>
             {value.entities.map((entity) => (
-              <li key={entity.id}>
+              <li key={entity.id} id={`entity-${entity.id}`}>
                 <strong>{entity.name}</strong> <span>{entity.kind}</span>{' '}
                 <a href={`#source-${entity.evidence.source_id}`}>Evidence</a>
               </li>

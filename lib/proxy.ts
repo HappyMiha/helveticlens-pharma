@@ -12,8 +12,13 @@ export async function proxy(
   if (
     !(
       allowed.test(route) ||
+      (request.method === 'GET' &&
+        new RegExp(
+          `^products/${product.id}/public-dossiers/[\\p{L}\\p{N}_-]{1,180}$`,
+          'u',
+        ).test(route)) ||
       new RegExp(
-        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-dossiers(?:/[0-9a-f-]{36}(?:/(?:discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/read)?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|shared-dossiers|followed-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
+        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-knowledge|public-dossiers(?:/[\\w-]{1,180}(?:/(?:files(?:/[0-9a-f-]{36})?|research(?:/[0-9a-f-]{36}(?:/(?:events|workspace|control))?)?|discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/read)?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|shared-dossiers|followed-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
       ).test(route)
     )
   )
