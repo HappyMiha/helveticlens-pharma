@@ -269,3 +269,14 @@ platform now offers saved-source and author-published public-knowledge search
 from a global entry, plus a conflict-safe draft handoff to existing Marvin.
 Native saved/public matching remains literal and bounded; product whole-dossier
 semantic retrieval and deliberate public-web research retain their current scope.
+
+
+### Inspectable source reading
+
+Version 1.25 separates source origin, capture time and unknown publication date.
+Actual retained-excerpt and claim-use counts lead into readable preserved passages;
+source details disclose the saved version and its validated recorded fingerprint.
+Empty captures and unavailable fingerprints remain explicit. The shared native
+reader adopts the same hierarchy and adds saved passage/character counts, declared
+document date and retained-file details in five locales. Exact references and
+current source rights are preserved; no completeness or truth score is inferred.

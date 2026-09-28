@@ -1,7 +1,12 @@
 'use client';
 import type { Investigation } from '@/lib/investigation';
-import { readable, sourceHref } from '@/lib/investigation';
+import { readable } from '@/lib/investigation';
 import { sourceUsage } from '@/lib/lens';
+import {
+  sourceReference,
+  sourceTimestamp,
+  sourceFingerprint,
+} from '@/lib/source-reading';
 import { date } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,12 +20,14 @@ import {
 
 type Source = Investigation['sources'][number];
 export function SourceMetadata({ source }: { source: Source }) {
-  const href = sourceHref(source.url);
+  const reference = sourceReference(source.url);
+  const href = reference?.href;
+  const captured = sourceTimestamp(source.created_at);
   return (
     <dl className="source-metadata">
       <div>
         <dt>Origin</dt>
-        <dd>{href ? new URL(href).hostname : 'Saved dossier material'}</dd>
+        <dd>{href ? reference?.origin : 'Saved dossier material'}</dd>
       </div>
       {source.original && (
         <div>
@@ -31,7 +38,11 @@ export function SourceMetadata({ source }: { source: Source }) {
       <div>
         <dt>Captured</dt>
         <dd>
-          <time dateTime={source.created_at}>{date(source.created_at)}</time>
+          {captured ? (
+            <time dateTime={captured}>{date(captured)}</time>
+          ) : (
+            'Not established'
+          )}
         </dd>
       </div>
       <div>
@@ -46,9 +57,22 @@ export function SourceMetadata({ source }: { source: Source }) {
   );
 }
 export function SourcePreview({ source }: { source: Source }) {
+  const fingerprint = sourceFingerprint(source.sha256);
   return (
-    <div className="source-preview">
-      <p>{source.snapshot.scope}</p>
+    <div className="source-preview" data-source-reading>
+      <p className="source-capture-scope">
+        {source.snapshot.scope || 'Only retained excerpts are shown.'}
+      </p>
+      <p className="source-capture-limit">
+        This reader shows the retained capture. The original source may have
+        changed since it was saved.
+      </p>
+      {!source.snapshot.excerpts.length && (
+        <p>
+          No excerpts were retained in this capture. Open the original source
+          when available.
+        </p>
+      )}
       {source.snapshot.unchanged_from && (
         <p className="investigation-muted">
           This capture matches the latest successfully analysed source for this
@@ -57,12 +81,31 @@ export function SourcePreview({ source }: { source: Source }) {
         </p>
       )}
       {source.snapshot.excerpts.map((excerpt) => (
-        <section key={excerpt.passage}>
+        <section className="source-excerpt" key={excerpt.passage}>
           <h4>{excerpt.passage}</h4>
           <blockquote>{excerpt.text}</blockquote>
         </section>
       ))}
-      <code>SHA-256 {source.sha256}</code>
+      <details className="source-provenance">
+        <summary>Saved source details</summary>
+        <dl className="source-metadata">
+          <div>
+            <dt>Saved version</dt>
+            <dd>{source.id}</dd>
+          </div>
+          <div>
+            <dt>Capture fingerprint</dt>
+            <dd>
+              {fingerprint ? (
+                <code data-source-fingerprint>SHA-256 {fingerprint}</code>
+              ) : (
+                'Not available in this record'
+              )}
+            </dd>
+          </div>
+        </dl>
+        <p>Use this recorded fingerprint to identify the saved capture.</p>
+      </details>
     </div>
   );
 }
@@ -73,19 +116,36 @@ export function SourceCard({
   source: Source;
   value: Investigation;
 }) {
-  const href = sourceHref(source.url);
+  const reference = sourceReference(source.url);
+  const href = reference?.href;
   const used = sourceUsage(value, source.id);
   return (
     <article id={`source-${source.id}`} className="investigation-source">
       <div className="eyebrow">{readable(source.kind)}</div>
       <h4>{source.title}</h4>
       <SourceMetadata source={source} />
+      <dl className="source-reading-counts">
+        <div>
+          <dt>
+            retained{' '}
+            {source.snapshot.excerpts.length === 1 ? 'excerpt' : 'excerpts'}
+          </dt>
+          <dd>{source.snapshot.excerpts.length}</dd>
+        </div>
+        <div>
+          <dt>
+            {used.claims.length === 1
+              ? 'claim uses this source'
+              : 'claims use this source'}
+          </dt>
+          <dd>{used.claims.length}</dd>
+        </div>
+      </dl>
       <div className="source-usage">
-        <strong>
-          Used in {used.claims.length}{' '}
-          {used.claims.length === 1 ? 'claim' : 'claims'}
-        </strong>
-        <span>{used.contradictions} claims with contradicting evidence</span>
+        <span>
+          {used.contradictions} {used.contradictions === 1 ? 'claim' : 'claims'}{' '}
+          with contradicting evidence in this investigation
+        </span>
         {used.claims.map((id, i) => (
           <a href={`#claim-${id}`} key={id}>
             Claim {i + 1}

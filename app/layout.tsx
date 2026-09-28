@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { THEME_BOOTSTRAP } from '@/lib/theme-preference';
 import './globals.css';
 import './visual-language.css';
+import './source-reading.css';
 import { ResearchEnvironment } from '@/components/app-shell';
 export const metadata: Metadata = {
   title: 'HelveticLens Pharma',

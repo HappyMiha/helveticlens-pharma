@@ -1,5 +1,15 @@
 # Changes
 
+## 1.25.0 — Read the evidence
+
+- Read retained source excerpts in a calmer, wider reader with clear origin,
+  capture time and actual excerpt/claim counts.
+- Expand saved-source details for the precise version and recorded fingerprint.
+- Keep publication dates and primary-source classification explicit when unknown;
+  retained excerpts do not imply a complete document or verified truth.
+- Share the reading hierarchy with native saved/corpus evidence, preserving exact
+  passage/PDF links, pagination and current source permissions.
+
 ## 1.24.0 — Keep your question close
 
 - Dismiss Ask / Search and reopen it on the same page without losing the question.

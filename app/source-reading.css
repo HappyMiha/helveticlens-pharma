@@ -1,0 +1,135 @@
+/* Brandbook source reading: type, whitespace and inspectable retained evidence. */
+.investigation-source > h4 {
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+  line-height: 1.23;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.source-metadata {
+  gap: 1.5rem 2rem;
+  margin-block: 1.5rem;
+}
+.source-metadata dt {
+  font-size: 0.8125rem;
+}
+.source-metadata dd {
+  font-size: 1rem;
+  line-height: 1.625;
+}
+.source-reading-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 3rem;
+  margin-block: 2rem;
+}
+.source-reading-counts > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+}
+.source-reading-counts dt {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.source-reading-counts dd {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.source-usage {
+  margin-block: 1.5rem;
+  gap: 0.75rem 1rem;
+}
+.source-usage > span {
+  flex-basis: 100%;
+}
+.source-actions {
+  padding-bottom: 1.5rem;
+}
+.source-preview {
+  max-width: 75ch;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.source-capture-scope {
+  font-size: 1rem;
+}
+.source-capture-limit,
+.source-provenance > p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.source-excerpt {
+  padding-block: 1.5rem;
+}
+.source-excerpt h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.source-excerpt blockquote {
+  margin: 0.75rem 0 0;
+  padding-inline-start: 1.25rem;
+  border-inline-start: 2px solid var(--border);
+}
+.source-provenance {
+  border-top: 1px solid var(--border);
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+}
+.source-provenance summary,
+.investigation-source > details > summary {
+  min-height: 2.75rem;
+  padding-block: 0.625rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.source-provenance summary:focus-visible,
+.investigation-source > details > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.source-provenance .source-metadata {
+  grid-template-columns: 1fr;
+}
+.source-provenance code {
+  color: var(--text-primary);
+  line-height: 1.625;
+}
+.source-reader-sheet[data-slot='sheet-content'] {
+  width: min(800px, 94vw);
+  max-width: 800px;
+  padding: 2rem;
+  background: var(--background);
+}
+.source-reader-sheet [data-slot='sheet-title'] {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.167;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .source-metadata {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .source-reader-sheet[data-slot='sheet-content'] {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 1.5rem 1rem;
+  }
+  .source-reading-counts {
+    gap: 1.5rem 2rem;
+  }
+}
+@media (forced-colors: active) {
+  .source-reader-sheet[data-slot='sheet-content'] {
+    background: Canvas;
+    color: CanvasText;
+  }
+  .source-excerpt blockquote {
+    border-color: CanvasText;
+  }
+}

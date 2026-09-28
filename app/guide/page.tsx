@@ -336,7 +336,11 @@ export default function Guide() {
                 not measure total internet coverage. A source shows its origin,
                 capture time, retained excerpts and the claims that use it.
                 Unknown source classification and publication dates stay
-                unknown.
+                unknown. The source reader separates capture time from
+                publication date. Counts describe retained excerpts and actual
+                claim use. Expand Saved source details to inspect the saved
+                version and its fingerprint; excerpt counts never promise a
+                complete document.
               </p>
               <p>
                 The Lens appears only during a recorded search, read or
