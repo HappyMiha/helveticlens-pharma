@@ -1,5 +1,6 @@
 'use client';
 import { PublicCopyOrigin } from './public-origin';
+import { DomainContext } from './domain-context';
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
@@ -303,6 +304,7 @@ export function Wizard({
               ][step]
             }
           </p>
+          <DomainContext pack={doc?.profile.domain_pack} />
           {step === 0 && (
             <div className="form-stack">
               <div className="field-pair">

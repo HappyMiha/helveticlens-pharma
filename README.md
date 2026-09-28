@@ -1,5 +1,14 @@
 # HelveticLens Pharma
 
+## Monitoring in your professional context
+
+Saved dossiers show their monitoring direction. Topic suggestions, source
+guidance and refinement use the direction assigned by the shared Core. Pharma
+uses medicine, safety, clinical evidence, regulation and market-access interests;
+Legal uses legal developments and proceedings. Suggestions remain editable and
+require your review. Source coverage still comes from the available catalogue
+and explicitly selected page watches.
+
 ## Search the whole saved dossier
 
 Meaning search ranks authorized passages and source-linked findings across the dossier, including older evidence. First-use local preparation shows real progress and can be stopped/resumed; exact unchanged inputs are reused for later questions. Results retain literal citations and open their original investigation/source. Laya adds a separate relevance opinion without hiding uncertain candidates. Questions remain transient and private; Jev/Laya public-web discovery stays a separate deliberate action.

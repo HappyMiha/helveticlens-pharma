@@ -2089,3 +2089,15 @@ code {
 .focused-reference {
   margin-bottom: 32px;
 }
+
+/* Saved direction comes from the common Core, including restored drafts. */
+.domain-context {
+  margin-block: 1rem;
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 1rem;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.domain-context p {
+  margin-block: 0.25rem 0;
+}

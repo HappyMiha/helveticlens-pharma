@@ -1,5 +1,18 @@
 # Changes
 
+## 1.29.0 — Domain-aware dossier setup
+
+- The common Core selects Legal or Pharma instructions from the saved dossier,
+  including the shared profile setup route. Pharma topic suggestions now cover
+  pharmaceutical questions instead of using the Legal topic prompt.
+- Saved setup and dossier screens show their actual monitoring direction.
+  Older responses without direction metadata remain readable.
+- Source guidance and monitoring refinement use the same direction. Generated
+  proposals retain the pack revision; topics still require explicit review.
+- Existing source coverage, permissions, Legal aliases and manual setup remain.
+  This release does not add approved sources, clinical conclusions or typed
+  Market Access templates.
+
 ## 1.27.0 — Inspect saved document context
 
 - Rename the legal product to Helvetic Lens Legal; link to its canonical domain and existing renamed repository. Historical legal APIs and the former hostname keep working with the same dossiers and rights.

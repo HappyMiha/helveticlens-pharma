@@ -98,7 +98,15 @@ export interface Topic {
   plan: TopicPlan;
   revisions: TopicPlan[];
 }
+export interface DomainPack {
+  id: 'LegalPack' | 'PharmaPack';
+  version: string;
+  domain: 'LEGAL' | 'PHARMA';
+  label: string;
+  focus: string;
+}
 export interface Profile {
+  domain_pack?: DomainPack;
   id: string;
   revision: number;
   status: 'draft' | 'active' | 'paused';
@@ -296,6 +304,7 @@ export interface TopicSuggestions {
   model: string;
 }
 export interface SourceAdvice {
+  domain_pack?: DomainPack;
   recommendations: { source_id: string; reason: string }[];
   provider: string;
   model: string;

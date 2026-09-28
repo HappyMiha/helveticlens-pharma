@@ -3,6 +3,7 @@ import { PrivateDossierFollowing } from './research-following';
 import { researchFocus } from '@/lib/research-following';
 import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
+import { DomainContext } from './domain-context';
 import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
@@ -168,6 +169,7 @@ export function Dossier({
           <div className="eyebrow">{c.sector}</div>
           <h1>{c.name}</h1>
           <p>{c.goal}</p>
+          <DomainContext pack={p.domain_pack} />
         </div>
         <div className="dossier-actions">
           <Status status={p.status} />
