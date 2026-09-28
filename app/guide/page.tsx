@@ -757,6 +757,22 @@ export default function Guide() {
             </section>
           </div>
         </div>
+        <section className="guide-section">
+          <h2>Personal research updates</h2>
+          <p>
+            Choose Follow dossier inside a private or public dossier. Your
+            Followed dossiers page collects completed research, captured source
+            quotations and possible contradictions with both original sources.
+            Open a quotation to inspect the exact saved evidence.
+          </p>
+          <p>
+            Unchanged repeat captures and research progress do not create
+            updates. Mark current updates seen only affects your reading
+            position; it does not verify claims or review monitoring
+            observations. Following sends no email. Current access is checked
+            whenever updates refresh.
+          </p>
+        </section>
       </main>
       <footer className="guide-footer">
         <p>

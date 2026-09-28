@@ -1548,3 +1548,130 @@ test('model-negative evidence remains inspectable without implying a word match'
   assert.match(html, /remains visible for your review/);
   assert.doesNotMatch(html, /This record matched the search words/);
 });
+
+const { researchHref, researchFocus } = require(
+  resolve('lib/research-following.ts'),
+);
+const { ResearchUpdateItem, FollowControls } = require(
+  resolve('components/research-following.tsx'),
+);
+test('research notification links preserve exact private and public source context without query text', () => {
+  const dossier = '11111111-1111-4111-8111-111111111111';
+  const run = '22222222-2222-4222-8222-222222222222';
+  const anchor = 'source-33333333-3333-4333-8333-333333333333';
+  const privateUrl = new URL(
+    researchHref('private', dossier, run, anchor),
+    'https://example.test',
+  );
+  assert.deepEqual(researchFocus(privateUrl.search, dossier), {
+    id: run,
+    anchor,
+    tick: 0,
+  });
+  assert.equal(researchFocus(privateUrl.search, 'another-dossier'), undefined);
+  assert.equal(
+    researchFocus('?dossier=' + dossier + '&research=untrusted-text', dossier),
+    undefined,
+  );
+  const publicUrl = new URL(
+    researchHref('public', dossier, run, anchor),
+    'https://example.test',
+  );
+  assert.equal(publicUrl.pathname, '/public-dossiers/' + dossier);
+  assert.equal(publicUrl.searchParams.get('research'), run);
+  assert.equal(publicUrl.hash, '#' + anchor);
+  assert.equal(publicUrl.searchParams.has('dossier'), false);
+});
+test('research update previews render literal escaped quotes and independent paired evidence', () => {
+  const item = {
+    investigation_id: 'new-run',
+    question: '<script>unsafe</script>',
+    completed_at: '2026-09-28T02:00:00Z',
+    unseen: true,
+    source_count: 2,
+    finding_count: 1,
+    comparison_counts: { CONTRADICTS: 1 },
+    sources: [
+      {
+        id: 'new-source',
+        title: 'Registry <unsafe>',
+        quote: 'Literal <source> words',
+        locator: 'p1',
+        truncated: false,
+      },
+    ],
+    findings: [
+      {
+        id: 'new-claim',
+        statement: 'Machine <finding>',
+        status: 'SUPPORTED',
+        source_id: 'new-source',
+      },
+    ],
+    comparisons: [
+      {
+        id: 'comparison',
+        kind: 'CONTRADICTS',
+        basis: 'Machine comparison, not independent verification.',
+        previous: {
+          id: 'old-claim',
+          investigation_id: 'old-run',
+          statement: 'Earlier finding',
+          evidence: {
+            quote: 'Earlier exact quote',
+            locator: 'p2',
+            source: { id: 'old-source', title: 'Previous registry' },
+          },
+        },
+        current: {
+          id: 'new-claim',
+          investigation_id: 'new-run',
+          statement: 'Later finding',
+          evidence: {
+            quote: 'Later exact quote',
+            locator: 'p1',
+            source: { id: 'new-source', title: 'Current registry' },
+          },
+        },
+      },
+    ],
+    completion_note: 'One unavailable branch. Coverage is not exhaustive.',
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(ResearchUpdateItem, {
+      item,
+      audience: 'private',
+      dossierId: 'doc',
+    }),
+  );
+  assert.match(html, /Literal &lt;source&gt; words/);
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /possible contradictions/);
+  assert.match(html, /Earlier exact quote/);
+  assert.match(html, /Later exact quote/);
+  assert.match(html, /research=old-run/);
+  assert.match(html, /source-old-source/);
+  assert.match(html, /not independent verification/);
+  assert.match(html, /One unavailable branch/);
+});
+test('explicit seen control discloses reading versus verification and counts real unseen research', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(FollowControls, {
+      audience: 'private',
+      id: 'doc',
+      onChanged: async () => {},
+      state: {
+        following: true,
+        available: true,
+        revision: 2,
+        marker: 'a'.repeat(64),
+        unread: true,
+        research: { total: 8, unseen: 3, latest_at: '2026-09-28T02:00:00Z' },
+      },
+    }),
+  );
+  assert.match(html, /3 unseen research updates/);
+  assert.match(html, /Mark current updates seen/);
+  assert.match(html, /does not verify or approve findings/);
+  assert.match(html, /Stop following/);
+});

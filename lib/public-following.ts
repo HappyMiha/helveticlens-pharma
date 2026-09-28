@@ -1,6 +1,7 @@
+import type { PersonalFollow } from './research-following';
 import type { PublicDossier } from './publication';
 
-export interface FollowState {
+export interface FollowState extends PersonalFollow {
   publication_id: string;
   publication: Omit<PublicDossier, 'body' | 'sources'> | null;
   available: boolean;

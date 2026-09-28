@@ -1,5 +1,27 @@
 # Changes
 
+## 1.20.0 — personal research updates
+
+Follow a private or public dossier to receive personal in-app updates when research finishes with newly captured evidence. The Following page shows your current workspace, accepted guest dossiers and public subscriptions. Expand a dossier to inspect paginated research history, literal source excerpts and possible contradictions with both original citations. Links open the exact investigation, claim or source.
+
+Read positions are shared between the dossier and Following page. Explicit mark-seen actions cannot acknowledge a newer research completion. Following and reading never verify a claim, subscribe colleagues, publish private material or send email. Current access and source permissions apply before counts and paging; removed evidence disappears when the view refreshes. Progress ticks, failed research and unchanged repeat captures do not create research updates.
+
+## 1.19.0 — search retained private evidence
+
+Search saved source passages and claim citations with local multilingual Laya comparison or model-free word matching. Semantic comparison ranks twelve records per window and retains uncertain candidates; it is not a global semantic index. Exact quotes and source links accompany results. Current dossier, guest and paired-page permissions are rechecked, and private search text is never sent to public discovery. Confidence is not measured accuracy; unknown costs remain unknown.
+
+## 1.18.0 — recurring public-web research
+
+Explicitly authorize one public question on a daily or weekly schedule inside a private dossier. New evidence uses the durable investigation and comparison engine; unchanged captured bodies and excerpts skip repeated analysis. Current roles and audience changes fence work. Private notes never expand the public query. The policy displays its actual coverage, limits, history and pause state.
+
+## 1.17.0 — research changed saved pages
+
+An explicit policy can reopen research when linked workspace page watches capture a new version. Keep both original versions, a bounded change excerpt and exact source history. Both sides retain current source permissions. Members-only dossiers preserve their existing restriction on workspace page watches.
+
+## 1.16.0 — research new monitoring evidence
+
+An explicitly enabled private policy feeds new native topic matches into durable research, independent extraction and comparison with earlier findings. Research remains inside the chosen dossier audience and preserves source evidence, limits, current account authority and recovery state.
+
 ## 1.15.0 — evidence changes across investigations
 
 Changes over time compares independently captured findings in the same dossier and audience. Read the earlier and newer statements, exact supporting quotations, source records and original investigations side by side. Corroboration, contradiction and temporal update remain machine interpretations; original claims and their histories are preserved. Later evidence appears separately from the recorded status.

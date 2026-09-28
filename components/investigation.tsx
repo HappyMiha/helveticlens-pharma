@@ -46,7 +46,7 @@ export function DossierInvestigation({
   );
   const [history, setHistory] = useState<InvestigationSummary[]>([]);
   const [total, setTotal] = useState(0);
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(focusRequest?.id || '');
   const [stored, setValue] = useState<Investigation | null>(null);
   const value = stored?.id === selected ? stored : null;
   const canControl =

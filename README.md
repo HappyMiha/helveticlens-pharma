@@ -1,5 +1,11 @@
 # HelveticLens Pharma
 
+## Personal research updates
+
+Choose **Follow dossier** in a private or public dossier, then open **Followed dossiers** for completed research, captured source quotes and possible contradictions. Expand the history and open the exact evidence. Your read position is personal, permission checked and shared with the dossier; marking updates seen does not approve machine findings. Following sends no email.
+
+Recurring discovery, monitoring/page-triggered research and local saved-evidence search are documented in the [product guide](https://pharma.helveticlens.ch/guide) and [release history](CHANGELOG.md). Brandbook v1.0 governs both product surfaces. The complete investigation and visual specifications remain in progress; completed slices and production evidence are recorded in the shared platform repository.
+
 ## Changes over time
 
 Release 1.15 adds source-linked comparisons across investigations. Read both original findings and supporting quotes, inspect their sources, and distinguish corroboration, contradiction and a later state. The earlier claim and revision history are preserved; later-evidence status is shown separately. Current dossier editors can dismiss or restore a comparison with a recorded explanation, with explicit consent for public notes. Anonymous public reading follows current publication and source visibility.
@@ -18,7 +24,7 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.15.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.20.0 changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 

@@ -1114,3 +1114,45 @@ test('private evidence search forwards only native credentials and blocks public
     globalThis.fetch = original;
   }
 });
+
+test('personal private and public research updates forward native identity without caching or foreign products', async () => {
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=native');
+    assert.equal(init.headers.get('x-organization-id'), null);
+    return Response.json({ items: [], total: 0 });
+  };
+  for (const suffix of [
+    'followed-private-dossiers',
+    'public-dossiers/11111111-1111-4111-8111-111111111111/follow/updates',
+    'dossiers/11111111-1111-4111-8111-111111111111/follow/updates',
+  ]) {
+    const route = `products/${product.id}/${suffix}`;
+    const response = await proxy(
+      new Request('https://product.test/api/' + route, {
+        headers: {
+          cookie: 'helvetic_lens_session=native; unrelated=secret',
+          'x-organization-id': 'forged',
+        },
+      }),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+    const wrong = route.replace(
+      product.id,
+      product.id === 'pharma' ? 'loyer' : 'pharma',
+    );
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + wrong),
+          context(wrong),
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(calls, 3);
+});

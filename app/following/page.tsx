@@ -16,18 +16,19 @@ export default function FollowingPage() {
         <Link href="/">Open workspace</Link>
       </header>
       <div className="public-intro">
-        <p className="eyebrow">Your reading list</p>
+        <p className="eyebrow">Personal research</p>
         <h1>Followed dossiers</h1>
         <p>
-          Return to new publication and public discussion changes. Your list is
-          personal; following sends no email.
+          Return to new evidence, possible contradictions and public discussion.
+          Your list is personal; following sends no email.
         </p>
       </div>
       <FollowedDossiers />
       <footer className="public-footer">
-        Refresh to check current public changes. Withdrawn content is
-        unavailable; deleted publications leave your list. Following is separate
-        from monitoring and delivery settings in your private dossiers.
+        Research updates refresh while this page is open. Withdrawn evidence and
+        dossiers you can no longer access are removed from the current view.
+        Reading does not approve a finding; email delivery has separate
+        settings.
       </footer>
     </main>
   );

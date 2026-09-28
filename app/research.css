@@ -1607,3 +1607,51 @@
     width: 100%;
   }
 }
+.private-research-following {
+  margin-block: 2rem;
+  padding-block: 1.5rem;
+  border-block: 1px solid var(--border);
+}
+.private-research-following h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+.research-update-history {
+  margin-block: 1.25rem;
+}
+.research-update-history > summary,
+.research-update-comparison > summary {
+  cursor: pointer;
+  padding-block: 0.75rem;
+  font-weight: 600;
+}
+.research-update {
+  padding-block: 1.75rem;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.research-update h3 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+.research-update figure {
+  margin-block: 1.25rem;
+  padding-inline-start: 1.25rem;
+  border-inline-start: 2px solid var(--border);
+}
+.research-update blockquote {
+  font-size: 1rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.research-update figcaption {
+  margin-block: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+.research-update-findings {
+  padding-inline-start: 1.25rem;
+}
+.research-update-findings li {
+  margin-block: 0.75rem;
+}

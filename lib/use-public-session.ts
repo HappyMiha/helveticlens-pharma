@@ -14,7 +14,13 @@ export function usePublicSession() {
       void refresh();
     };
     window.addEventListener(EVENT, update);
-    return () => window.removeEventListener(EVENT, update);
+    window.addEventListener('helvetic-session-changed', update);
+    window.addEventListener('focus', update);
+    return () => {
+      window.removeEventListener(EVENT, update);
+      window.removeEventListener('helvetic-session-changed', update);
+      window.removeEventListener('focus', update);
+    };
   }, [refresh]);
   return session;
 }

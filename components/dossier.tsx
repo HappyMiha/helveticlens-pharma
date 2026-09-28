@@ -1,4 +1,6 @@
 'use client';
+import { PrivateDossierFollowing } from './research-following';
+import { researchFocus } from '@/lib/research-following';
 import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
 import { DossierContributions } from './dossier-contributions';
@@ -73,7 +75,11 @@ export function Dossier({
   const canConfigure = d.access?.can_configure ?? canEdit;
   const [focusInvestigation, setFocusInvestigation] = useState<
     { id: string; tick: number; anchor?: string } | undefined
-  >();
+  >(() =>
+    typeof window === 'undefined'
+      ? undefined
+      : researchFocus(window.location.search, d.id),
+  );
   const openInvestigation = (id: string, anchor?: string) =>
     setFocusInvestigation((old) => ({
       id,
@@ -229,6 +235,13 @@ export function Dossier({
           await reload();
         }}
       />
+      {userId && (
+        <PrivateDossierFollowing
+          key={`${d.id}:${userId}`}
+          dossierId={d.id}
+          userId={userId}
+        />
+      )}
       <DossierInvestigation
         key={`${d.id}:${userId || ''}`}
         dossierId={d.id}

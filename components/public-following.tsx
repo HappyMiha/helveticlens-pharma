@@ -1,96 +1,35 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Bell, BellOff, Check, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthDialog } from './auth-dialog';
 import { PublicReuse } from './public-reuse';
-import { api, date } from '@/lib/api';
+import { date } from '@/lib/api';
 import { product } from '@/lib/product';
 import type { PublicDossier } from '@/lib/publication';
 import { publicHref } from '@/lib/publication';
 import type { FollowState, FollowPage } from '@/lib/public-following';
-import { useResource } from '@/lib/use-resource';
+import { usePersonalUpdates } from '@/lib/use-personal-updates';
+import {
+  FollowControls,
+  PrivateFollowedDossiers,
+  ResearchUpdates,
+} from './research-following';
 import {
   usePublicSession,
   publicSessionChanged,
 } from '@/lib/use-public-session';
 
 const ROOT = `/products/${product.id}`;
-function FollowControls({
-  state,
-  onChanged,
-}: {
-  state: FollowState;
-  onChanged: () => Promise<void>;
-}) {
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
-  async function change(read = false) {
-    setBusy(true);
-    setError('');
-    try {
-      await api(
-        `${ROOT}/public-dossiers/${state.publication_id}/follow${read ? '/read' : ''}`,
-        read
-          ? { expected_revision: state.revision, marker: state.marker }
-          : { expected_revision: state.revision, following: !state.following },
-      );
-      await onChanged();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <div className="follow-controls">
-      <div className="public-action-row">
-        <Button
-          variant={state.following ? 'outline' : 'default'}
-          disabled={busy || (!state.available && !state.following)}
-          onClick={() => void change()}
-        >
-          {state.following ? <BellOff size={16} /> : <Bell size={16} />}
-          {state.following ? 'Stop following' : 'Follow dossier'}
-        </Button>
-        {state.following && state.available && (
-          <output className="follow-state">
-            {state.unread ? 'New public changes' : 'No unseen changes'}
-          </output>
-        )}
-        {state.following && state.unread && (
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => void change(true)}
-          >
-            <Check size={16} />
-            Mark update as seen
-          </Button>
-        )}
-      </div>
-      {error && (
-        <p role="alert" className="banner error">
-          {error}{' '}
-          <Button
-            variant="link"
-            disabled={busy}
-            onClick={() => void onChanged()}
-          >
-            Refresh state
-          </Button>
-        </p>
-      )}
-    </div>
-  );
-}
 export function PublicDossierActions({ dossier }: { dossier: PublicDossier }) {
   const session = usePublicSession();
   const identity =
     !session.error && session.data?.authenticated ? session.data : null;
-  const state = useResource<FollowState>(
-    identity ? `${ROOT}/public-dossiers/${dossier.id}/follow` : null,
+  const state = usePersonalUpdates<FollowState>(
+    identity
+      ? `${ROOT}/public-dossiers/${dossier.id}/follow?account=${encodeURIComponent(identity.user.id + ':' + identity.organization.id)}`
+      : null,
   );
   const [auth, setAuth] = useState(false);
   return (
@@ -100,8 +39,8 @@ export function PublicDossierActions({ dossier }: { dossier: PublicDossier }) {
         <Link href="/following">Followed dossiers</Link>
       </div>
       <p>
-        Follow publication and public discussion changes in your personal list.
-        Following sends no email.
+        Follow publications, public discussion and completed research in your
+        personal list. Following sends no email.
       </p>
       {session.error ? (
         <p role="alert">
@@ -127,7 +66,12 @@ export function PublicDossierActions({ dossier }: { dossier: PublicDossier }) {
               </Button>
             </p>
           ) : state.data ? (
-            <FollowControls state={state.data} onChanged={state.refresh} />
+            <FollowControls
+              audience="public"
+              id={dossier.id}
+              state={state.data}
+              onChanged={state.refresh}
+            />
           ) : (
             <output>Loading your following settings…</output>
           )}
@@ -162,8 +106,10 @@ export function FollowedDossiers() {
     !session.error && session.data?.authenticated ? session.data : null;
   const [auth, setAuth] = useState(false),
     [offset, setOffset] = useState(0);
-  const list = useResource<FollowPage>(
-    identity ? `${ROOT}/followed-dossiers?offset=${offset}` : null,
+  const list = usePersonalUpdates<FollowPage>(
+    identity
+      ? `${ROOT}/followed-dossiers?offset=${offset}&account=${encodeURIComponent(identity.user.id + ':' + identity.organization.id)}`
+      : null,
   );
   return (
     <section className="followed-library" aria-label="Your followed dossiers">
@@ -180,8 +126,8 @@ export function FollowedDossiers() {
         <div className="public-empty">
           <h2>Your personal reading list</h2>
           <p>
-            Sign in to follow a dossier and return to its public updates. Your
-            list is private to your account.
+            Sign in to follow private or public dossiers and return to their
+            research updates. Your list is private to your account.
           </p>
           <Button onClick={() => setAuth(true)}>Sign in</Button>
         </div>
@@ -194,6 +140,11 @@ export function FollowedDossiers() {
               Refresh updates
             </Button>
           </div>
+          <PrivateFollowedDossiers
+            key={`${identity.user.id}:${identity.organization.id}`}
+            accountKey={`${identity.user.id}:${identity.organization.id}`}
+          />
+          <h2>Public dossiers</h2>
           {list.error ? (
             <div role="alert" className="public-empty">
               <p>{list.error}</p>
@@ -234,7 +185,20 @@ export function FollowedDossiers() {
                           </p>
                         </>
                       )}
-                      <FollowControls state={state} onChanged={list.refresh} />
+                      <FollowControls
+                        audience="public"
+                        id={state.publication_id}
+                        state={state}
+                        onChanged={list.refresh}
+                      />
+                      {state.available && (
+                        <ResearchUpdates
+                          key={`${identity.user.id}:${identity.organization.id}:${state.publication_id}`}
+                          audience="public"
+                          id={state.publication_id}
+                          accountKey={`${identity.user.id}:${identity.organization.id}`}
+                        />
+                      )}
                     </article>
                   ))}
                 </div>
