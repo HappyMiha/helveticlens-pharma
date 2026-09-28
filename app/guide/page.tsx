@@ -81,11 +81,11 @@ export default function Guide() {
               <h2 id="products-title">Move between Helvetic Lens products.</h2>
               <p>
                 Open Ask / Search on any page, or use the workspace sidebar, to
-                reach Pharma, Legal and the Monitoring platform. Each link
-                opens a new tab, so your current dossier and unsaved work stay
-                here. Your search question and private dossier are not sent to
-                another product. Sign in there if requested; existing access
-                rules still apply.
+                reach Pharma, Legal and the Monitoring platform. Each link opens
+                a new tab, so your current dossier and unsaved work stay here.
+                Your search question and private dossier are not sent to another
+                product. Sign in there if requested; existing access rules still
+                apply.
               </p>
               <ProductDestinations current={product.id} />
             </section>
@@ -229,6 +229,13 @@ export default function Guide() {
                 unavailable originals and unchanged text have an explicit
                 skipped reason. This checks already saved evidence; the page’s
                 acquisition schedule stays separate.
+              </p>
+              <p>
+                If saved text or history cannot be loaded, use Retry this page
+                or Retry history. Retrying keeps the selected saved revision;
+                Reload current revision from start checks the latest permitted
+                capture. A failed read stays hidden until a current request
+                succeeds. Leaving the reader cancels its pending request.
               </p>
             </section>
             <section

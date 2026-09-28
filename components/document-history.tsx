@@ -42,18 +42,9 @@ function HistoryList({
   onRead: (version: SavedPageVersion, firstCursor: string) => void;
   onReset: () => void;
 }) {
-  const { data, error, loading, refresh } = useResource<History>(
+  const { data, error, loading, refreshing, refresh } = useResource<History>(
     historyPath(root, position.cursor),
   );
-  const [retrying, setRetrying] = useState(false);
-  async function retry() {
-    setRetrying(true);
-    try {
-      await refresh();
-    } finally {
-      setRetrying(false);
-    }
-  }
   return (
     <>
       <div className="snapshot-actions">
@@ -63,14 +54,14 @@ function HistoryList({
       </div>
       {loading && <output>Loading saved versions…</output>}
       {error && (
-        <div className="banner error" role="alert">
+        <div className="banner error" role="alert" aria-busy={refreshing}>
           <span>{error}</span>
           <Button
             variant="outline"
-            disabled={retrying}
-            onClick={() => void retry()}
+            disabled={refreshing}
+            onClick={() => void refresh()}
           >
-            Retry history
+            {refreshing ? 'Retrying…' : 'Retry history'}
           </Button>
         </div>
       )}
@@ -141,18 +132,9 @@ function SnapshotReader({
   onMove: (position: PagePosition) => void;
   onReload: () => void;
 }) {
-  const { data, error, loading, refresh } = useResource<SavedPage>(
+  const { data, error, loading, refreshing, refresh } = useResource<SavedPage>(
     snapshotPath(root, position),
   );
-  const [retrying, setRetrying] = useState(false);
-  async function retry() {
-    setRetrying(true);
-    try {
-      await refresh();
-    } finally {
-      setRetrying(false);
-    }
-  }
   const original = documentSourceLink(data?.source_url, data?.document.url);
   return (
     <>
@@ -163,14 +145,14 @@ function SnapshotReader({
       </div>
       {loading && <output>Loading saved text…</output>}
       {error && (
-        <div className="banner error" role="alert">
+        <div className="banner error" role="alert" aria-busy={refreshing}>
           <span>{error}</span>
           <Button
             variant="outline"
-            disabled={retrying}
-            onClick={() => void retry()}
+            disabled={refreshing}
+            onClick={() => void refresh()}
           >
-            Retry this page
+            {refreshing ? 'Retrying…' : 'Retry this page'}
           </Button>
         </div>
       )}

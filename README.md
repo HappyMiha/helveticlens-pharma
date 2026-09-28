@@ -313,3 +313,16 @@ records are retained. The old hostname and `/api/products/loyer` remain supporte
 for existing links; `/api/products/legal` is canonical. Historical response
 records may retain `product: "loyer"`; this is a stable internal identity.
 Sign-in and device appearance settings remain scoped to each domain.
+
+
+### Evidence read recovery
+
+Version 1.28 cancels superseded resource reads and fences late responses across
+reader, URL and session changes. A failed refresh clears retained content; its
+error remains visible through retry until a current request succeeds. Saved-text
+and history retry controls display actual request progress and preserve exact
+revision/cursor selection. The native comparison workspace now recovers reports
+through its current profile/runtime-aware reader, with scoped callbacks and
+accessible retry in all five native locales. No provider or publication setting
+changes; automated and exact deployment evidence is tracked in the shared core
+docs/PRODUCT_READ_RECOVERY.md. Full product and human acceptance remain open.
