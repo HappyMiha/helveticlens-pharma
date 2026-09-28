@@ -26,9 +26,13 @@ const require = createRequire(import.meta.url);
 const { publicContent, publicOffset, publicSearch } = require(
   join(build, 'publication.js'),
 );
-const { readPublicDossier, readPublicPage, readPublicDiscussion, readPublicKnowledge, readPublicInvestigation } = require(
-  join(build, 'public-reader.js'),
-);
+const {
+  readPublicDossier,
+  readPublicPage,
+  readPublicDiscussion,
+  readPublicKnowledge,
+  readPublicInvestigation,
+} = require(join(build, 'public-reader.js'));
 const actualFetch = globalThis.fetch;
 after(() => {
   globalThis.fetch = actualFetch;
@@ -80,7 +84,7 @@ test('server reader fetches only public records without credentials or persisten
     assert.equal(new URL(url).origin, 'https://helveticlens.ch');
     assert.match(
       new URL(url).pathname,
-      /^\/api\/products\/(pharma|loyer)\/public-dossiers/,
+      /^\/api\/products\/(pharma|legal)\/public-dossiers/,
     );
     assert.deepEqual(init.headers, { accept: 'application/json' });
     assert.equal(init.cache, 'no-store');
@@ -146,7 +150,6 @@ test('server discussion renders only an anonymous public projection', async () =
   );
 });
 
-
 test('public slug and typed evidence readers preserve anonymous no-store boundaries', async () => {
   const urls = [];
   globalThis.fetch = async (url, init) => {
@@ -156,9 +159,14 @@ test('public slug and typed evidence readers preserve anonymous no-store boundar
     assert.equal(init.redirect, 'manual');
     return Response.json({ items: [], total: 0 });
   };
-  await readPublicDossier('закон-дослідження-11111111-1111-4111-8111-111111111111');
+  await readPublicDossier(
+    'закон-дослідження-11111111-1111-4111-8111-111111111111',
+  );
   await readPublicKnowledge('claim & source', 20);
-  await readPublicInvestigation('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222');
+  await readPublicInvestigation(
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+  );
   assert.match(urls[1], /public-knowledge/);
   assert.equal(new URL(urls[1]).searchParams.get('q'), 'claim & source');
   assert.match(urls[2], /research\/22222222/);

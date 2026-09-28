@@ -4,6 +4,7 @@ import './globals.css';
 import './visual-language.css';
 import './source-reading.css';
 import './saved-comparisons.css';
+import './version-context.css';
 import { ResearchEnvironment } from '@/components/app-shell';
 export const metadata: Metadata = {
   title: 'HelveticLens Pharma',

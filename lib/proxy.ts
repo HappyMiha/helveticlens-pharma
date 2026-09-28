@@ -7,7 +7,14 @@ export async function proxy(
   request: Request,
   context: { params: Promise<{ path: string[] }> },
 ) {
-  const { path } = await context.params;
+  const { path: requestedPath } = await context.params;
+  // Old legal tabs keep their API links; Pharma cannot acquire legal access.
+  const path =
+    product.id === 'legal' &&
+    requestedPath[0] === 'products' &&
+    requestedPath[1] === 'loyer'
+      ? ['products', 'legal', ...requestedPath.slice(2)]
+      : requestedPath;
   const route = path.join('/');
   if (
     !(

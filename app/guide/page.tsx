@@ -81,11 +81,11 @@ export default function Guide() {
               <h2 id="products-title">Move between Helvetic Lens products.</h2>
               <p>
                 Open Ask / Search on any page, or use the workspace sidebar, to
-                reach Pharma, Loyer and the Monitoring platform. Each link opens
-                a new tab, so your current dossier and unsaved work stay here.
-                Your search question and private dossier are not sent to another
-                product. Sign in there if requested; existing access rules still
-                apply.
+                reach Pharma, Legal and the Monitoring platform. Each link
+                opens a new tab, so your current dossier and unsaved work stay
+                here. Your search question and private dossier are not sent to
+                another product. Sign in there if requested; existing access
+                rules still apply.
               </p>
               <ProductDestinations current={product.id} />
             </section>
@@ -218,11 +218,14 @@ export default function Guide() {
                 watches.
               </p>
               <p>
-                Open Inspect the saved change to compare earlier and new text,
-                then read either retained version. The engine extracts a window
-                of up to 12,000 characters around the first difference and
-                compares the resulting findings independently. Other changes may
-                lie outside that window. Pages longer than 200,000 characters,
+                Expand Saved version details in the full reader to inspect the
+                exact version, file, revision and fingerprint. Saved counts
+                describe retained text, not complete source coverage. Open
+                Inspect the saved change to compare earlier and new text, then
+                read either retained version. The engine extracts a window of up
+                to 12,000 characters around the first difference and compares
+                the resulting findings independently. Other changes may lie
+                outside that window. Pages longer than 200,000 characters,
                 unavailable originals and unchanged text have an explicit
                 skipped reason. This checks already saved evidence; the page’s
                 acquisition schedule stays separate.

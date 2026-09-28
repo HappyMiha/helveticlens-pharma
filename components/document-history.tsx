@@ -11,6 +11,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { date } from '@/lib/api';
+import { SavedVersionContext } from './saved-version-context';
+import { documentSourceLink } from '@/lib/version-context';
 import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import {
@@ -26,60 +28,6 @@ import type {
   SavedPage,
   SavedPageVersion,
 } from '@/lib/contracts';
-
-function sourceUrl(value: string | null) {
-  try {
-    return value && ['https:', 'http:'].includes(new URL(value).protocol)
-      ? value
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function Provenance({ version }: { version: SavedPageVersion }) {
-  const scope = version.selection_provenance;
-  return (
-    <div className="snapshot-provenance">
-      <p>
-        Saved {date(version.created_at)} ·{' '}
-        {version.origin === 'live'
-          ? 'Page capture'
-          : `Origin: ${version.origin || 'not recorded'}`}{' '}
-        · revision {version.evidence_revision}
-      </p>
-      <p>
-        Declared document date: {version.declared_date || 'Not recorded'}
-        {version.date_provenance ? ` (${version.date_provenance})` : ''}
-      </p>
-      {version.synthetic && (
-        <p className="source-health-warning">
-          <b>Synthetic saved version.</b> This is not a verified live-source
-          capture.
-        </p>
-      )}
-      {(scope.scope ||
-        scope.official_version_date ||
-        scope.articles.length > 0) && (
-        <details className="snapshot-scope">
-          <summary>
-            Saved selection ·{' '}
-            {scope.scope || `${scope.articles.length} selected articles`}
-          </summary>
-          <p>
-            This capture may cover only selected parts of the source. Official
-            version date: {scope.official_version_date || 'Not recorded'}.
-          </p>
-          {scope.articles.map((article, i) => (
-            <p key={`${article.number}:${i}`}>
-              Art. {article.number} · {article.heading}
-            </p>
-          ))}
-        </details>
-      )}
-    </div>
-  );
-}
 
 function HistoryList({
   root,
@@ -143,12 +91,7 @@ function HistoryList({
             {data.items.map((version) => (
               <article key={version.id}>
                 <h3>{version.title || data.document.name}</h3>
-                <Provenance version={version} />
-                <p className="muted">
-                  {version.characters.toLocaleString()} characters ·{' '}
-                  {version.passage_count.toLocaleString()} text passages ·{' '}
-                  {version.content_type}
-                </p>
+                <SavedVersionContext version={version} />
                 <Button
                   variant="outline"
                   onClick={() => onRead(version, data.first_cursor)}
@@ -210,7 +153,7 @@ function SnapshotReader({
       setRetrying(false);
     }
   }
-  const original = sourceUrl(data?.source_url || data?.document.url || null);
+  const original = documentSourceLink(data?.source_url, data?.document.url);
   return (
     <>
       <div className="snapshot-actions">
@@ -234,7 +177,7 @@ function SnapshotReader({
       {!error && data && (
         <>
           <h3>{data.title || data.document.name}</h3>
-          <Provenance version={data} />
+          <SavedVersionContext version={data} />
           <p className="muted">
             {data.language ? `Language: ${data.language} · ` : ''}
             {data.content_type}. This is saved extracted text; the original page
@@ -243,11 +186,14 @@ function SnapshotReader({
           {original && (
             <a
               className="source-link break-url"
-              href={original}
+              href={original.href}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
-              Open original source <ArrowUpRight size={14} />
+              {original.recorded
+                ? 'Open original source'
+                : 'Open monitored page'}{' '}
+              <ArrowUpRight size={14} />
             </a>
           )}
           <div className="snapshot-page-label">
@@ -269,9 +215,14 @@ function SnapshotReader({
             </p>
           )}
           {data.pagination.mode === 'text' ? (
-            <div className="snapshot-text">{data.plain_text}</div>
+            <div className="snapshot-text" lang={data.language || undefined}>
+              {data.plain_text}
+            </div>
           ) : (
-            <div className="snapshot-passages">
+            <div
+              className="snapshot-passages"
+              lang={data.language || undefined}
+            >
               {data.passages.map((part, i) => (
                 <section key={`${part.id}:${i}`}>
                   <p className="muted">

@@ -7,7 +7,8 @@ export interface PublicContent {
 }
 export interface PublicDossier extends PublicContent {
   id: string;
-  product: 'pharma' | 'loyer';
+  // Retained API projections may still carry the historical legal key.
+  product: 'pharma' | 'legal' | 'loyer';
   revision: number;
   slug: string;
   living_research: boolean;

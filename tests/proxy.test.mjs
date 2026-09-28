@@ -189,7 +189,7 @@ test('blocks cross-origin writes, admin routes and the other product before forw
       await proxy(
         new Request('https://product.test/api/products/x/dossiers'),
         context(
-          `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers`,
+          `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/dossiers`,
         ),
       )
     ).status,
@@ -280,7 +280,7 @@ test('AI planning forwards only the explicit same-product request with CSRF', as
   assert.equal(result.status, 200);
   assert.equal(result.headers.get('cache-control'), 'private, no-store');
   for (const forbidden of [
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/plan`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/discover/plan`,
     `products/${product.id}/discover/unrestricted`,
     `${route}/extra`,
   ])
@@ -335,11 +335,11 @@ test('research, private discussion and brief preserve query, authorization and r
     assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=test');
   }
   for (const route of [
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/workbench`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/topic/searches`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/topic/references`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/topic/references/saved-source`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/discover`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/workbench`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/dossiers/topic/searches`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/dossiers/topic/references`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/dossiers/topic/references/saved-source`,
   ])
     assert.equal(
       (
@@ -372,7 +372,7 @@ test('discovery imports preserve the exact signed body and CSRF only within this
   };
   for (const candidate of [
     product.id,
-    product.id === 'pharma' ? 'loyer' : 'pharma',
+    product.id === 'pharma' ? 'legal' : 'pharma',
   ]) {
     const route = `products/${candidate}/dossiers/topic/discovery-references`;
     const response = await proxy(
@@ -474,7 +474,7 @@ test('research preview and reviewed generation preserve private input identity w
     'helvetic_lens_session=test',
   );
   assert.equal(calls[1].init.headers.get('x-csrf-token'), 'csrf');
-  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const other = product.id === 'pharma' ? 'legal' : 'pharma';
   const denied = route.replace(`products/${product.id}/`, `products/${other}/`);
   assert.equal(
     (
@@ -519,7 +519,7 @@ test('saved document readers retain scoped cursors, revision conflicts and priva
     calls[1].init.headers.get('cookie'),
     'helvetic_lens_session=private',
   );
-  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const other = product.id === 'pharma' ? 'legal' : 'pharma';
   const denied = root.replace(`products/${product.id}/`, `products/${other}/`);
   assert.equal(
     (
@@ -557,7 +557,7 @@ test('research source lookup stays private and cannot resolve through the other 
   assert.equal(response.status, 404);
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
   assert.match((await response.json()).detail, /no longer accessible/);
-  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const other = product.id === 'pharma' ? 'legal' : 'pharma';
   const denied = route.replace(`products/${product.id}/`, `products/${other}/`);
   assert.equal(
     (
@@ -637,7 +637,7 @@ test('private question search preserves literal query, answer filter, page and u
   assert.match((await response.json()).detail, /12 distinct words/);
   const other = route.replace(
     `products/${product.id}/`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/`,
   );
   assert.equal(
     (
@@ -691,7 +691,7 @@ test('public contribution actions retain consent, revision and CSRF with strict 
     assert.equal(response.status, 409);
     assert.equal(response.headers.get('cache-control'), 'private, no-store');
   }
-  const other = product.id === 'pharma' ? 'loyer' : 'pharma';
+  const other = product.id === 'pharma' ? 'legal' : 'pharma';
   for (const denied of [
     route.replace(product.id, other),
     route + '/admin',
@@ -843,8 +843,8 @@ test('decision search gateway forwards exact public query and allows only bounde
     `${base}/runs/${id}/delete`,
     `${base}/runs/${id}/inspect/extra`,
     `${base}/provider-key`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/decision`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/discover/expand`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/discover/decision`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/discover/expand`,
   ])
     assert.equal((await proxy(request(), context(route))).status, 404);
   assert.equal(calls, 7);
@@ -913,7 +913,7 @@ test('dossier invitation gateway preserves account cookies and restricts product
   );
   assert.equal(calls[1][1].headers.get('x-csrf-token'), 'fixture');
   for (const route of [
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossier-invitations`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/dossier-invitations`,
     `products/${product.id}/dossier-invitations/${id}/promote`,
     `products/${product.id}/dossier-invitations/not-an-id/accept`,
   ]) {
@@ -956,7 +956,7 @@ test('guest readers retain account scope and cannot select another product or wo
     assert.equal(response.headers.get('cache-control'), 'private, no-store');
   }
   for (const route of [
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/shared-dossiers`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/shared-dossiers`,
     `products/${product.id}/shared-dossiers/forged`,
   ]) {
     assert.equal(
@@ -1049,7 +1049,7 @@ test('recurring private search forwards scoped controls and rejects public or wr
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
   for (const path of [
     `products/${product.id}/public-dossiers/topic/web-research`,
-    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/fixture/web-research`,
+    `products/${product.id === 'pharma' ? 'legal' : 'pharma'}/dossiers/fixture/web-research`,
   ]) {
     assert.equal(
       (
@@ -1097,7 +1097,7 @@ test('private evidence search forwards only native credentials and blocks public
       route.replace('/dossiers/', '/public-dossiers/'),
       route.replace(
         '/' + product.id + '/',
-        '/' + (product.id === 'pharma' ? 'loyer' : 'pharma') + '/',
+        '/' + (product.id === 'pharma' ? 'legal' : 'pharma') + '/',
       ),
     ])
       assert.equal(
@@ -1142,7 +1142,7 @@ test('personal private and public research updates forward native identity witho
     assert.equal(response.headers.get('cache-control'), 'private, no-store');
     const wrong = route.replace(
       product.id,
-      product.id === 'pharma' ? 'loyer' : 'pharma',
+      product.id === 'pharma' ? 'legal' : 'pharma',
     );
     assert.equal(
       (
@@ -1155,4 +1155,66 @@ test('personal private and public research updates forward native identity witho
     );
   }
   assert.equal(calls, 3);
+});
+
+test('historical legal paths reach the same canonical gateway and never enter Pharma', async () => {
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.equal(
+      new URL(url).pathname,
+      `/api/products/${product.id}/dossiers/fixture/entries`,
+    );
+    assert.equal(new URL(url).searchParams.get('q'), 'alpha & beta');
+    assert.equal(
+      init.headers.get('cookie'),
+      'helvetic_lens_session=fixture; helvetic_lens_csrf=csrf',
+    );
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(
+      new TextDecoder().decode(init.body),
+      '{"body":"Retained work"}',
+    );
+    return Response.json({ id: 'same-retained-entry' });
+  };
+  const route = 'products/loyer/dossiers/fixture/entries';
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}?q=alpha%20%26%20beta`, {
+      method: 'POST',
+      headers: {
+        origin: 'https://product.test',
+        cookie:
+          'helvetic_lens_session=fixture; helvetic_lens_csrf=csrf; foreign=never',
+        'x-csrf-token': 'csrf',
+      },
+      body: '{"body":"Retained work"}',
+    }),
+    context(route),
+  );
+  assert.equal(response.status, product.id === 'pharma' ? 404 : 200);
+  assert.equal(calls, product.id === 'pharma' ? 0 : 1);
+});
+
+test('neither legal spelling bypasses product isolation or cross-origin write protection', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return Response.json({});
+  };
+  for (const name of ['loyer', 'legal', 'legalish']) {
+    const route = `products/${name}/dossiers/fixture/entries`;
+    const response = await proxy(
+      new Request(`https://product.test/api/${route}`, {
+        method: 'POST',
+        headers: { origin: 'https://unrelated.example' },
+        body: '{}',
+      }),
+      context(route),
+    );
+    assert.equal(
+      response.status,
+      product.id === 'pharma' || name === 'legalish' ? 404 : 403,
+    );
+  }
+  assert.equal(calls, 0);
 });

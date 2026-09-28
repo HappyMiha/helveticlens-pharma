@@ -1,5 +1,14 @@
 # Changes
 
+## 1.27.0 — Inspect saved document context
+
+- Rename the legal product to Helvetic Lens Legal; link to its canonical domain and existing renamed repository. Historical legal APIs and the former hostname keep working with the same dossiers and rights.
+
+- Read exact saved version IDs, file details, revisions and fingerprints in document history.
+- Distinguish capture and declared dates, true retained counts, synthetic captures and article selections.
+- Use a readable source layout and full-screen mobile reader while preserving revision-pinned navigation.
+- Original-source links reject unsafe or credential-bearing URLs; a monitored-page fallback is labeled separately.
+
 ## 1.26.0 — Inspect saved comparisons
 
 - Compare retained page excerpts with each version’s capture time, actual saved

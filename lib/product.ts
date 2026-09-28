@@ -1,5 +1,5 @@
 export const product = {
-  id: 'pharma' as 'pharma' | 'loyer',
+  id: 'pharma' as 'pharma' | 'legal',
   name: 'Pharma',
   domain: 'pharma.helveticlens.ch',
   eyebrow: 'PHARMACEUTICAL INTELLIGENCE',

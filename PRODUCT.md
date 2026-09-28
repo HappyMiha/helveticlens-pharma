@@ -1,5 +1,12 @@
 # HelveticLens Pharma — product model
 
+Current release status and workflows are maintained in [README](README.md) and
+the production product guide. The founding product model below records the
+initial workflow and its original limits; subsequent releases add dynamic
+investigations, open-web and semantic search, roles, personal following and
+recurring monitoring. The legal product is now **Helvetic Lens Legal**.
+
+
 ## The job
 
 Help regulatory affairs, pharmacovigilance and medical teams keep a shared answer to an important question current, with evidence they can inspect. The product follows medicines, safety, evidence and regulatory change. The working audience is a small professional team using a private organization workspace.

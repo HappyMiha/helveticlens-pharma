@@ -43,7 +43,7 @@ test('continuation uses the displayed query and encodes opaque cursor without fo
   assert.doesNotMatch(url.href, /Private|yesterday|result/);
   const workspace = new URL(
     discoveryPath(
-      'loyer',
+      'legal',
       { ...result, provider: 'workspace', match_mode: 'phrase' },
       'unused',
     ),
