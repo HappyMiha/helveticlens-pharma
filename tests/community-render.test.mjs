@@ -1786,3 +1786,63 @@ test('corpus results distinguish full ranking, optional model opinions and exact
   assert.match(html, /&lt;img/);
   assert.doesNotMatch(html, /Search older|Model relevance probability|83%/);
 });
+
+const { ProductDestinations } = require(
+  resolve('components/product-destinations.tsx'),
+);
+const { productNavigationCopy } = require(resolve('lib/product-navigation.ts'));
+test('product navigation preserves the current tab and never carries private context to another origin', () => {
+  const destinations = {
+    pharma: 'https://pharma.helveticlens.ch/',
+    loyer: 'https://loyer.helveticlens.ch/',
+    platform: 'https://helveticlens.ch/',
+  };
+  for (const current of Object.keys(destinations)) {
+    const html = renderToStaticMarkup(
+      React.createElement(ProductDestinations, {
+        current,
+        question: 'CONFIDENTIAL_QUESTION',
+        dossierId: 'PRIVATE_ID',
+        credential: 'SECRET_VALUE',
+      }),
+    );
+    const links = [...html.matchAll(/<a ([^>]+)>/g)].map(
+      ([_, attributes]) => attributes,
+    );
+    assert.equal(links.length, 2);
+    assert.match(html, /aria-current="true"/);
+    assert.doesNotMatch(html, /CONFIDENTIAL_QUESTION|PRIVATE_ID|SECRET_VALUE/);
+    for (const attributes of links) {
+      const href = attributes.match(/href="([^"]+)"/)[1];
+      assert.ok(
+        Object.entries(destinations).some(
+          ([id, url]) => id !== current && url === href,
+        ),
+      );
+      assert.equal(new URL(href).search, '');
+      assert.equal(new URL(href).hash, '');
+      assert.match(attributes, /target="_blank"/);
+      assert.match(attributes, /rel="noopener noreferrer"/);
+      assert.match(attributes.toLowerCase(), /referrerpolicy="no-referrer"/);
+      assert.match(attributes, /aria-label="[^"]+Opens in a new tab"/);
+    }
+  }
+});
+test('all native product navigation locales expose current location and external-link meaning', () => {
+  assert.deepEqual(Object.keys(productNavigationCopy), [
+    'en-CH',
+    'de-CH',
+    'fr-CH',
+    'it-CH',
+    'rm-CH',
+  ]);
+  for (const copy of Object.values(productNavigationCopy)) {
+    const html = renderToStaticMarkup(
+      React.createElement(ProductDestinations, { current: 'platform', copy }),
+    );
+    assert.ok(html.includes(copy.title));
+    assert.ok(html.includes(copy.current));
+    assert.ok(html.includes(copy.opens));
+    assert.ok(html.includes(copy.note));
+  }
+});

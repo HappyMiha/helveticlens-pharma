@@ -1,5 +1,13 @@
 # Changes
 
+## 1.22.0 — Shared product navigation
+
+- Reach Pharma, Loyer and Monitoring from the sidebar, global Ask / Search or guide.
+- Keep the current dossier and unsaved work in its tab; fixed destination links
+  share no search text, private identifiers, credentials, opener or referrer.
+- Preserve destination permissions, existing research controls and Brandbook themes.
+
+
 ## 1.21.0 — whole-dossier meaning search
 
 Find older captured evidence without manually scanning twelve-record windows. Local multilingual retrieval and word ranking cover the current authorized dossier, with resumable preparation, reusable exact-input vectors, complete ranked paging and original citations. Laya opinions remain visible separately and never suppress candidates. Questions are not persisted or sent to hosted search.

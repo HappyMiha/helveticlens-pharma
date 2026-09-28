@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight, BookOpen, Check } from 'lucide-react';
 import { product } from '@/lib/product';
+import { ProductDestinations } from '@/components/product-destinations';
 import './guide.css';
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 const chapters = [
+  ['products', 'Move between products'],
   ['interface', 'Ask, read and trace evidence'],
   ['saved-evidence-search', 'Search your saved evidence'],
   ['public-research', 'Develop a living public dossier'],
@@ -74,6 +76,19 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section id="products" aria-labelledby="products-title">
+              <span className="guide-step">YOUR RESEARCH SPACES</span>
+              <h2 id="products-title">Move between Helvetic Lens products.</h2>
+              <p>
+                Open Ask / Search on any page, or use the workspace sidebar, to
+                reach Pharma, Loyer and the Monitoring platform. Each link opens
+                a new tab, so your current dossier and unsaved work stay here.
+                Your search question and private dossier are not sent to another
+                product. Sign in there if requested; existing access rules still
+                apply.
+              </p>
+              <ProductDestinations current={product.id} />
+            </section>
             <section
               id="saved-evidence-search"
               aria-labelledby="saved-evidence-search-title"

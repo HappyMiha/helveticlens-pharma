@@ -968,3 +968,84 @@ button[data-slot='button'] {
 .shared-dossiers .team-people {
   margin-bottom: 16px;
 }
+
+/* Product destinations use fixed public origins; no query or dossier transfer. */
+.hl-products {
+  --product-text: var(--text-primary, var(--foreground));
+  --product-muted: var(--text-secondary, var(--muted-foreground));
+  --product-line: var(--line, var(--border));
+  color: var(--product-text);
+  min-width: 0;
+  padding: 16px 12px;
+}
+.hl-products-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hl-products ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.hl-products li {
+  min-width: 0;
+}
+.hl-products a,
+.hl-product-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--product-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.hl-products strong {
+  font-weight: 600;
+}
+.hl-products svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.hl-product-current {
+  border-left: 2px solid var(--product-muted);
+}
+.hl-product-current small {
+  color: var(--product-muted);
+  font-size: 11px;
+}
+.hl-products a:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hl-products a:focus-visible {
+  outline: 2px solid var(--product-text);
+  outline-offset: 2px;
+}
+.hl-products-note {
+  margin: 10px 0 0;
+  color: var(--product-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+@media print {
+  .hl-products {
+    display: none !important;
+  }
+}
+
+.ask-palette .hl-products {
+  padding-inline: 0;
+  border-top: 1px solid var(--line);
+}

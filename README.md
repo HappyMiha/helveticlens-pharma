@@ -233,3 +233,14 @@ Recurring public research: dossier editors can explicitly save a public question
 and daily/weekly cadence, inspect actual provider and evidence history, and pause
 the schedule. New permitted evidence is compared with prior findings; unchanged
 captures skip extraction. Queries never include private notes automatically.
+
+
+### Move between products
+
+The sidebar, global Ask / Search and guide connect Pharma, Loyer and the native
+Monitoring platform through fixed public home addresses. The current product is
+identified without navigating away. Other destinations open in a new tab without
+an opener or referrer; queries, dossier IDs, private drafts and credentials are
+never attached. Destination login/access checks remain in place. Version 1.22
+adds this shared journey and the native Brandbook navigation frame; broader native
+page themes and human visual/language acceptance remain open.

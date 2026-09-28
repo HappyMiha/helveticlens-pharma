@@ -64,6 +64,7 @@ import { Dossier } from './dossier';
 import { Workbench } from './workbench';
 import { ResearchDesk } from './research-desk';
 import { AppShell, GlassSidebar, TopNavigation } from './app-shell';
+import { ProductDestinations } from './product-destinations';
 
 export const ROOT = `/products/${product.id}/dossiers`;
 export const emptyConfig = (): ProfileConfig => ({
@@ -457,10 +458,8 @@ export default function Workspace() {
             <a href="/guide" target="_blank" rel="noreferrer">
               Product guide <ArrowUpRight size={14} />
             </a>
-            <a href="https://helveticlens.ch" target="_blank" rel="noreferrer">
-              Open full platform <ArrowUpRight size={14} />
-            </a>
           </div>
+          <ProductDestinations current={product.id} />
         </SidebarContent>
         <SidebarFooter>
           <div className="workspace-identity">

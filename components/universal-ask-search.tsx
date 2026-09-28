@@ -42,6 +42,7 @@ import { discoveryPath } from '@/lib/discovery-pages';
 import { discoveryTarget, dossierHref } from '@/lib/dossier-navigation';
 import { sourceHref } from '@/lib/investigation';
 import { LensProgress } from './lens';
+import { ProductDestinations } from './product-destinations';
 
 export type AskScope = {
   id: string;
@@ -470,6 +471,7 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
               ))}
             </section>
           )}
+          <ProductDestinations current={product.id} />
           <div className="ask-navigation">
             <Link href="/" onClick={close}>
               Workspace
