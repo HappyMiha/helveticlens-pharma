@@ -18,6 +18,7 @@ import { evidenceCounts } from '@/lib/lens';
 import { OriginalContribution } from './dossier-contributions';
 import { InvestigationFindings } from './investigation-findings';
 import { ClaimEvolution } from './claim-evolution';
+import { EvidenceSearch, type EvidenceSearchHandle } from './evidence-search';
 
 export function DossierInvestigation({
   dossierId,
@@ -29,8 +30,8 @@ export function DossierInvestigation({
   onOpen,
 }: {
   title?: string;
-  focusRequest?: { id: string; tick: number };
-  onOpen: (id: string) => void;
+  focusRequest?: { id: string; tick: number; anchor?: string };
+  onOpen: (id: string, anchor?: string) => void;
   dossierId: string;
   canEdit: boolean;
   canContribute?: boolean;
@@ -38,6 +39,11 @@ export function DossierInvestigation({
 }) {
   const base = `/products/${product.id}/dossiers/${dossierId}/investigations`;
   const { register } = useAskSearch();
+  const evidenceSearch = useRef<EvidenceSearchHandle>(null);
+  const searchEvidence = useCallback(
+    (query: string) => evidenceSearch.current?.start(query),
+    [],
+  );
   const [history, setHistory] = useState<InvestigationSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState('');
@@ -169,10 +175,17 @@ export function DossierInvestigation({
     };
   }, [base, focusRequest]);
   useEffect(() => {
-    if (focusRequest?.id === value?.id)
-      document
-        .getElementById(`investigation-${value?.id}`)
-        ?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    if (focusRequest?.id === value?.id) {
+      const target = document.getElementById(
+        focusRequest?.anchor || `investigation-${value?.id}`,
+      );
+      const details = target?.querySelector('details');
+      if (details && focusRequest?.anchor?.startsWith('source-'))
+        details.open = true;
+      target?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      target?.setAttribute('tabindex', '-1');
+      target?.focus({ preventScroll: true });
+    }
   }, [focusRequest, value?.id]);
   const running = isRunning(value);
   useEffect(() => {
@@ -325,9 +338,11 @@ export function DossierInvestigation({
         canInvestigate: canEdit,
         unavailable: busy || running || activeElsewhere,
         investigate: start,
+        searchEvidence,
       }),
     [
       register,
+      searchEvidence,
       dossierId,
       title,
       canEdit,
@@ -372,6 +387,12 @@ export function DossierInvestigation({
           </Button>
         </div>
       )}
+      <EvidenceSearch
+        key={`${dossierId}:${userId || ''}`}
+        dossierId={dossierId}
+        ref={evidenceSearch}
+        onOpen={onOpen}
+      />
       {loading && <output>Loading saved investigations…</output>}
       {!!history.length && (
         <div className="investigation-history">

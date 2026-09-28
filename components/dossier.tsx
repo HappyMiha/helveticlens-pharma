@@ -72,10 +72,14 @@ export function Dossier({
   const canMonitor = d.access?.can_monitor ?? canEdit;
   const canConfigure = d.access?.can_configure ?? canEdit;
   const [focusInvestigation, setFocusInvestigation] = useState<
-    { id: string; tick: number } | undefined
+    { id: string; tick: number; anchor?: string } | undefined
   >();
-  const openInvestigation = (id: string) =>
-    setFocusInvestigation((old) => ({ id, tick: (old?.tick || 0) + 1 }));
+  const openInvestigation = (id: string, anchor?: string) =>
+    setFocusInvestigation((old) => ({
+      id,
+      anchor,
+      tick: (old?.tick || 0) + 1,
+    }));
   const [tab, setTab] = useState(
       initialReferenceId ? 'evidence' : 'discussion',
     ),

@@ -1063,3 +1063,54 @@ test('recurring private search forwards scoped controls and rejects public or wr
   }
   assert.equal(count, 1);
 });
+
+test('private evidence search forwards only native credentials and blocks public or cross-product paths', async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (_url, init) => {
+    calls++;
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(init.headers.get('x-organization-id'), null);
+    assert.equal(
+      new TextDecoder().decode(init.body),
+      '{"query":"private question","mode":"semantic"}',
+    );
+    return Response.json({ items: [] });
+  };
+  try {
+    const route = `products/${product.id}/dossiers/fixture/evidence-search`;
+    const response = await proxy(
+      new Request('https://product.test/api/' + route, {
+        method: 'POST',
+        headers: {
+          origin: 'https://product.test',
+          'x-csrf-token': 'csrf',
+          'x-organization-id': 'forged',
+        },
+        body: '{"query":"private question","mode":"semantic"}',
+      }),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+    for (const path of [
+      route.replace('/dossiers/', '/public-dossiers/'),
+      route.replace(
+        '/' + product.id + '/',
+        '/' + (product.id === 'pharma' ? 'loyer' : 'pharma') + '/',
+      ),
+    ])
+      assert.equal(
+        (
+          await proxy(
+            new Request('https://product.test/api/' + path),
+            context(path),
+          )
+        ).status,
+        404,
+      );
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
+});

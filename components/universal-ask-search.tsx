@@ -49,6 +49,7 @@ export type AskScope = {
   canInvestigate: boolean;
   unavailable: boolean;
   investigate: (question: string) => Promise<boolean>;
+  searchEvidence?: (question: string) => void;
 };
 type AskEnvironment = {
   openAsk: () => void;
@@ -59,7 +60,7 @@ const AskContext = createContext<AskEnvironment>({
   register: () => () => {},
 });
 export const useAskSearch = () => useContext(AskContext);
-type Destination = 'workspace' | 'public' | 'web' | 'investigate';
+type Destination = 'workspace' | 'public' | 'web' | 'investigate' | 'evidence';
 type Result = {
   title: string;
   href: string;
@@ -173,6 +174,7 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
   async function submit(destination: Destination) {
     if (
       !ready ||
+      (destination === 'evidence' && (!identity || !scope?.searchEvidence)) ||
       (destination === 'workspace' && !identity) ||
       (destination === 'web' && !admin) ||
       (destination === 'investigate' && !identity)
@@ -186,6 +188,11 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
     setCoverage('');
     setSearched(question);
     try {
+      if (destination === 'evidence') {
+        scope?.searchEvidence?.(question);
+        close();
+        return;
+      }
       if (destination === 'investigate') {
         if (!scope?.canInvestigate || scope.unavailable) return;
         const success = await scope.investigate(question);
@@ -340,6 +347,21 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
                         {scope.unavailable
                           ? 'Another investigation is active'
                           : 'Find sources and build an evidence trail'}
+                      </small>
+                    </span>
+                  </CommandItem>
+                )}
+                {scope?.searchEvidence && (
+                  <CommandItem
+                    value="evidence"
+                    disabled={!ready || checking || !identity}
+                    onSelect={() => void submit('evidence')}
+                  >
+                    <FolderSearch />
+                    <span>
+                      Search this dossier’s evidence
+                      <small>
+                        Meaning and exact citations · private local search
                       </small>
                     </span>
                   </CommandItem>

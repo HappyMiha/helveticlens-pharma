@@ -1412,3 +1412,139 @@ test('recurring results expose fallback, unchanged captures and unknown cost wit
   assert.match(html, /0.910/);
   assert.doesNotMatch(html, /<script>|Accuracy: 91|\$0\.000000/);
 });
+
+const { EvidenceSearch, EvidenceSearchResults, EvidenceSearchResult } = require(
+  resolve('components/evidence-search.tsx'),
+);
+const { currentEvidenceSearch, evidenceAnchor } = require(
+  resolve('lib/evidence-search.ts'),
+);
+const evidenceItem = {
+  id: 'receipt',
+  kind: 'claim',
+  investigation_id: 'investigation',
+  source_id: 'source',
+  title: 'Untrusted <script>source</script>',
+  url: 'javascript:alert(1)',
+  sha256: 'a'.repeat(64),
+  quote: '<img src=x onerror=alert(1)> exact retained quote',
+  locator: 'p21',
+  created_at: '2026-09-28T00:00:00Z',
+  statement: 'A source-linked finding',
+  claim_status: 'CONTESTED',
+  claim_id: 'claim',
+  claim_revision: 3,
+  text_truncated: true,
+  text_characters: 2800,
+  semantic_match: true,
+  literal_match: false,
+  relevance_probability: 0.91,
+  confidence: 0.82,
+};
+const evidencePage = {
+  dossier_id: 'dossier',
+  query: 'private question',
+  mode: 'semantic',
+  method: 'local_semantic_hybrid',
+  items: [evidenceItem],
+  total_records: 30,
+  matching_records: null,
+  examined_records: 12,
+  offset: 0,
+  batch_size: 12,
+  next_offset: 12,
+  as_of: '2026-09-28T00:00:00Z',
+  fingerprint: 'b'.repeat(64),
+  coverage: 'Only this saved evidence window.',
+  measurement: {
+    latency_ms: 234,
+    requests_completed: 12,
+    models: ['fixture'],
+    estimated_cost_usd: null,
+    accuracy: null,
+    accuracy_basis: 'Not reviewed independently.',
+    cost_scope: 'Local cost is unknown, not zero.',
+    confidence_definition: 'Model confidence is not accuracy.',
+  },
+};
+test('private evidence search SSR explains local scope and does not run a search', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidenceSearch, { dossierId: 'dossier', onOpen() {} }),
+  );
+  assert.match(html, /Find the evidence you already have/);
+  assert.match(html, /Meaning · local/);
+  assert.match(html, /All words · no model/);
+  assert.match(html, /12 records at a time/);
+  assert.match(html, /Typing alone sends nothing/);
+  assert.doesNotMatch(html, /fixture|private question|records in this batch/);
+});
+test('evidence results retain exact provenance, disputed status and safe source links', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidenceSearchResult, {
+      item: evidenceItem,
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /contested/i);
+  assert.match(html, /revision 3/);
+  assert.match(html, /&lt;img/);
+  assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /p21/);
+  assert.match(html, /SHA-256/);
+  assert.match(html, /Open finding &amp; citations/);
+  assert.match(html, /First 2,400 of 2800/);
+  assert.match(html, /not measured accuracy/);
+  assert.doesNotMatch(html, /href="javascript:|<script>|<img /);
+  assert.equal(evidenceAnchor(evidenceItem), 'claim-claim');
+  assert.equal(
+    evidenceAnchor({ ...evidenceItem, kind: 'passage' }),
+    'source-source',
+  );
+});
+test('bounded search makes older evidence, failure recovery and unknown measurements explicit', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidenceSearchResults, {
+      page: { ...evidencePage, method: 'literal_fallback' },
+      onOpen() {},
+      onPage() {},
+    }),
+  );
+  assert.match(html, /12 records in this batch/);
+  assert.match(html, /30 saved records/);
+  assert.match(html, /Search older evidence/);
+  assert.match(html, /Local comparison was unavailable/);
+  assert.match(html, /Cost: Unknown/);
+  assert.match(html, /Independent accuracy: not evaluated/);
+  assert.doesNotMatch(html, /Cost: 0|Accuracy: 91|Newer evidence/);
+});
+test('stale, cross-dossier, edited-query and failure evidence pages are never reused', () => {
+  assert.equal(
+    currentEvidenceSearch(
+      evidencePage,
+      'dossier',
+      ' private question ',
+      'semantic',
+      '',
+    ),
+    evidencePage,
+  );
+  for (const args of [
+    [null, 'dossier', 'private question', 'semantic', ''],
+    [evidencePage, 'other', 'private question', 'semantic', ''],
+    [evidencePage, 'dossier', 'another question', 'semantic', ''],
+    [evidencePage, 'dossier', 'private question', 'literal', ''],
+    [evidencePage, 'dossier', 'private question', 'semantic', 'Access revoked'],
+  ])
+    assert.equal(currentEvidenceSearch(...args), null);
+});
+
+test('model-negative evidence remains inspectable without implying a word match', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidenceSearchResult, {
+      item: { ...evidenceItem, semantic_match: false, literal_match: false },
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /remains visible for your review/);
+  assert.doesNotMatch(html, /This record matched the search words/);
+});

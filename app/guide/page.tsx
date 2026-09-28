@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 const chapters = [
   ['interface', 'Ask, read and trace evidence'],
+  ['saved-evidence-search', 'Search your saved evidence'],
   ['public-research', 'Develop a living public dossier'],
   ['ongoing-research', 'Keep research current automatically'],
   ['changes-over-time', 'Compare evidence over time'],
@@ -73,6 +74,45 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section
+              id="saved-evidence-search"
+              aria-labelledby="saved-evidence-search-title"
+            >
+              <span className="guide-step">PRIVATE KNOWLEDGE</span>
+              <h2 id="saved-evidence-search-title">
+                Find the evidence you already have.
+              </h2>
+              <p>
+                Open a dossier and use Search saved evidence, or choose Search
+                this dossier’s evidence in Ask / Search. Meaning compares your
+                question with captured passages and source-linked findings using
+                local Laya. Your query and private evidence stay on the
+                platform; this action makes no public-web or hosted Jev request.
+              </p>
+              <p>
+                Meaning checks 12 records at a time, newest first, without
+                requiring the same words. Continue with Search older evidence to
+                reach earlier records. All words searches across the same
+                permitted ledger without a model. New captures appear when you
+                start a fresh search.
+              </p>
+              <p>
+                Each result retains an exact quotation, source fingerprint and
+                locator. Open the finding or captured source to inspect its
+                context, disputed status and citations. Relevance and model
+                confidence do not establish truth or measured accuracy. Search
+                measurements show elapsed time, completed local requests and
+                unknown compute cost.
+              </p>
+              <p>
+                Only completed private investigations are searched. Uncaptured
+                attachments, live web pages and public discussion are outside
+                this search. Long excerpts use their first 2,400 characters for
+                semantic comparison. If local comparison fails, the batch falls
+                back to word matches. Access and source permissions are
+                rechecked while results are open.
+              </p>
+            </section>
             <section
               id="ongoing-research"
               aria-labelledby="ongoing-research-title"

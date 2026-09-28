@@ -1541,3 +1541,69 @@
 .decision-lanes li {
   overflow-wrap: anywhere;
 }
+
+.evidence-search {
+  padding-block: 2rem;
+  border-block: 1px solid var(--border);
+  margin-block: 2rem;
+  scroll-margin-top: 6rem;
+}
+.evidence-search h3 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+.evidence-search p {
+  max-width: 78ch;
+  overflow-wrap: anywhere;
+}
+.evidence-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.evidence-search-form label {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+.evidence-search-form label:first-child {
+  flex: 1 1 20rem;
+}
+.evidence-search-results > output {
+  display: block;
+  font-size: 1rem;
+  margin-block: 1.5rem;
+}
+.evidence-search-result {
+  padding-block: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 6rem;
+}
+.evidence-search-result h4 {
+  font-size: 1.125rem;
+  margin-block: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.evidence-search-result blockquote {
+  margin: 1rem 0;
+  padding-inline-start: 1rem;
+  border-inline-start: 2px solid var(--border);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.evidence-search-result code {
+  overflow-wrap: anywhere;
+  font-size: 0.8125rem;
+}
+.evidence-search-method {
+  margin-top: 1rem;
+}
+@media (max-width: 640px) {
+  .evidence-search-form > button {
+    width: 100%;
+  }
+}
