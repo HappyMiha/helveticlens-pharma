@@ -99,6 +99,7 @@ export interface Topic {
   revisions: TopicPlan[];
 }
 export interface DomainPack {
+  context_schema_id?: string;
   id: 'LegalPack' | 'PharmaPack';
   version: string;
   domain: 'LEGAL' | 'PHARMA';
@@ -170,6 +171,8 @@ export interface ResearchPreview {
   };
 }
 export interface EntryData {
+  before?: Partial<import('./structured-context').ContextSnapshot>;
+  after?: import('./structured-context').ContextSnapshot;
   decision?: SourceDecision;
   reference_id?: string;
   expected_review_id?: string | null;
@@ -211,6 +214,7 @@ export interface Entry {
     | 'improvement'
     | 'monitor'
     | 'context'
+    | 'domain_context'
     | 'review'
     | 'action'
     | 'question'

@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const chapters = [
   ['products', 'Move between products'],
   ['dossier', 'Read a dossier'],
+  ['subject', 'Record the dossier subject'],
   ['interface', 'Ask, read and trace evidence'],
   ['saved-evidence-search', 'Search your saved evidence'],
   ['public-research', 'Develop a living public dossier'],
@@ -113,6 +114,30 @@ export default function Guide() {
                 Print and export are in Dossier options above the document. Ask
                 / Search can still investigate or search the active dossier from
                 any chapter and opens AI research to show the results.
+              </p>
+            </section>
+            <section id="subject" aria-labelledby="subject-title">
+              <span className="guide-step">RECORDED SUBJECT</span>
+              <h2 id="subject-title">Give the question its context.</h2>
+              <p>
+                Open Dossier → Dossier subject → Add details. All fields are
+                optional. In Pharma, keep products, active substances,
+                indications and markets distinct. In Legal, record known
+                jurisdictions, parties, authorities, laws, cases and relevant
+                dates. Use one value per line; dates use YYYY-MM-DD.
+              </p>
+              <p>
+                Editors can save or clear values. The dossier shows the saved
+                details and records who changed them. A colleague’s newer edit
+                must be reloaded before you can overwrite it. A failed save
+                keeps your draft in the editor. Private printouts and JSON
+                exports retain the subject.
+              </p>
+              <p>
+                These details come from your team. They are not verified
+                findings, resolved identities or proof that a rule applies.
+                Saving them does not run research, change monitoring or copy
+                them into a public version.
               </p>
             </section>
             <section id="products" aria-labelledby="products-title">

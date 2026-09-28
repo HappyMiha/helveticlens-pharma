@@ -1,5 +1,18 @@
 # Changes
 
+## 1.31.0 — Record the dossier subject
+
+- Save optional structured subject details through the shared Core: products,
+  active substances, indications and markets for Pharma; jurisdictions, parties,
+  authorities, cases and dates for Legal.
+- Read recorded details inside the dossier and open the editor explicitly.
+  Values remain user-provided context, separate from verified source facts.
+- Keep versioned context, current editor rights, revision conflicts and attributed
+  change history. Private exports and printouts retain the saved subject.
+- Preserve old work settings. Saving context does not run AI/search, change
+  monitoring or publish private details. Source coverage and identity resolution
+  remain separate.
+
 ## 1.30.0 — A readable dossier
 
 - Open a document with its monitoring question, scope and latest source updates.

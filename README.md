@@ -1,5 +1,15 @@
 # HelveticLens Pharma
 
+## Record the subject
+
+Dossier subject keeps optional domain details separate: Pharma products, active
+substances, indications and markets; Legal jurisdictions, parties, authorities,
+cases and dates. Editors save the shared versioned context; readers see the
+recorded details. Changes retain authorship, and private print/export includes
+them. Existing work settings remain independent. These are user-provided names
+and identifiers, not verified source facts or automatically resolved entities.
+Saving details does not change monitoring, run research or publish them.
+
 ## Read the dossier as a document
 
 The opening page holds the question, monitoring scope and latest source updates.
