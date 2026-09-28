@@ -3,13 +3,13 @@ import { PrivateDossierFollowing } from './research-following';
 import { researchFocus } from '@/lib/research-following';
 import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
-import { DomainContext } from './domain-context';
 import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
 import { ReferenceLibrary } from '@/components/reference-library';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -21,6 +21,7 @@ import {
   Check,
   FileText,
   FolderOpen,
+  MoreHorizontal,
   Globe,
   MessageSquare,
   Pause,
@@ -54,6 +55,13 @@ import { DossierWork } from './dossier-work';
 import { ActionDialog } from './action-dialog';
 import { PageWatches } from './page-watches';
 import { PublicationEditor } from './publication-editor';
+import { initialDossierSection } from '@/lib/dossier-sections';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 export function Dossier({
   dossier: d,
@@ -69,6 +77,8 @@ export function Dossier({
   reload,
   notify,
 }: DossierProps) {
+  const isMobile = useIsMobile();
+  const dossierElement = useRef<HTMLElement>(null);
   const p = d.profile,
     c = p.config;
   const canContribute = d.access?.can_contribute ?? canEdit;
@@ -81,19 +91,26 @@ export function Dossier({
       ? undefined
       : researchFocus(window.location.search, d.id),
   );
-  const openInvestigation = (id: string, anchor?: string) =>
+  const openInvestigation = (id: string, anchor?: string) => {
+    setTab('research');
     setFocusInvestigation((old) => ({
       id,
       anchor,
       tick: (old?.tick || 0) + 1,
     }));
+  };
   const [tab, setTab] = useState(
-      initialReferenceId ? 'evidence' : 'discussion',
+      initialDossierSection(
+        initialReferenceId,
+        initialQuestionId,
+        focusInvestigation?.id,
+      ),
     ),
     [actionEvidence, setActionEvidence] = useState<Match | null>(null),
     [note, setNote] = useState(''),
     [reference, setReference] = useState({ title: '', url: '', body: '' }),
     [matches, setMatches] = useState<Match[]>([]),
+    [loadedMatchesKey, setLoadedMatchesKey] = useState(''),
     [matchError, setMatchError] = useState(''),
     [feedback, setFeedback] = useState(''),
     [relevance, setRelevance] = useState('relevant'),
@@ -101,6 +118,8 @@ export function Dossier({
     [chosen, setChosen] = useState<Record<string, string>>({}),
     [older, setOlder] = useState<Entry[]>([]),
     [refreshTick, setRefreshTick] = useState(0);
+  const matchesKey = JSON.stringify([d.id, p.topic_ids, refreshTick]);
+  const matchesLoading = loadedMatchesKey !== matchesKey;
   useEffect(() => {
     let active = true;
     api<Match[]>(`${ROOT}/${d.id}/matches`)
@@ -108,15 +127,19 @@ export function Dossier({
         if (active) {
           setMatches(results);
           setMatchError('');
+          setLoadedMatchesKey(matchesKey);
         }
       })
       .catch((e) => {
-        if (active) setMatchError(e.message);
+        if (active) {
+          setMatchError(e.message);
+          setLoadedMatchesKey(matchesKey);
+        }
       });
     return () => {
       active = false;
     };
-  }, [d.id, p.topic_ids, refreshTick]);
+  }, [d.id, matchesKey]);
   const entries = [
       ...d.entries,
       ...older.filter((x) => !d.entries.some((y) => y.id === x.id)),
@@ -125,6 +148,36 @@ export function Dossier({
     notes = entries.filter((x) => x.kind === 'note'),
     feedbacks = entries.filter((x) => x.kind === 'feedback'),
     proposals = entries.filter((x) => x.kind === 'proposal');
+  const revealResearch = useCallback(() => setTab('research'), [setTab]);
+  const [monitoringTarget, setMonitoringTarget] = useState('');
+  const openMonitoring = useCallback(
+    (id: string) => {
+      setMonitoringTarget(id);
+      setTab('monitoring');
+    },
+    [setTab],
+  );
+  useEffect(() => {
+    if (tab !== 'monitoring' || !monitoringTarget || !dossierElement.current)
+      return;
+    const focus = () => {
+      const target = document.getElementById(monitoringTarget);
+      if (!target || !dossierElement.current?.contains(target)) return false;
+      target.scrollIntoView({ block: 'start' });
+      target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+      return true;
+    };
+    if (focus()) return;
+    const observer = new MutationObserver(() => {
+      if (focus()) observer.disconnect();
+    });
+    observer.observe(dossierElement.current, {
+      childList: true,
+      subtree: true,
+    });
+    return () => observer.disconnect();
+  }, [tab, monitoringTarget]);
   const sourceUrl = (m: Match) => m.evidence?.source_url || '';
   async function add(
     kind: string,
@@ -144,196 +197,134 @@ export function Dossier({
     setRefreshTick((n) => n + 1);
   }
   return (
-    <article className="dossier-document">
+    <article className="dossier-document" ref={dossierElement}>
       <div className="detail-top">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={16} />
-          All topics
+          All dossiers
         </Button>
-        <a
-          className="download-link"
-          href={`/api${ROOT}/${d.id}/brief`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <Printer size={16} />
-          Topic brief
-        </a>
-        <a className="download-link" href={`/api${ROOT}/${d.id}/export`}>
-          <ArrowDownToLine size={16} />
-          Export dossier
-        </a>
-      </div>
-      <div className="dossier-heading">
-        <div>
-          <div className="eyebrow">{c.sector}</div>
-          <h1>{c.name}</h1>
-          <p>{c.goal}</p>
-          <DomainContext pack={p.domain_pack} />
-        </div>
-        <div className="dossier-actions">
-          <Status status={p.status} />
-          {p.status === 'draft' ? (
-            <Button
-              variant="outline"
-              disabled={!canConfigure || !!busy}
-              onClick={onSetup}
-            >
-              Monitoring setup
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              disabled={!canMonitor || !!busy}
-              onClick={() =>
-                run('Updating topic monitoring', async () => {
-                  await api(`/monitoring-profiles/${p.id}/status`, {
-                    expected_revision: p.revision,
-                    status: p.status === 'active' ? 'paused' : 'active',
-                  });
-                  await refreshed();
-                  notify(
-                    'Topic monitoring updated. Shared source collection and document page watches keep their separate settings.',
-                  );
-                })
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="outline" />}>
+            <MoreHorizontal size={18} /> Dossier options
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              render={
+                <a
+                  href={`/api${ROOT}/${d.id}/brief`}
+                  aria-label="Print dossier"
+                  target="_blank"
+                  rel="noreferrer"
+                />
               }
             >
-              {p.status === 'active' ? <Pause size={16} /> : <Play size={16} />}{' '}
-              {p.status === 'active' ? 'Pause topics' : 'Resume topics'}
-            </Button>
-          )}
-        </div>
+              <Printer size={16} /> Print dossier
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={
+                <a
+                  href={`/api${ROOT}/${d.id}/export`}
+                  aria-label="Export dossier"
+                />
+              }
+            >
+              <ArrowDownToLine size={16} /> Export dossier
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTab('publication')}>
+              <Users size={16} /> People & sharing
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <div className="dossier-byline">
-        <span>
-          <Users size={14} />
-          {p.status === 'draft'
-            ? d.access?.audience === 'invited_team'
-              ? 'Private draft · invited dossier team'
-              : 'Private draft · creator only'
-            : d.access?.audience === 'team'
-              ? 'Private monitoring · invited dossier team'
-              : 'Shared with your organization'}
-        </span>
-        <span>
-          <Globe size={14} />
-          {c.requested_jurisdictions || 'Switzerland'}
-        </span>
-        <span>Created {date(p.created_at)}</span>
-      </div>
-      <DossierTeamPanel
-        dossierId={d.id}
-        access={d.access}
-        onChanged={reload}
-        onLeave={onBack}
-      />
-      <PublicCopyOrigin origin={d.public_origin} />
-      <DossierContributions
-        dossierId={d.id}
-        entries={entries}
-        canEdit={canContribute}
-        onOpen={openInvestigation}
-        onSaved={async () => {
-          await reload();
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          setMonitoringTarget('');
+          setTab(String(value));
         }}
-      />
-      {userId && (
-        <PrivateDossierFollowing
-          key={`${d.id}:${userId}`}
-          dossierId={d.id}
-          userId={userId}
-        />
-      )}
-      <DossierInvestigation
-        key={`${d.id}:${userId || ''}`}
-        dossierId={d.id}
-        title={c.name}
-        focusRequest={focusInvestigation}
-        onOpen={openInvestigation}
-        canEdit={canEdit}
-        canContribute={canContribute}
-        userId={userId}
-      />
-      <MonitoringResearchPanel
-        key={`${d.id}:${userId || ''}`}
-        dossierId={d.id}
-        onOpen={openInvestigation}
-      />
-      <WebResearchPanel
-        key={`web:${d.id}:${userId || ''}`}
-        dossierId={d.id}
-        onOpen={openInvestigation}
-      />
-      <details
-        className="dossier-tools"
-        open={initialQuestionId || initialReferenceId ? true : undefined}
+        orientation={isMobile ? 'horizontal' : 'vertical'}
+        className="dossier-reader"
       >
-        <summary>Discussion, monitoring & dossier tools</summary>
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(String(v))}
-          className="dossier-tabs"
-        >
-          <TabsList variant="line">
+        <aside className="dossier-contents" aria-label="Dossier contents">
+          <p className="dossier-contents-label">Contents</p>
+          <TabsList variant="line" aria-label="Dossier chapters">
             {(
               [
-                ['discussion', 'Questions & discussion', MessageSquare],
-                ['overview', 'Monitoring', FolderOpen],
-                ['work', 'Actions & reviews', ClipboardList],
-                ['evidence', 'Evidence & sources', Globe],
-                ['notes', `Notes · ${notes.length}`, MessageSquare],
-                ['files', `Files · ${files.length}`, FileText],
-                ['learning', 'Improve monitoring', Sparkles],
-                ['publication', 'Public version', Globe],
+                ['overview', 'Dossier', FolderOpen],
+                ['research', 'AI research', Sparkles],
+                ['evidence', 'Sources & files', Globe],
+                ['discussion', 'Discussion', MessageSquare],
+                ['work', 'Actions', ClipboardList],
+                ['monitoring', 'Monitoring', Bell],
+                ['publication', 'Sharing', Users],
               ] as NavigationItem[]
-            ).map(([value, label, Icon]) => (
-              <TabsTrigger value={value} key={value}>
+            ).map(([value, label, Icon], index) => (
+              <TabsTrigger
+                value={value}
+                key={value}
+                data-workspace-tool={index >= 4 || undefined}
+              >
+                <span className="chapter-number" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <Icon size={16} />
-                {label}
+                <span>{label}</span>
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="discussion">
-            <Discussion
-              dossier={d}
-              initialQuestionId={initialQuestionId}
-              canEdit={canEdit}
-              busy={busy}
-              run={run}
-              reload={refreshed}
-              notify={notify}
-              onRefine={(question) => {
-                setRefinement(question);
-                setTab('learning');
-              }}
-            />
-          </TabsContent>
-          <TabsContent value="work">
-            <DossierWork
-              key={`${d.id}:${d.work.revision}`}
-              dossier={d}
-              entries={entries}
-              canEdit={canEdit}
-              busy={busy}
-              run={run}
-              reload={refreshed}
-              notify={notify}
-            />
-          </TabsContent>
-          <TabsContent value="publication">
-            <PublicationEditor
-              key={d.id}
-              dossierId={d.id}
-              canEdit={d.access?.can_publish ?? canEdit}
-            />
-          </TabsContent>
-          <TabsContent value="overview">
+        </aside>
+        <div className="dossier-paper">
+          <div className="dossier-heading">
+            <div>
+              <div className="dossier-cover-label">
+                Dossier <span aria-hidden="true">/</span>{' '}
+                {p.domain_pack?.label || c.sector}
+              </div>
+              <h1>{c.name}</h1>
+              <div className="dossier-purpose">
+                <span className="content-origin">Monitoring question</span>
+                <p>{c.goal}</p>
+              </div>
+            </div>
+          </div>
+          <div className="dossier-byline">
+            <span>
+              <Users size={14} />
+              {p.status === 'draft'
+                ? d.access?.audience === 'invited_team'
+                  ? 'Private draft · invited dossier team'
+                  : 'Private draft · creator only'
+                : d.access?.audience === 'team'
+                  ? 'Private monitoring · invited dossier team'
+                  : 'Shared with your organization'}
+            </span>
+            <span>
+              <Globe size={14} />
+              {c.requested_jurisdictions || 'Switzerland'}
+            </span>
+            <span>Created {date(p.created_at)}</span>
+          </div>
+          <PublicCopyOrigin origin={d.public_origin} />
+          <TabsContent
+            value="overview"
+            className="dossier-chapter dossier-opening"
+            data-content-kind="dossier"
+          >
+            <p className="chapter-kicker">01 / Dossier</p>
+
             <div className="detail-columns">
               <section>
                 <div className="section-header">
-                  <h2>Monitoring scope</h2>
+                  <h2>What this dossier follows</h2>
                   <span className="tag">{p.topics?.length || 0} topics</span>
                 </div>
+                {!p.topics?.length && (
+                  <p className="muted">
+                    No monitoring topics saved yet. You can collect sources,
+                    discuss the question and start AI research while preparing
+                    the monitoring scope.
+                  </p>
+                )}
                 {p.topics?.map((t) => (
                   <article key={t.id} className="scope-topic">
                     <div>
@@ -358,12 +349,14 @@ export function Dossier({
                   </article>
                 ))}
                 <div className="section-header spaced">
-                  <h2>Recent evidence</h2>
+                  <h2>Latest source updates</h2>
                   <Button variant="ghost" onClick={() => setTab('evidence')}>
                     View all <ArrowRight size={15} />
                   </Button>
                 </div>
-                {matchError ? (
+                {matchesLoading ? (
+                  <output>Loading saved source updates…</output>
+                ) : matchError ? (
                   <div className="banner error">
                     {matchError}
                     <Button
@@ -388,39 +381,30 @@ export function Dossier({
                     ))}
                   </div>
                 ) : (
-                  <Empty title="Waiting for matching evidence" icon={Globe}>
-                    Source collection and topic matching run in the background.
-                    No saved match means no match has been reported yet; it does
-                    not establish that no change occurred.
+                  <Empty
+                    title={
+                      p.status === 'draft'
+                        ? 'Monitoring has not started'
+                        : 'Waiting for matching evidence'
+                    }
+                    icon={Globe}
+                  >
+                    {p.status === 'draft'
+                      ? 'Review the topics, sources and audience to start monitoring this dossier.'
+                      : 'No saved match has been reported yet. This does not establish that no change occurred.'}
+                    {p.status === 'draft' && canConfigure && (
+                      <Button
+                        variant="outline"
+                        disabled={!!busy}
+                        onClick={onSetup}
+                      >
+                        Complete monitoring setup
+                      </Button>
+                    )}
                   </Empty>
                 )}
               </section>
               <aside>
-                <section className="surface delivery-card">
-                  <Bell size={21} />
-                  <h3>Delivery</h3>
-                  <p>In-app dossier and your personal organization digest.</p>
-                  <span className="tag">
-                    {c.delivery === 'keep'
-                      ? 'Existing email settings'
-                      : c.delivery === 'off'
-                        ? 'Email turned off at setup'
-                        : c.delivery + ' at setup'}
-                  </span>
-                  <p className="muted">
-                    Delivery choices shown here record the setup. Manage current
-                    email settings in the platform.
-                  </p>
-                  <a
-                    className="source-link"
-                    href="https://helveticlens.ch/digests"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open digest settings
-                    <ArrowUpRight size={15} />
-                  </a>
-                </section>
                 <section className="surface activity-card">
                   <h3>Activity</h3>
                   {entries.slice(0, 8).map((e) => (
@@ -439,8 +423,11 @@ export function Dossier({
                                 proposal: 'AI refinement proposed',
                                 improvement: 'Monitoring refined',
                                 monitor: 'Page watch connected',
+                                correction: 'Correction added',
+                                research_request: 'Research question added',
                               } as Record<string, string>
-                            )[e.kind]}
+                            )[e.kind] ||
+                            'Dossier updated'}
                         </b>
                         <small>
                           {e.author} · {date(e.created_at)}
@@ -458,7 +445,271 @@ export function Dossier({
               </aside>
             </div>
           </TabsContent>
-          <TabsContent value="evidence">
+          <TabsContent
+            value="research"
+            keepMounted
+            className="dossier-chapter"
+            data-content-kind="ai"
+          >
+            <p className="chapter-kicker">02 / AI research</p>
+            <p className="chapter-intro">
+              AI interpretations are working findings. Read the supporting
+              excerpts and unresolved questions before making a decision.
+            </p>
+            <DossierInvestigation
+              key={`${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              title={c.name}
+              focusRequest={focusInvestigation}
+              onOpen={openInvestigation}
+              onReveal={revealResearch}
+              onOpenMonitoring={openMonitoring}
+              canEdit={canEdit}
+              canContribute={canContribute}
+              userId={userId}
+            />
+            <details className="dossier-secondary">
+              <summary>Submit material for AI review</summary>
+              <DossierContributions
+                dossierId={d.id}
+                entries={entries}
+                canEdit={canContribute}
+                onOpen={openInvestigation}
+                onSaved={async () => {
+                  await reload();
+                }}
+              />
+            </details>
+            <details
+              className="dossier-secondary"
+              open={refinement ? true : undefined}
+            >
+              <summary>Improve what AI monitors</summary>
+
+              <div className="detail-columns">
+                <section>
+                  <div className="section-header">
+                    <h2>Teach the monitoring what matters.</h2>
+                  </div>
+                  <p className="muted">
+                    Saved relevance decisions and your notes inform the next AI
+                    proposal. Changes take effect only after an administrator
+                    reviews and applies them.
+                  </p>
+                  {canEdit && (
+                    <form
+                      className="surface"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void run('Saving relevance feedback', async () => {
+                          await add('feedback', feedback, { relevance });
+                          setFeedback('');
+                          notify('Feedback saved to this dossier.');
+                        });
+                      }}
+                    >
+                      <Field label="Your relevance decision">
+                        <NativeSelect
+                          value={relevance}
+                          onChange={(e) => setRelevance(e.target.value)}
+                        >
+                          <NativeSelectOption value="relevant">
+                            Relevant — find more like this
+                          </NativeSelectOption>
+                          <NativeSelectOption value="not_relevant">
+                            Not relevant — narrow the scope
+                          </NativeSelectOption>
+                          <NativeSelectOption value="uncertain">
+                            Needs review
+                          </NativeSelectOption>
+                        </NativeSelect>
+                      </Field>
+                      <Field label="Explain what to include or exclude">
+                        <Textarea
+                          required
+                          rows={3}
+                          value={feedback}
+                          maxLength={10000}
+                          onChange={(e) => setFeedback(e.target.value)}
+                          placeholder="e.g. Prioritise changes that affect our Swiss authorisation; exclude commercial announcements."
+                        />
+                      </Field>
+                      <Button
+                        type="submit"
+                        disabled={!!busy || !feedback.trim()}
+                      >
+                        Save feedback
+                      </Button>
+                    </form>
+                  )}
+                  {feedbacks.map((f) => (
+                    <article className="feedback-entry" key={f.id}>
+                      <span className="tag">
+                        {(f.data.relevance || 'uncertain').replaceAll('_', ' ')}
+                      </span>
+                      <p>{f.body}</p>
+                      <small>
+                        {f.author} · {date(f.created_at)}
+                      </small>
+                    </article>
+                  ))}
+                </section>
+                <aside>
+                  <section className="surface refinement-card">
+                    <Sparkles size={25} />
+                    <h3>Refine the next search.</h3>
+                    <p>
+                      AI considers the current topics and the latest 20
+                      relevance notes. The complete review history remains in
+                      your dossier.
+                    </p>
+                    <Field label="Additional direction">
+                      <Textarea
+                        rows={3}
+                        value={refinement}
+                        maxLength={2000}
+                        onChange={(e) => setRefinement(e.target.value)}
+                        placeholder="Make the scope more specific…"
+                      />
+                    </Field>
+                    <Button
+                      disabled={!canConfigure || !!busy}
+                      onClick={() =>
+                        run('Preparing an AI refinement', async () => {
+                          await api(`${ROOT}/${d.id}/improve`, {
+                            expected_revision: p.revision,
+                            feedback: refinement,
+                          });
+                          await reload();
+                          notify(
+                            'AI proposal saved. Review it below before applying.',
+                          );
+                        })
+                      }
+                    >
+                      <Sparkles size={16} />
+                      Suggest improvement
+                    </Button>
+                    <a
+                      href="https://helveticlens.ch/settings"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="source-link"
+                    >
+                      Configure AI provider <ArrowUpRight size={14} />
+                    </a>
+                  </section>
+                </aside>
+              </div>
+              {proposals.map((proposal) => (
+                <section className="proposal surface spaced" key={proposal.id}>
+                  <div className="section-header">
+                    <h3>Proposed refinement</h3>
+                    <span className="tag">
+                      {proposal.data.provider} · {proposal.data.model}
+                    </span>
+                  </div>
+                  <p className="muted">
+                    {date(proposal.created_at)} · Based on{' '}
+                    {(proposal.data.feedback_ids || []).length} relevance notes
+                  </p>
+                  {(proposal.data.topics || []).map((s, i) => {
+                    const key = `${proposal.id}:${i}`,
+                      topicId = chosen[key] || p.topic_ids[0],
+                      topic = p.topics.find((t) => t.id === topicId),
+                      applied = entries.find(
+                        (e) =>
+                          e.kind === 'improvement' &&
+                          e.data.proposal_id === proposal.id &&
+                          e.data.topic_id === topicId,
+                      ),
+                      stale =
+                        topic?.current_revision !==
+                        proposal.data.topic_revisions?.[topicId];
+                    return (
+                      <div className="proposal-option" key={i}>
+                        <h3>{s.name}</h3>
+                        <p>{s.description}</p>
+                        <div className="chips">
+                          {s.keywords.map((k: string) => (
+                            <span key={k}>{k}</span>
+                          ))}
+                        </div>
+                        <div className="proposal-apply">
+                          <Field label="Topic to refine">
+                            <NativeSelect
+                              value={topicId}
+                              onChange={(e) =>
+                                setChosen({ ...chosen, [key]: e.target.value })
+                              }
+                            >
+                              {p.topics.map((t) => (
+                                <NativeSelectOption key={t.id} value={t.id}>
+                                  {t.plan.name}
+                                </NativeSelectOption>
+                              ))}
+                            </NativeSelect>
+                          </Field>
+                          <Button
+                            variant="outline"
+                            disabled={
+                              !canMonitor || !!busy || !!applied || stale
+                            }
+                            onClick={() =>
+                              run(
+                                'Applying reviewed monitoring refinement',
+                                async () => {
+                                  if (!topic)
+                                    throw new Error(
+                                      'Choose a monitoring topic.',
+                                    );
+                                  await api(
+                                    `${ROOT}/${d.id}/improvements/apply`,
+                                    {
+                                      proposal_id: proposal.id,
+                                      topic_id: topicId,
+                                      suggestion: i,
+                                      expected_revision: topic.current_revision,
+                                    },
+                                  );
+                                  await refreshed();
+                                  notify(
+                                    'Monitoring refined. A native topic revision and review record have been saved.',
+                                  );
+                                },
+                              )
+                            }
+                          >
+                            {applied ? (
+                              <Check size={16} />
+                            ) : (
+                              <Sparkles size={16} />
+                            )}{' '}
+                            {applied
+                              ? 'Applied'
+                              : stale
+                                ? 'Request a fresh proposal'
+                                : 'Apply reviewed change'}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </section>
+              ))}
+            </details>
+          </TabsContent>
+          <TabsContent
+            value="evidence"
+            className="dossier-chapter"
+            data-content-kind="source"
+          >
+            <p className="chapter-kicker">03 / Sources & files</p>
+            <p className="chapter-intro">
+              Original pages, captured excerpts and attached documents. Source
+              material is kept separate from the interpretations it supports.
+            </p>
+
             <ReferenceLibrary
               key={d.id}
               dossier={d}
@@ -488,8 +739,17 @@ export function Dossier({
                 Refresh
               </Button>
             </div>
-            {matchError && <div className="banner error">{matchError}</div>}
-            {matches.length > 0 && (
+            {matchesLoading && <output>Loading saved source updates…</output>}
+            {!matchesLoading && matchError && (
+              <div className="banner error">{matchError}</div>
+            )}
+            {!matchesLoading && !matchError && !matches.length && (
+              <p className="muted">
+                No saved monitoring matches yet. Source references and attached
+                files remain available below and in the library.
+              </p>
+            )}
+            {!matchesLoading && !matchError && matches.length > 0 && (
               <div className="evidence-list">
                 {matches.map((m) => (
                   <div key={m.id}>
@@ -536,7 +796,7 @@ export function Dossier({
                                 },
                               );
                               notify(
-                                'Feedback saved. Explain what to exclude in Improve monitoring.',
+                                'Feedback saved. Open AI research → Improve what AI monitors to explain what to exclude.',
                               );
                             })
                           }
@@ -627,354 +887,304 @@ export function Dossier({
                 </p>
               </form>
             )}
-          </TabsContent>
-          <TabsContent value="notes">
-            <div className="narrow-content">
-              <h2>Team notes</h2>
-              <p className="muted">
-                Keep questions, decisions and follow-up work with the evidence
-                they refer to.
-              </p>
+            <section
+              className="dossier-attachments"
+              aria-label="Attached documents"
+            >
+              <div className="section-header">
+                <div>
+                  <h2>Dossier files</h2>
+                  <p className="muted">
+                    Private attachments, up to 10 MB each. Files retain their
+                    upload time, author and SHA-256 fingerprint.
+                  </p>
+                </div>
+              </div>
               {canEdit && (
-                <form
-                  className="note-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void run('Saving comment', async () => {
-                      await add('note', note);
-                      setNote('');
-                    });
-                  }}
-                >
-                  <Field label="Your comment">
-                    <Textarea
-                      rows={4}
-                      required
-                      maxLength={10000}
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="What should the team know or review next?"
-                    />
-                  </Field>
-                  <Button type="submit" disabled={!note.trim() || !!busy}>
-                    <MessageSquare size={16} />
-                    Add comment
-                  </Button>
-                </form>
+                <div className="upload-zone">
+                  <Upload size={30} />
+                  <h3>Attach evidence or working documents</h3>
+                  <p>
+                    Save-only attachment. For automatic analysis, open AI
+                    research → Submit material for AI review. Maximum 50 files
+                    per dossier.
+                  </p>
+                  <input
+                    aria-label="Upload a dossier file"
+                    type="file"
+                    disabled={!!busy}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      void run('Uploading attachment', async () => {
+                        if (file.size > 10 * 1024 * 1024)
+                          throw new Error('Choose a file of at most 10 MB.');
+                        const form = new FormData();
+                        form.append('file', file);
+                        await api(`${ROOT}/${d.id}/files`, form);
+                        await reload();
+                        notify('File saved to the dossier.');
+                      });
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
               )}
-              {notes.map((e) => (
-                <article className="note" key={e.id}>
-                  <div className="note-header">
-                    <span className="avatar">
-                      {e.author.slice(0, 2).toUpperCase()}
+              <div className="files-list">
+                {files.map((f) => (
+                  <article key={f.id}>
+                    <span className="file-icon">
+                      <FileText size={25} />
                     </span>
-                    <b>{e.author}</b>
-                    <time>{date(e.created_at)}</time>
-                  </div>
-                  {e.title && <h3>{e.title}</h3>}
-                  <p>{e.body}</p>
-                  {e.url && (
+                    <div>
+                      <h3>{f.title}</h3>
+                      <p>
+                        {(f.byte_size / 1024).toFixed(1)} KB · {f.author} ·{' '}
+                        {date(f.created_at)}
+                      </p>
+                      <details>
+                        <summary>Integrity fingerprint</summary>
+                        <code>{f.sha256}</code>
+                      </details>
+                    </div>
                     <a
-                      className="source-link"
-                      href={e.url}
-                      target="_blank"
-                      rel="noreferrer"
+                      className="download-link"
+                      href={`/api${ROOT}/${d.id}/files/${f.id}`}
                     >
-                      Primary source <ArrowUpRight size={15} />
+                      <ArrowDownToLine size={18} />
+                      Download
                     </a>
-                  )}
-                </article>
-              ))}
-              {!notes.length && (
-                <Empty
-                  title="Keep the conversation with the evidence"
-                  icon={MessageSquare}
-                >
-                  Add a first observation, decision or question for your
-                  colleagues.
+                  </article>
+                ))}
+              </div>
+              {!files.length && (
+                <Empty title="No files attached yet" icon={FileText}>
+                  Attach supporting documents to keep the dossier complete.
                 </Empty>
               )}
-            </div>
+            </section>
           </TabsContent>
-          <TabsContent value="files">
-            <div className="section-header">
-              <div>
-                <h2>Dossier files</h2>
+          <TabsContent
+            value="discussion"
+            className="dossier-chapter"
+            data-content-kind="human"
+          >
+            <p className="chapter-kicker">04 / Discussion</p>
+            <p className="chapter-intro">
+              Questions, observations and decisions from people working on this
+              dossier. Authorship stays with each contribution.
+            </p>
+
+            <Discussion
+              dossier={d}
+              initialQuestionId={initialQuestionId}
+              canEdit={canEdit}
+              busy={busy}
+              run={run}
+              reload={refreshed}
+              notify={notify}
+              onRefine={(question) => {
+                setRefinement(question);
+                setTab('research');
+              }}
+            />
+            <details className="dossier-secondary">
+              <summary>Team notebook · {notes.length} saved notes</summary>
+
+              <div className="narrow-content">
+                <h2>Team notes</h2>
                 <p className="muted">
-                  Private attachments, up to 10 MB each. Files retain their
-                  upload time, author and SHA-256 fingerprint.
-                </p>
-              </div>
-            </div>
-            {canEdit && (
-              <div className="upload-zone">
-                <Upload size={30} />
-                <h3>Attach evidence or working documents</h3>
-                <p>
-                  Save-only attachment. For automatic analysis, use Add &
-                  analyse above. Maximum 50 files per dossier.
-                </p>
-                <input
-                  aria-label="Upload a dossier file"
-                  type="file"
-                  disabled={!!busy}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    void run('Uploading attachment', async () => {
-                      if (file.size > 10 * 1024 * 1024)
-                        throw new Error('Choose a file of at most 10 MB.');
-                      const form = new FormData();
-                      form.append('file', file);
-                      await api(`${ROOT}/${d.id}/files`, form);
-                      await reload();
-                      notify('File saved to the dossier.');
-                    });
-                    e.target.value = '';
-                  }}
-                />
-              </div>
-            )}
-            <div className="files-list">
-              {files.map((f) => (
-                <article key={f.id}>
-                  <span className="file-icon">
-                    <FileText size={25} />
-                  </span>
-                  <div>
-                    <h3>{f.title}</h3>
-                    <p>
-                      {(f.byte_size / 1024).toFixed(1)} KB · {f.author} ·{' '}
-                      {date(f.created_at)}
-                    </p>
-                    <details>
-                      <summary>Integrity fingerprint</summary>
-                      <code>{f.sha256}</code>
-                    </details>
-                  </div>
-                  <a
-                    className="download-link"
-                    href={`/api${ROOT}/${d.id}/files/${f.id}`}
-                  >
-                    <ArrowDownToLine size={18} />
-                    Download
-                  </a>
-                </article>
-              ))}
-            </div>
-            {!files.length && (
-              <Empty title="No files attached yet" icon={FileText}>
-                Attach supporting documents to keep the dossier complete.
-              </Empty>
-            )}
-          </TabsContent>
-          <TabsContent value="learning">
-            <div className="detail-columns">
-              <section>
-                <div className="section-header">
-                  <h2>Teach the monitoring what matters.</h2>
-                </div>
-                <p className="muted">
-                  Saved relevance decisions and your notes inform the next AI
-                  proposal. Changes take effect only after an administrator
-                  reviews and applies them.
+                  Keep questions, decisions and follow-up work with the evidence
+                  they refer to.
                 </p>
                 {canEdit && (
                   <form
-                    className="surface"
+                    className="note-form"
                     onSubmit={(e) => {
                       e.preventDefault();
-                      void run('Saving relevance feedback', async () => {
-                        await add('feedback', feedback, { relevance });
-                        setFeedback('');
-                        notify('Feedback saved to this dossier.');
+                      void run('Saving comment', async () => {
+                        await add('note', note);
+                        setNote('');
                       });
                     }}
                   >
-                    <Field label="Your relevance decision">
-                      <NativeSelect
-                        value={relevance}
-                        onChange={(e) => setRelevance(e.target.value)}
-                      >
-                        <NativeSelectOption value="relevant">
-                          Relevant — find more like this
-                        </NativeSelectOption>
-                        <NativeSelectOption value="not_relevant">
-                          Not relevant — narrow the scope
-                        </NativeSelectOption>
-                        <NativeSelectOption value="uncertain">
-                          Needs review
-                        </NativeSelectOption>
-                      </NativeSelect>
-                    </Field>
-                    <Field label="Explain what to include or exclude">
+                    <Field label="Your comment">
                       <Textarea
+                        rows={4}
                         required
-                        rows={3}
-                        value={feedback}
                         maxLength={10000}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        placeholder="e.g. Prioritise changes that affect our Swiss authorisation; exclude commercial announcements."
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="What should the team know or review next?"
                       />
                     </Field>
-                    <Button type="submit" disabled={!!busy || !feedback.trim()}>
-                      Save feedback
+                    <Button type="submit" disabled={!note.trim() || !!busy}>
+                      <MessageSquare size={16} />
+                      Add comment
                     </Button>
                   </form>
                 )}
-                {feedbacks.map((f) => (
-                  <article className="feedback-entry" key={f.id}>
-                    <span className="tag">
-                      {(f.data.relevance || 'uncertain').replaceAll('_', ' ')}
-                    </span>
-                    <p>{f.body}</p>
-                    <small>
-                      {f.author} · {date(f.created_at)}
-                    </small>
+                {notes.map((e) => (
+                  <article className="note" key={e.id}>
+                    <div className="note-header">
+                      <span className="avatar">
+                        {e.author.slice(0, 2).toUpperCase()}
+                      </span>
+                      <b>{e.author}</b>
+                      <time>{date(e.created_at)}</time>
+                    </div>
+                    {e.title && <h3>{e.title}</h3>}
+                    <p>{e.body}</p>
+                    {e.url && (
+                      <a
+                        className="source-link"
+                        href={e.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Primary source <ArrowUpRight size={15} />
+                      </a>
+                    )}
                   </article>
                 ))}
-              </section>
-              <aside>
-                <section className="surface refinement-card">
-                  <Sparkles size={25} />
-                  <h3>Refine the next search.</h3>
-                  <p>
-                    AI considers the current topics and the latest 20 relevance
-                    notes. The complete review history remains in your dossier.
-                  </p>
-                  <Field label="Additional direction">
-                    <Textarea
-                      rows={3}
-                      value={refinement}
-                      maxLength={2000}
-                      onChange={(e) => setRefinement(e.target.value)}
-                      placeholder="Make the scope more specific…"
-                    />
-                  </Field>
-                  <Button
-                    disabled={!canConfigure || !!busy}
-                    onClick={() =>
-                      run('Preparing an AI refinement', async () => {
-                        await api(`${ROOT}/${d.id}/improve`, {
-                          expected_revision: p.revision,
-                          feedback: refinement,
-                        });
-                        await reload();
-                        notify(
-                          'AI proposal saved. Review it below before applying.',
-                        );
-                      })
-                    }
+                {!notes.length && (
+                  <Empty
+                    title="Keep the conversation with the evidence"
+                    icon={MessageSquare}
                   >
-                    <Sparkles size={16} />
-                    Suggest improvement
-                  </Button>
-                  <a
-                    href="https://helveticlens.ch/settings"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="source-link"
-                  >
-                    Configure AI provider <ArrowUpRight size={14} />
-                  </a>
-                </section>
-              </aside>
-            </div>
-            {proposals.map((proposal) => (
-              <section className="proposal surface spaced" key={proposal.id}>
-                <div className="section-header">
-                  <h3>Proposed refinement</h3>
-                  <span className="tag">
-                    {proposal.data.provider} · {proposal.data.model}
-                  </span>
-                </div>
-                <p className="muted">
-                  {date(proposal.created_at)} · Based on{' '}
-                  {(proposal.data.feedback_ids || []).length} relevance notes
-                </p>
-                {(proposal.data.topics || []).map((s, i) => {
-                  const key = `${proposal.id}:${i}`,
-                    topicId = chosen[key] || p.topic_ids[0],
-                    topic = p.topics.find((t) => t.id === topicId),
-                    applied = entries.find(
-                      (e) =>
-                        e.kind === 'improvement' &&
-                        e.data.proposal_id === proposal.id &&
-                        e.data.topic_id === topicId,
-                    ),
-                    stale =
-                      topic?.current_revision !==
-                      proposal.data.topic_revisions?.[topicId];
-                  return (
-                    <div className="proposal-option" key={i}>
-                      <h3>{s.name}</h3>
-                      <p>{s.description}</p>
-                      <div className="chips">
-                        {s.keywords.map((k: string) => (
-                          <span key={k}>{k}</span>
-                        ))}
-                      </div>
-                      <div className="proposal-apply">
-                        <Field label="Topic to refine">
-                          <NativeSelect
-                            value={topicId}
-                            onChange={(e) =>
-                              setChosen({ ...chosen, [key]: e.target.value })
-                            }
-                          >
-                            {p.topics.map((t) => (
-                              <NativeSelectOption key={t.id} value={t.id}>
-                                {t.plan.name}
-                              </NativeSelectOption>
-                            ))}
-                          </NativeSelect>
-                        </Field>
-                        <Button
-                          variant="outline"
-                          disabled={!canMonitor || !!busy || !!applied || stale}
-                          onClick={() =>
-                            run(
-                              'Applying reviewed monitoring refinement',
-                              async () => {
-                                if (!topic)
-                                  throw new Error('Choose a monitoring topic.');
-                                await api(
-                                  `${ROOT}/${d.id}/improvements/apply`,
-                                  {
-                                    proposal_id: proposal.id,
-                                    topic_id: topicId,
-                                    suggestion: i,
-                                    expected_revision: topic.current_revision,
-                                  },
-                                );
-                                await refreshed();
-                                notify(
-                                  'Monitoring refined. A native topic revision and review record have been saved.',
-                                );
-                              },
-                            )
-                          }
-                        >
-                          {applied ? (
-                            <Check size={16} />
-                          ) : (
-                            <Sparkles size={16} />
-                          )}{' '}
-                          {applied
-                            ? 'Applied'
-                            : stale
-                              ? 'Request a fresh proposal'
-                              : 'Apply reviewed change'}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </section>
-            ))}
+                    Add a first observation, decision or question for your
+                    colleagues.
+                  </Empty>
+                )}
+              </div>
+            </details>
           </TabsContent>
-        </Tabs>
-      </details>
+          <TabsContent
+            value="work"
+            className="dossier-chapter dossier-workspace"
+            data-content-kind="workspace"
+          >
+            <p className="chapter-kicker">05 / Actions</p>
+
+            <DossierWork
+              key={`${d.id}:${d.work.revision}`}
+              dossier={d}
+              entries={entries}
+              canEdit={canEdit}
+              busy={busy}
+              run={run}
+              reload={refreshed}
+              notify={notify}
+            />
+          </TabsContent>
+          <TabsContent
+            value="monitoring"
+            keepMounted
+            className="dossier-chapter dossier-workspace"
+            data-content-kind="workspace"
+          >
+            <p className="chapter-kicker">06 / Monitoring</p>
+            <h2>How this dossier stays up to date</h2>
+            <div className="dossier-actions">
+              <Status status={p.status} />
+              {p.status === 'draft' ? (
+                <Button
+                  variant="outline"
+                  disabled={!canConfigure || !!busy}
+                  onClick={onSetup}
+                >
+                  Monitoring setup
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  disabled={!canMonitor || !!busy}
+                  onClick={() =>
+                    run('Updating topic monitoring', async () => {
+                      await api(`/monitoring-profiles/${p.id}/status`, {
+                        expected_revision: p.revision,
+                        status: p.status === 'active' ? 'paused' : 'active',
+                      });
+                      await refreshed();
+                      notify(
+                        'Topic monitoring updated. Shared source collection and document page watches keep their separate settings.',
+                      );
+                    })
+                  }
+                >
+                  {p.status === 'active' ? (
+                    <Pause size={16} />
+                  ) : (
+                    <Play size={16} />
+                  )}{' '}
+                  {p.status === 'active' ? 'Pause topics' : 'Resume topics'}
+                </Button>
+              )}
+            </div>
+            <section className="surface delivery-card">
+              <Bell size={21} />
+              <h3>Delivery</h3>
+              <p>In-app dossier and your personal organization digest.</p>
+              <span className="tag">
+                {c.delivery === 'keep'
+                  ? 'Existing email settings'
+                  : c.delivery === 'off'
+                    ? 'Email turned off at setup'
+                    : c.delivery + ' at setup'}
+              </span>
+              <p className="muted">
+                Delivery choices shown here record the setup. Manage current
+                email settings in the platform.
+              </p>
+              <a
+                className="source-link"
+                href="https://helveticlens.ch/digests"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open digest settings
+                <ArrowUpRight size={15} />
+              </a>
+            </section>
+            {userId && (
+              <PrivateDossierFollowing
+                key={`${d.id}:${userId}`}
+                dossierId={d.id}
+                userId={userId}
+              />
+            )}
+            <MonitoringResearchPanel
+              key={`${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              onOpen={openInvestigation}
+            />
+            <WebResearchPanel
+              key={`web:${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              onOpen={openInvestigation}
+            />
+          </TabsContent>
+          <TabsContent
+            value="publication"
+            className="dossier-chapter dossier-workspace"
+            data-content-kind="workspace"
+          >
+            <p className="chapter-kicker">07 / Sharing</p>
+            <DossierTeamPanel
+              dossierId={d.id}
+              access={d.access}
+              onChanged={reload}
+              onLeave={onBack}
+            />
+
+            <PublicationEditor
+              key={d.id}
+              dossierId={d.id}
+              canEdit={d.access?.can_publish ?? canEdit}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
       {actionEvidence && (
         <ActionDialog
           dossierId={d.id}
@@ -989,27 +1199,28 @@ export function Dossier({
           }}
         />
       )}
-      {tab !== 'evidence' && d.entry_count > entries.length && (
-        <div className="load-history">
-          <p>
-            Showing {entries.length} of {d.entry_count} dossier entries.
-          </p>
-          <Button
-            variant="outline"
-            disabled={!!busy}
-            onClick={() =>
-              run('Loading older dossier history', async () => {
-                const result = await api<Entry[]>(
-                  `${ROOT}/${d.id}/entries?offset=${entries.length}`,
-                );
-                setOlder([...older, ...result]);
-              })
-            }
-          >
-            Load older history
-          </Button>
-        </div>
-      )}
+      {['overview', 'discussion', 'evidence', 'research'].includes(tab) &&
+        d.entry_count > entries.length && (
+          <div className="load-history">
+            <p>
+              Showing {entries.length} of {d.entry_count} dossier entries.
+            </p>
+            <Button
+              variant="outline"
+              disabled={!!busy}
+              onClick={() =>
+                run('Loading older dossier history', async () => {
+                  const result = await api<Entry[]>(
+                    `${ROOT}/${d.id}/entries?offset=${entries.length}`,
+                  );
+                  setOlder([...older, ...result]);
+                })
+              }
+            >
+              Load older history
+            </Button>
+          </div>
+        )}
     </article>
   );
 }

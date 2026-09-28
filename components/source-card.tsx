@@ -59,7 +59,12 @@ export function SourceMetadata({ source }: { source: Source }) {
 export function SourcePreview({ source }: { source: Source }) {
   const fingerprint = sourceFingerprint(source.sha256);
   return (
-    <div className="source-preview" data-source-reading>
+    <div
+      className="source-preview"
+      data-source-reading
+      data-content-kind="source"
+    >
+      <p className="content-origin">Original source · retained excerpts</p>
       <p className="source-capture-scope">
         {source.snapshot.scope || 'Only retained excerpts are shown.'}
       </p>

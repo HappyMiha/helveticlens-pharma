@@ -28,7 +28,11 @@ export function DossierInvestigation({
   title = 'this dossier',
   focusRequest,
   onOpen,
+  onReveal,
+  onOpenMonitoring,
 }: {
+  onReveal?: () => void;
+  onOpenMonitoring?: (id: string) => void;
   title?: string;
   focusRequest?: { id: string; tick: number; anchor?: string };
   onOpen: (id: string, anchor?: string) => void;
@@ -41,8 +45,11 @@ export function DossierInvestigation({
   const { register } = useAskSearch();
   const evidenceSearch = useRef<EvidenceSearchHandle>(null);
   const searchEvidence = useCallback(
-    (query: string) => evidenceSearch.current?.start(query),
-    [],
+    (query: string) => {
+      onReveal?.();
+      return evidenceSearch.current?.start(query);
+    },
+    [onReveal],
   );
   const [history, setHistory] = useState<InvestigationSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -237,6 +244,7 @@ export function DossierInvestigation({
       if (question.trim().length < 2 || busy || !canEdit) return false;
       if (!pending.current || pending.current.question !== question.trim())
         pending.current = { request_key: uid(), question: question.trim() };
+      onReveal?.();
       setBusy(true);
       setError('');
       try {
@@ -259,7 +267,7 @@ export function DossierInvestigation({
         setBusy(false);
       }
     },
-    [base, busy, canEdit],
+    [base, busy, canEdit, onReveal],
   );
   async function control(action: 'pause' | 'resume' | 'cancel' | 'retry') {
     if (!value) return;
@@ -360,7 +368,7 @@ export function DossierInvestigation({
     >
       <div className="investigation-introduction">
         <div>
-          <h2>Follow the evidence.</h2>
+          <h2>Research notebook</h2>
           <p>
             Ask a question. Keep the sources, findings and open questions
             together.
@@ -495,7 +503,15 @@ export function DossierInvestigation({
                 This run searches only the saved public question. Findings stay
                 within this dossier.
               </p>
-              <a href={`#web-trigger-${value.web_research_trigger.id}`}>
+              <a
+                href={`#web-trigger-${value.web_research_trigger.id}`}
+                onClick={(event) => {
+                  if (onOpenMonitoring) {
+                    event.preventDefault();
+                    onOpenMonitoring(event.currentTarget.hash.slice(1));
+                  }
+                }}
+              >
                 View schedule and search measurements
               </a>
             </aside>
@@ -508,7 +524,15 @@ export function DossierInvestigation({
                   : 'Started by a new monitoring signal'}
               </strong>
               <p>{value.monitoring_trigger.source.title}</p>
-              <a href={`#monitoring-trigger-${value.monitoring_trigger.id}`}>
+              <a
+                href={`#monitoring-trigger-${value.monitoring_trigger.id}`}
+                onClick={(event) => {
+                  if (onOpenMonitoring) {
+                    event.preventDefault();
+                    onOpenMonitoring(event.currentTarget.hash.slice(1));
+                  }
+                }}
+              >
                 Why it started and which settings applied
               </a>
             </aside>

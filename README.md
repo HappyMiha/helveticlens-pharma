@@ -1,5 +1,13 @@
 # HelveticLens Pharma
 
+## Read the dossier as a document
+
+The opening page holds the question, monitoring scope and latest source updates.
+Use the numbered contents to open AI research, Sources & files, Discussion,
+Actions, Monitoring or Sharing. AI interpretations, literal source excerpts and
+human contributions have distinct labels and reading areas. Print and export
+are in Dossier options; global Ask still follows the active dossier.
+
 ## Monitoring in your professional context
 
 Saved dossiers show their monitoring direction. Topic suggestions, source
@@ -40,7 +48,7 @@ A dedicated pharmaceutical monitoring workspace based on the HelveticLens platfo
 
 Describe a monitoring question → review AI topics → select primary sources → choose delivery → start a collaborative dossier.
 
-Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [1.20.0 changes](CHANGELOG.md) for this release.
+Read the [product guide](https://pharma.helveticlens.ch/guide) for the working loop and recovery paths, and the [release changes](CHANGELOG.md) for this release.
 
 See [the product model](PRODUCT.md) for the research loop, intended users, coverage and pilot measures.
 

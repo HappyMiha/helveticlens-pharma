@@ -6,7 +6,8 @@ import { date } from '@/lib/api';
 
 function Evidence({ value }: { value: EvidenceLink }) {
   return (
-    <div className="investigation-evidence">
+    <div className="investigation-evidence" data-content-kind="source">
+      <p className="content-origin">Original source excerpt</p>
       <blockquote>{value.quote}</blockquote>
       <a href={`#source-${value.source_id}`}>Source · {value.locator}</a>
     </div>
@@ -18,9 +19,15 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
   );
   return (
     <div className="investigation-findings">
-      <DossierSection id="key-findings" number="01" title="Claims & evidence">
+      <DossierSection
+        id="key-findings"
+        number="01"
+        title="AI findings & supporting evidence"
+      >
         <div className="investigation-section-title">
-          <p className="eyebrow">What the evidence says</p>
+          <p className="content-origin">
+            AI interpretation · review with the sources
+          </p>
           <span>{value.claims.length} claims</span>
         </div>
         <p className="investigation-muted">{value.evidence_basis}</p>
@@ -33,6 +40,7 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
         {value.claims.map((claim) => (
           <article
             className="investigation-claim"
+            data-content-kind="ai"
             id={`claim-${claim.id}`}
             key={claim.id}
           >

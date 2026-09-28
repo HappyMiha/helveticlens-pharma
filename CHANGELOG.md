@@ -1,5 +1,18 @@
 # Changes
 
+## 1.30.0 — A readable dossier
+
+- Open a document with its monitoring question, scope and latest source updates.
+  A numbered contents rail separates reading from research and workspace controls.
+- Give AI research, sources and files, human discussion, actions, monitoring and
+  sharing their own chapters. Print and export move to Dossier options.
+- Label machine interpretation and literal source excerpts separately. Keep
+  citations, authorship, review state, private access and publication decisions.
+- Preserve global Ask, exact-source/question/research links and current research
+  while switching chapters. Support responsive chapter navigation and both themes.
+- Update the product guide for the new reading flow. The former public Loyer
+  hostname is retired; existing Legal dossiers and internal aliases remain.
+
 ## 1.29.0 — Domain-aware dossier setup
 
 - The common Core selects Legal or Pharma instructions from the saved dossier,

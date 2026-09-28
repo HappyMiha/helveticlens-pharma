@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 
 const chapters = [
   ['products', 'Move between products'],
+  ['dossier', 'Read a dossier'],
   ['interface', 'Ask, read and trace evidence'],
   ['saved-evidence-search', 'Search your saved evidence'],
   ['public-research', 'Develop a living public dossier'],
@@ -76,6 +77,44 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section id="dossier" aria-labelledby="dossier-title">
+              <span className="guide-step">YOUR WORKING DOCUMENT</span>
+              <h2 id="dossier-title">Open the dossier. Find your place.</h2>
+              <p>
+                The opening page holds the monitoring question, saved topics and
+                latest source updates. Use Contents beside the document, or
+                above it on a small screen, to move between its chapters.
+              </p>
+              <ul>
+                <li>
+                  <strong>Dossier</strong> — scope, source updates and activity.
+                </li>
+                <li>
+                  <strong>AI research</strong> — research questions, machine
+                  findings and material submitted for analysis.
+                </li>
+                <li>
+                  <strong>Sources &amp; files</strong> — original references,
+                  captured evidence and attachments.
+                </li>
+                <li>
+                  <strong>Discussion</strong> — questions, attributed replies
+                  and the team notebook.
+                </li>
+                <li>
+                  <strong>Actions</strong> — follow-up work;{' '}
+                  <strong>Monitoring</strong> — schedules and delivery;{' '}
+                  <strong>Sharing</strong> — people and the public version.
+                </li>
+              </ul>
+              <p>
+                AI interpretation and original source excerpts carry separate
+                labels. A finding is not a source quote or a team decision.
+                Print and export are in Dossier options above the document. Ask
+                / Search can still investigate or search the active dossier from
+                any chapter and opens AI research to show the results.
+              </p>
+            </section>
             <section id="products" aria-labelledby="products-title">
               <span className="guide-step">YOUR RESEARCH SPACES</span>
               <h2 id="products-title">Move between Helvetic Lens products.</h2>
@@ -147,11 +186,11 @@ export default function Guide() {
                 Let new monitoring signals update the evidence.
               </h2>
               <p>
-                In an active dossier, open Keep this dossier current. A dossier
-                editor with workspace monitoring permission can enable private
-                analysis of future saved topic matches. The permission continues
-                while that person is signed out, and stops if their access or
-                monitoring settings change.
+                In an active dossier, open Monitoring → Keep this dossier
+                current. A dossier editor with workspace monitoring permission
+                can enable private analysis of future saved topic matches. The
+                permission continues while that person is signed out, and stops
+                if their access or monitoring settings change.
               </p>
               <p>
                 Choose one to six research starts per UTC day; the default is
@@ -180,11 +219,12 @@ export default function Guide() {
               </p>
               <h3>Keep discovering new sources.</h3>
               <p>
-                Open Keep discovering new sources in any dossier, including a
-                private draft. An editor can enter one public question, choose
-                daily or weekly searching and confirm recurring use by external
-                providers. The question is never expanded with private notes.
-                New findings stay in the dossier’s existing audience.
+                Open Monitoring → Keep discovering new sources in any dossier,
+                including a private draft. An editor can enter one public
+                question, choose daily or weekly searching and confirm recurring
+                use by external providers. The question is never expanded with
+                private notes. New findings stay in the dossier’s existing
+                audience.
               </p>
               <p>
                 Each run uses Jev/TypeSafe with Laya fallback across the
@@ -398,7 +438,7 @@ export default function Guide() {
               <span className="guide-step">LIVING RESEARCH</span>
               <h2 id="investigate-title">Ask this dossier.</h2>
               <p>
-                Open a dossier, enter a question and choose{' '}
+                Open AI research in a dossier, enter a question and choose{' '}
                 <strong>Investigate</strong>. The system selects available
                 sources, reads permitted excerpts and records claims with exact
                 source quotes. New entities found in public evidence can open
@@ -432,20 +472,21 @@ export default function Guide() {
                 Each investigation is bounded to three public branches, three
                 inspected sources per branch and three saved evidence snapshots.
                 Authenticated archives, scanned-image OCR and original file
-                extraction are not available in this workflow yet. Existing
-                public publication and monitoring controls stay in{' '}
-                <strong>Discussion, monitoring &amp; dossier tools</strong>.
+                extraction are not available in this workflow yet. Publication
+                controls are in <strong>Sharing</strong>; schedules and delivery
+                are in <strong>Monitoring</strong>.
               </p>
             </section>
             <section id="contributions" aria-labelledby="contributions-title">
               <span className="guide-step">PRIVATE CONTRIBUTIONS</span>
               <h2 id="contributions-title">Add material. Keep its original.</h2>
               <p>
-                Use Develop this dossier together to add a comment, source URL,
-                correction, research request or file. Add &amp; analyse saves
-                the original and authorship, then queues a private review. Open
-                review to follow real progress, inspect exact quotes or download
-                the original. Later contributions wait for current dossier work.
+                Open AI research → Submit material for AI review to add a
+                comment, source URL, correction, research request or file. Add
+                &amp; analyse saves the original and authorship, then queues a
+                private review. Open review to follow real progress, inspect
+                exact quotes or download the original. Later contributions wait
+                for current dossier work.
               </p>
               <p>
                 The workspace AI analyses the submitted material. A submitted
@@ -566,14 +607,14 @@ export default function Guide() {
                 Invite the right people to the evidence.
               </h2>
               <p>
-                Open a saved research draft or active dossier and expand Dossier
-                team. The original creator can enable team management, then
-                invite a workspace colleague or a guest by their verified email
-                address as an editor, contributor or viewer. Guests must already
-                have an account. The invitation appears in the colleague’s
-                Dossier invitations and expires after seven days. It is tied to
-                that account; a copied link grants nobody else access. No email
-                is sent.
+                Open Sharing in a saved research draft or active dossier, then
+                expand Dossier team. The original creator can enable team
+                management, then invite a workspace colleague or a guest by
+                their verified email address as an editor, contributor or
+                viewer. Guests must already have an account. The invitation
+                appears in the colleague’s Dossier invitations and expires after
+                seven days. It is tied to that account; a copied link grants
+                nobody else access. No email is sent.
               </p>
               <p>
                 Owners manage people and publication. Editors edit the dossier
@@ -646,15 +687,15 @@ export default function Guide() {
               <h2 id="evidence-title">Review an AI research note.</h2>
               <p>
                 To share your findings with everyone, open the dossier’s{' '}
-                <strong>Public version</strong> tab. Write a separate public
-                title, summary, text and source links, preview the exact version
-                and confirm publication. Read published versions at{' '}
-                <Link href="/public-dossiers">Public dossiers</Link> without an
-                account. Changes need a new preview; withdrawing removes the
-                public version here. Private files and discussions stay in the
-                workspace. Published dossiers also have a public discussion.
-                Sign in here to add a contribution, choose a public display
-                name, attach source links and review the preview before
+                <strong>Sharing</strong> chapter, then Public version. Write a
+                separate public title, summary, text and source links, preview
+                the exact version and confirm publication. Read published
+                versions at <Link href="/public-dossiers">Public dossiers</Link>{' '}
+                without an account. Changes need a new preview; withdrawing
+                removes the public version here. Private files and discussions
+                stay in the workspace. Published dossiers also have a public
+                discussion. Sign in here to add a contribution, choose a public
+                display name, attach source links and review the preview before
                 confirming. You can edit or remove your own contributions.
                 Dossier administrators can hide or restore a contribution with a
                 reason; an edit to a hidden contribution stays hidden until

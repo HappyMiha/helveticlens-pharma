@@ -159,7 +159,7 @@ export function DossierContributions({
     >
       <div className="contribution-heading">
         <FilePlus2 size={20} />
-        <h2 id={`contribute-${dossierId}`}>Develop this dossier together</h2>
+        <h2 id={`contribute-${dossierId}`}>Add material for AI review</h2>
       </div>
       {canEdit ? (
         <form onSubmit={(event) => void save(event)}>
