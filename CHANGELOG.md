@@ -1,5 +1,16 @@
 # Changes
 
+## 1.33.0 — Readable source coverage
+
+- A quiet Sources & files reader separates watched pages, shared topic sources
+  and recurring research, with last attempts and successful checks shown separately.
+- Selected inactive/missing catalogue entries and unsupported streams remain visible.
+  Topic state, shared collection, source limits and earlier search settings are explicit.
+- Refresh reads existing records without starting a scan or AI work. Current
+  dossier authorization, guest isolation and source links remain in force.
+- Full per-scan manifests and human usability acceptance remain open.
+
+
 ## 1.32.0 — Versioned dossier templates
 
 - Choose an optional registered research template in new-dossier setup or change it explicitly in an existing dossier.

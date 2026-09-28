@@ -275,6 +275,16 @@ export default function Guide() {
                 notification choices still apply. Recurring public search has
                 its own explicit schedule below.
               </p>
+              <h3>Understand source coverage.</h3>
+              <p>
+                In Sources &amp; files, open What has been checked to see saved
+                page checks, selected topic collections and recurring research.
+                Last attempts and successful checks have separate dates.
+                Missing, paused and unsupported sources stay visible. Shared
+                feed collection does not prove a complete dossier scan. Refresh
+                status reads saved records; it does not run research or start a
+                check.
+              </p>
               <h3>Keep discovering new sources.</h3>
               <p>
                 Open Monitoring → Keep discovering new sources in any dossier,

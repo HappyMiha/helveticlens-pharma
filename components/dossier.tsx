@@ -7,6 +7,7 @@ import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
+import { DossierCoveragePanel } from './dossier-coverage';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -734,6 +735,14 @@ export function Dossier({
               Original pages, captured excerpts and attached documents. Source
               material is kept separate from the interpretations it supports.
             </p>
+
+            <DossierCoveragePanel
+              key={`coverage:${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              refreshToken={refreshTick}
+              onMonitoring={() => setTab('monitoring')}
+              onInvestigation={openInvestigation}
+            />
 
             <ReferenceLibrary
               key={d.id}

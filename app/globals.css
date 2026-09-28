@@ -2537,3 +2537,115 @@ code {
 .template-choice select:disabled {
   opacity: 0.6;
 }
+
+/* Coverage belongs to the source reader; diagnostics remain folded. */
+.dossier-coverage {
+  margin: 1.8rem 0 2.6rem;
+  padding: 1.6rem 0;
+  border-block: 1px solid var(--border);
+}
+.coverage-reading {
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+.coverage-caption {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+.coverage-limit {
+  max-width: 70ch;
+  margin: 0.75rem 0 1.25rem;
+}
+.coverage-group {
+  border-top: 1px solid var(--border);
+  padding: 1rem 0;
+}
+.coverage-group > summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.coverage-group > summary > span {
+  margin-left: 0.7rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+.coverage-list,
+.coverage-streams {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+.coverage-list > li,
+.coverage-streams > li {
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.coverage-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.coverage-row-title h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+.coverage-row-title a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.coverage-state {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted-foreground);
+}
+.coverage-state[data-attention='true'] {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.coverage-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0.7rem 0;
+}
+.coverage-times dt {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.coverage-times dd {
+  margin: 0;
+  font-size: 0.86rem;
+}
+.coverage-explanation {
+  border-left: 2px solid var(--border);
+  padding-left: 0.8rem;
+}
+.coverage-source-details,
+.coverage-footer {
+  margin-top: 0.75rem;
+}
+.coverage-source-details summary,
+.coverage-footer summary,
+.coverage-streams summary {
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+.coverage-topic-list {
+  padding-left: 1.2rem;
+}
+.coverage-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem;
+}
+@media (max-width: 600px) {
+  .coverage-group > summary > span {
+    display: block;
+    margin: 0.25rem 0 0 1rem;
+  }
+}

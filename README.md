@@ -1,5 +1,17 @@
 # HelveticLens Pharma
 
+## See what was checked
+
+In Sources & files, What has been checked separates saved page checks, selected
+source collections and recurring public research. Last attempts and successful
+checks have their own dates. Paused, missing, unsupported and partly verified
+sources stay visible. Shared collection is distinct from dossier topic matching,
+and scheduling is distinct from a completed investigation. Expand source details
+when needed; Refresh status only reads saved records. Current dossier roles apply,
+including invited readers and immediate revocation. This is saved operational
+state, not an exhaustive per-dossier scan or a new source approval.
+
+
 ## Choose a research template
 
 Choose optional versioned research guidance during setup or from Research
@@ -348,8 +360,8 @@ and exact encoded passage links using the same Brandbook reading hierarchy.
 Helvetic Lens Legal is the current legal product at
 https://legal.helveticlens.ch with source at
 https://github.com/HappyMiha/helveticlens-legal. The existing legal project and
-records are retained. The old hostname and `/api/products/loyer` remain supported
-for existing links; `/api/products/legal` is canonical. Historical response
+records are retained. The old public hostname is retired. `/api/products/loyer` remains supported
+for existing API clients; `/api/products/legal` is canonical. Historical response
 records may retain `product: "loyer"`; this is a stable internal identity.
 Sign-in and device appearance settings remain scoped to each domain.
 
