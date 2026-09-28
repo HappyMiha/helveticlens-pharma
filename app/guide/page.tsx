@@ -317,6 +317,13 @@ export default function Guide() {
                 material your current account may read.
               </p>
               <p>
+                Esc keeps your question on this page. Reopen Ask / Search to
+                continue; Cmd/Ctrl + K focuses an already open command. Moving
+                to another page or dossier clears the command, and a different
+                account or role cannot inherit your question. Other open dialogs
+                keep their own keyboard controls.
+              </p>
+              <p>
                 Inside a dossier, choose Investigate this dossier to start
                 durable research. Public web search and investigation send the
                 entered question to external search providers. Keep confidential

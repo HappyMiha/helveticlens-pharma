@@ -256,3 +256,16 @@ preferences. Appearance changes do not create research requests, change dossier
 visibility or save research text. The native platform adopts the same preference
 contract and Brandbook reading palettes; full visual/product acceptance remains
 separate from this scoped migration.
+
+
+### Global questions and search
+
+Version 1.24 preserves the current command question when the dialog is dismissed.
+Reopening checks the current account before showing a retained draft; page,
+dossier, account or role changes clear command state. Cmd/Ctrl+K focuses the
+open search and respects another dialog's keyboard ownership. Uncertain paid
+search receipts survive route changes for same-query recovery. The shared native
+platform now offers saved-source and author-published public-knowledge search
+from a global entry, plus a conflict-safe draft handoff to existing Marvin.
+Native saved/public matching remains literal and bounded; product whole-dossier
+semantic retrieval and deliberate public-web research retain their current scope.

@@ -18,8 +18,8 @@ Module._extensions['.css'] = () => {}; // Server markup assertions do not load s
 Module._resolveFilename = function (name, ...args) {
   return originalResolve.call(
     this,
-    name === 'next/link'
-      ? resolve('node_modules/vinext/dist/shims/link.js')
+    ['next/link', 'next/navigation'].includes(name)
+      ? resolve('node_modules/vinext/dist/shims/' + name.slice(5) + '.js')
       : name.startsWith('@/')
         ? resolve(name.slice(2))
         : name,

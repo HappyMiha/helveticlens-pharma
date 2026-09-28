@@ -1,5 +1,16 @@
 # Changes
 
+## 1.24.0 — Keep your question close
+
+- Dismiss Ask / Search and reopen it on the same page without losing the question.
+- Cmd/Ctrl+K focuses the open command; other dialogs, composed text and repeated
+  key presses keep their expected behavior.
+- Clear command state when the page, dossier, account or role changes, while
+  preserving the research workspace and recoverable provider request receipts.
+- Share the keyboard contract with native Monitoring, whose new global entry
+  searches authorized saved sources and public product knowledge, and prepares
+  questions in its existing Marvin context.
+
 ## 1.23.0 — Reliable reading preferences
 
 - Apply the saved dark/light/system choice before the first page content.

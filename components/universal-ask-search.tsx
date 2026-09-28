@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { askBoundary, isAskShortcut } from '@/lib/ask-interaction';
 import {
   createContext,
   useCallback,
@@ -83,6 +85,8 @@ export function AskTrigger({
   return (
     <Button
       variant="outline"
+      type="button"
+      aria-keyshortcuts="Meta+K Control+K"
       className="ask-trigger"
       onClick={openAsk}
       disabled={disabled}
@@ -94,8 +98,58 @@ export function AskTrigger({
   );
 }
 
+type PendingSearch = { fingerprint: string; key: string } | null;
 export function UniversalAskSearch({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [scope, setScope] = useState<AskScope | null>(null);
+  const opener = useRef<(() => void) | null>(null);
+  const pending = useRef<PendingSearch>(null);
+  const searchKey = useCallback((fingerprint: string) => {
+    if (pending.current?.fingerprint !== fingerprint)
+      pending.current = { fingerprint, key: uid() };
+    return pending.current.key;
+  }, []);
+  const clearPending = useCallback(() => {
+    pending.current = null;
+  }, []);
+  const register = useCallback((next: AskScope) => {
+    setScope(next);
+    return () => setScope((old) => (old === next ? null : old));
+  }, []);
+  const registerOpen = useCallback((next: () => void) => {
+    opener.current = next;
+    return () => {
+      if (opener.current === next) opener.current = null;
+    };
+  }, []);
+  const openAsk = useCallback(() => opener.current?.(), []);
+  return (
+    <AskContext.Provider value={{ openAsk, register }}>
+      {children}
+      <AskDialog
+        key={askBoundary(pathname, scope?.id)}
+        scope={scope}
+        registerOpen={registerOpen}
+        searchKey={searchKey}
+        clearPending={clearPending}
+      />
+    </AskContext.Provider>
+  );
+}
+
+function AskDialog({
+  scope,
+  registerOpen,
+  searchKey,
+  clearPending,
+}: {
+  scope: AskScope | null;
+  registerOpen: (open: () => void) => () => void;
+  searchKey: (fingerprint: string) => string;
+  clearPending: () => void;
+}) {
+  const queryInput = useRef<HTMLInputElement>(null);
+  const draftOwner = useRef<string | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -107,12 +161,11 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
   const [searched, setSearched] = useState('');
   const epoch = useRef(0);
   const sessionEpoch = useRef(0);
-  const pending = useRef<{ fingerprint: string; key: string } | null>(null);
-  const register = useCallback((next: AskScope) => {
-    setScope(next);
-    return () => setScope((old) => (old === next ? null : old));
-  }, []);
   const openAsk = useCallback(() => {
+    if (open) {
+      queryInput.current?.focus();
+      return;
+    }
     const attempt = ++sessionEpoch.current;
     epoch.current++;
     setOpen(true);
@@ -124,6 +177,18 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
     api<Identity>('/auth/session')
       .then((value) => {
         if (attempt === sessionEpoch.current) {
+          const owner = askBoundary(
+            '',
+            value.authenticated ? value.organization.id : '',
+            value.authenticated ? value.user.id : '',
+            '',
+            value.authenticated ? value.role : '',
+          );
+          if (draftOwner.current !== null && draftOwner.current !== owner) {
+            setQuery('');
+            clearPending();
+          }
+          draftOwner.current = owner;
           setIdentity(value.authenticated ? value : null);
           setChecking(false);
         }
@@ -131,47 +196,71 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
       .catch(() => {
         if (attempt === sessionEpoch.current) {
           setChecking(false);
+          setQuery('');
           setError(
             'Workspace access could not be checked. Public dossiers are still available.',
           );
         }
       });
-  }, []);
+  }, [open, clearPending]);
   const close = useCallback(() => {
     epoch.current++;
     sessionEpoch.current++;
     setOpen(false);
-    setQuery('');
     setResults(null);
     setIdentity(null);
     setError('');
     setBusy(null);
     setCoverage('');
   }, []);
+  const reset = useCallback(() => {
+    close();
+    setQuery('');
+  }, [close]);
+  const resetSession = useCallback(() => {
+    reset();
+    clearPending();
+    draftOwner.current = null;
+  }, [reset, clearPending]);
+  useEffect(() => registerOpen(openAsk), [openAsk, registerOpen]);
+  useEffect(() => {
+    if (!open || checking) return;
+    const frame = requestAnimationFrame(() =>
+      queryInput.current?.focus({ preventScroll: true }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [open, checking]);
+  useEffect(
+    () => () => {
+      epoch.current++;
+      sessionEpoch.current++;
+    },
+    [],
+  );
   useEffect(() => {
     const keyboard = (event: KeyboardEvent) => {
-      if (
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === 'k' &&
-        !event.altKey &&
-        !event.isComposing
-      ) {
-        event.preventDefault();
-        if (open) close();
-        else openAsk();
-      }
+      const dialog =
+        event.target instanceof Element
+          ? event.target.closest(
+              'dialog[open], [role="dialog"], [role="alertdialog"]',
+            )
+          : null;
+      if (!isAskShortcut(event, dialog)) return;
+      event.preventDefault();
+      if (open) queryInput.current?.focus();
+      else openAsk();
     };
     window.addEventListener('keydown', keyboard);
-    window.addEventListener('helvetic-session-changed', close);
-    window.addEventListener('popstate', close);
+    window.addEventListener('helvetic-session-changed', resetSession);
+    window.addEventListener('popstate', reset);
     return () => {
       window.removeEventListener('keydown', keyboard);
-      window.removeEventListener('helvetic-session-changed', close);
-      window.removeEventListener('popstate', close);
+      window.removeEventListener('helvetic-session-changed', resetSession);
+      window.removeEventListener('popstate', reset);
     };
-  }, [open, openAsk, close]);
+  }, [open, openAsk, reset, resetSession]);
   const admin = identity?.role === 'organization_admin';
-  const ready = query.trim().length >= 2 && !busy;
+  const ready = query.trim().length >= 2 && !busy && !checking;
   async function submit(destination: Destination) {
     if (
       !ready ||
@@ -191,14 +280,14 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
     try {
       if (destination === 'evidence') {
         scope?.searchEvidence?.(question);
-        close();
+        reset();
         return;
       }
       if (destination === 'investigate') {
         if (!scope?.canInvestigate || scope.unavailable) return;
         const success = await scope.investigate(question);
         if (epoch.current !== attempt) return;
-        if (success) close();
+        if (success) reset();
         else
           setError(
             'The investigation could not start. Its saved progress and error are shown in the dossier.',
@@ -235,12 +324,11 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
             identity?.user.id,
             question,
           ]);
-          if (pending.current?.fingerprint !== fingerprint)
-            pending.current = { fingerprint, key: uid() };
+          const requestKey = searchKey(fingerprint);
           const run = await api<DecisionRun>(
             `/products/${product.id}/discover/decision`,
             {
-              request_key: pending.current.key,
+              request_key: requestKey,
               query: question,
               mode: 'auto',
               depth: 'balanced',
@@ -249,7 +337,7 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
             },
           );
           if (run.status !== 'running' && epoch.current === attempt)
-            pending.current = null;
+            clearPending();
           hits = run.items;
           description =
             run.coverage ||
@@ -292,13 +380,16 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
     }
   }
   return (
-    <AskContext.Provider value={{ openAsk, register }}>
-      {children}
+    <>
       <div className="universal-ask">
         <AskTrigger />
       </div>
       <Dialog open={open} onOpenChange={(next) => (next ? openAsk() : close())}>
-        <DialogContent className="ask-palette" showCloseButton>
+        <DialogContent
+          className="ask-palette"
+          data-helvetic-ask="true"
+          showCloseButton
+        >
           <DialogHeader>
             <DialogTitle>Ask / Search</DialogTitle>
             <DialogDescription>
@@ -309,11 +400,12 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
           </DialogHeader>
           <Command shouldFilter={false} className="ask-command">
             <CommandInput
+              ref={queryInput}
               aria-label="Ask Helvetic Lens or search anything"
               placeholder="A question, a source, a topic…"
-              value={query}
+              value={checking ? '' : query}
               maxLength={300}
-              disabled={!!busy}
+              disabled={!!busy || checking}
               onValueChange={(value) => {
                 setQuery(value);
                 setResults(null);
@@ -482,10 +574,12 @@ export function UniversalAskSearch({ children }: { children: ReactNode }) {
             <Link href="/guide" onClick={close}>
               Guide
             </Link>
-            <small>↑ ↓ to choose · Enter to run · Esc to close</small>
+            <small>
+              ↑ ↓ to choose · Enter to run · Esc keeps your question
+            </small>
           </div>
         </DialogContent>
       </Dialog>
-    </AskContext.Provider>
+    </>
   );
 }
