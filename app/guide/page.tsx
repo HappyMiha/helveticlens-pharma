@@ -84,33 +84,43 @@ export default function Guide() {
               </h2>
               <p>
                 Open a dossier and use Search saved evidence, or choose Search
-                this dossier’s evidence in Ask / Search. Meaning compares your
-                question with captured passages and source-linked findings using
-                local Laya. Your query and private evidence stay on the
-                platform; this action makes no public-web or hosted Jev request.
+                this dossier’s evidence in Ask / Search. Meaning ranks all
+                available captured passages and source-linked findings,
+                including older records. Your question and private evidence stay
+                on the platform; this action makes no public-web or hosted Jev
+                request.
               </p>
               <p>
-                Meaning checks 12 records at a time, newest first, without
-                requiring the same words. Continue with Search older evidence to
-                reach earlier records. All words searches across the same
-                permitted ledger without a model. New captures appear when you
-                start a fresh search.
+                The first search prepares saved evidence locally. Progress shows
+                how many records are ready; Stop search lets you pause and
+                resume later. Unchanged preparation is reused for new questions.
+                More ranked results continues the same whole-dossier ranking.
+                New captures appear when you start a fresh search.
               </p>
               <p>
                 Each result retains an exact quotation, source fingerprint and
                 locator. Open the finding or captured source to inspect its
-                context, disputed status and citations. Relevance and model
-                confidence do not establish truth or measured accuracy. Search
-                measurements show elapsed time, completed local requests and
-                unknown compute cost.
+                context, disputed status and citations. Laya comments on the
+                displayed candidates; uncertain model opinions never remove a
+                result. Relevance, similarity and confidence do not establish
+                truth or medical/legal accuracy. Search measurements show actual
+                elapsed time, completed local requests and unknown compute cost.
+              </p>
+              <p>
+                Meaning supports up to 20,000 saved records. Local preparation
+                reads up to 512 tokens from each title, finding and the first
+                2,400 quotation characters. Long text can be truncated; open the
+                source for its complete captured context. All words searches the
+                full permitted ledger without a model. Direct comparison checks
+                successive batches of 12 records and remains available
+                separately.
               </p>
               <p>
                 Only completed private investigations are searched. Uncaptured
                 attachments, live web pages and public discussion are outside
-                this search. Long excerpts use their first 2,400 characters for
-                semantic comparison. If local comparison fails, the batch falls
-                back to word matches. Access and source permissions are
-                rechecked while results are open.
+                this search. Current dossier, guest and source permissions apply
+                before counting or ranking and are rechecked while results are
+                open.
               </p>
             </section>
             <section

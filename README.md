@@ -1,5 +1,12 @@
 # HelveticLens Pharma
 
+## Search the whole saved dossier
+
+Meaning search ranks authorized passages and source-linked findings across the dossier, including older evidence. First-use local preparation shows real progress and can be stopped/resumed; exact unchanged inputs are reused for later questions. Results retain literal citations and open their original investigation/source. Laya adds a separate relevance opinion without hiding uncertain candidates. Questions remain transient and private; Jev/Laya public-web discovery stays a separate deliberate action.
+
+The local retrieval cache supports 20,000 eligible records per dossier, with at most 512 tokens from each title/finding and 2,400-character quotation prefix. Uncaptured files and live-web content are outside this saved ledger. Words and direct 12-record comparison remain available. Independent multilingual sample results are documented in the shared core; they do not establish professional or dossier-specific accuracy. Current roles, source permissions and paired page versions are checked before ranking and counts, and again after inference.
+
+
 ## Personal research updates
 
 Choose **Follow dossier** in a private or public dossier, then open **Followed dossiers** for completed research, captured source quotes and possible contradictions. Expand the history and open the exact evidence. Your read position is personal, permission checked and shared with the dossier; marking updates seen does not approve machine findings. Following sends no email.

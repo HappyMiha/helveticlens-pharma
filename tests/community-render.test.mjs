@@ -1416,9 +1416,11 @@ test('recurring results expose fallback, unchanged captures and unknown cost wit
 const { EvidenceSearch, EvidenceSearchResults, EvidenceSearchResult } = require(
   resolve('components/evidence-search.tsx'),
 );
-const { currentEvidenceSearch, evidenceAnchor } = require(
-  resolve('lib/evidence-search.ts'),
-);
+const {
+  currentEvidenceSearch,
+  evidenceAnchor,
+  completeEvidenceSearch,
+} = require(resolve('lib/evidence-search.ts'));
 const evidenceItem = {
   id: 'receipt',
   kind: 'claim',
@@ -1472,7 +1474,7 @@ test('private evidence search SSR explains local scope and does not run a search
     React.createElement(EvidenceSearch, { dossierId: 'dossier', onOpen() {} }),
   );
   assert.match(html, /Find the evidence you already have/);
-  assert.match(html, /Meaning · local/);
+  assert.match(html, /Meaning · all saved evidence/);
   assert.match(html, /All words · no model/);
   assert.match(html, /12 records at a time/);
   assert.match(html, /Typing alone sends nothing/);
@@ -1674,4 +1676,113 @@ test('explicit seen control discloses reading versus verification and counts rea
   assert.match(html, /Mark current updates seen/);
   assert.match(html, /does not verify or approve findings/);
   assert.match(html, /Stop following/);
+});
+
+test('whole-dossier preparation continues checkpoints with a fixed scope and resumes only until ranking is ready', async () => {
+  const initial = { query: 'private question', mode: 'corpus', offset: 0 };
+  const progress = [],
+    calls = [];
+  const responses = [16, 30, null].map((ready) => ({
+    ...evidencePage,
+    mode: 'corpus',
+    method: 'local_corpus_hybrid',
+    preparing: ready !== null,
+    prepared_records: ready ?? 30,
+    examined_records: ready === null ? 30 : 0,
+  }));
+  const result = await completeEvidenceSearch(
+    initial,
+    async (body) => {
+      calls.push(body);
+      return responses[calls.length - 1];
+    },
+    () => true,
+    (page) => progress.push(page.prepared_records),
+  );
+  assert.deepEqual(progress, [16, 30]);
+  assert.equal(result, responses[2]);
+  assert.deepEqual(calls[0], initial);
+  assert.equal(calls[1].as_of, evidencePage.as_of);
+  assert.equal(calls[2].fingerprint, evidencePage.fingerprint);
+  assert.equal(calls.length, 3);
+});
+
+test('stopping or changing session prevents late preparation from sending the next request', async () => {
+  let current = true,
+    calls = 0,
+    updates = 0;
+  const result = await completeEvidenceSearch(
+    { query: 'private question', mode: 'corpus', offset: 0 },
+    async () => {
+      calls++;
+      current = false;
+      return {
+        ...evidencePage,
+        mode: 'corpus',
+        preparing: true,
+        prepared_records: 16,
+      };
+    },
+    () => current,
+    () => updates++,
+  );
+  assert.equal(result, null);
+  assert.equal(calls, 1);
+  assert.equal(updates, 0);
+});
+
+test('a stalled preparation or changed fingerprint cannot silently loop or mix scopes', async () => {
+  for (const changed of [false, true]) {
+    let calls = 0;
+    await assert.rejects(
+      completeEvidenceSearch(
+        { query: 'private question', mode: 'corpus', offset: 0 },
+        async () => ({
+          ...evidencePage,
+          mode: 'corpus',
+          preparing: true,
+          prepared_records: 16,
+          fingerprint:
+            ++calls > 1 && changed ? 'c'.repeat(64) : evidencePage.fingerprint,
+        }),
+        () => true,
+        () => {},
+      ),
+      changed ? /Saved evidence changed/ : /did not advance/,
+    );
+    assert.equal(calls, 2);
+  }
+});
+
+test('corpus results distinguish full ranking, optional model opinions and exact citation limits', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidenceSearchResults, {
+      page: {
+        ...evidencePage,
+        mode: 'corpus',
+        method: 'local_corpus_hybrid',
+        examined_records: 30,
+        items: [
+          {
+            ...evidenceItem,
+            semantic_similarity: 0.83,
+            embedding_truncated: true,
+            relevance_probability: null,
+            semantic_match: false,
+            confidence: null,
+          },
+        ],
+        measurement: { ...evidencePage.measurement, error: 'timeout' },
+      },
+      onOpen() {},
+      onPage() {},
+    }),
+  );
+  assert.match(html, /30 records ranked across this dossier/);
+  assert.match(html, /More ranked results/);
+  assert.match(html, /full dossier ranking and exact sources remain available/);
+  assert.match(html, /first 512 tokens/);
+  assert.match(html, /not a truth or accuracy score/);
+  assert.match(html, /&lt;img/);
+  assert.doesNotMatch(html, /Search older|Model relevance probability|83%/);
 });

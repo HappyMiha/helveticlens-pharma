@@ -13,7 +13,11 @@ import { Search } from 'lucide-react';
 import { api, date } from '@/lib/api';
 import { product } from '@/lib/product';
 import { readable, sourceHref } from '@/lib/investigation';
-import { currentEvidenceSearch, evidenceAnchor } from '@/lib/evidence-search';
+import {
+  currentEvidenceSearch,
+  evidenceAnchor,
+  completeEvidenceSearch,
+} from '@/lib/evidence-search';
 import type {
   EvidenceSearchItem,
   EvidenceSearchMode,
@@ -37,10 +41,13 @@ export function EvidenceSearch({
 }) {
   const id = useId();
   const [query, setQuery] = useState('');
-  const [mode, setMode] = useState<EvidenceSearchMode>('semantic');
+  const [mode, setMode] = useState<EvidenceSearchMode>('corpus');
   const [stored, setStored] = useState<EvidenceSearchPage | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState<EvidenceSearchPage | null>(null);
+  const [notice, setNotice] = useState('');
+  const controller = useRef<AbortController | null>(null);
   const epoch = useRef({ value: 0 });
   const base = `/products/${product.id}/dossiers/${dossierId}/evidence-search`;
   const page = currentEvidenceSearch(stored, dossierId, query, mode, error);
@@ -50,18 +57,36 @@ export function EvidenceSearch({
       method: EvidenceSearchMode,
       offset = 0,
       asOf?: string,
+      fence?: string,
     ) => {
+      controller.current?.abort();
+      const currentController = new AbortController();
+      controller.current = currentController;
       const attempt = ++epoch.current.value;
       setStored(null);
       setError('');
+      setNotice('');
+      setProgress(null);
       setBusy(true);
       try {
-        const value = await api<EvidenceSearchPage>(base, {
-          query: question.trim(),
-          mode: method,
-          offset,
-          as_of: asOf,
-        });
+        const value = await completeEvidenceSearch(
+          {
+            query: question.trim(),
+            mode: method,
+            offset,
+            as_of: asOf,
+            fingerprint: fence,
+          },
+          (body) =>
+            api<EvidenceSearchPage>(
+              base,
+              body,
+              undefined,
+              currentController.signal,
+            ),
+          () => epoch.current.value === attempt,
+          (checkpoint) => setProgress(checkpoint),
+        );
         if (epoch.current.value === attempt) setStored(value);
       } catch (failure) {
         if (epoch.current.value === attempt)
@@ -80,6 +105,9 @@ export function EvidenceSearch({
     const counter = epoch.current;
     const clear = () => {
       epoch.current.value++;
+      controller.current?.abort();
+      setProgress(null);
+      setNotice('');
       setStored(null);
       setQuery('');
       setBusy(false);
@@ -88,6 +116,7 @@ export function EvidenceSearch({
     window.addEventListener('helvetic-session-changed', clear);
     return () => {
       counter.value++;
+      controller.current?.abort();
       window.removeEventListener('helvetic-session-changed', clear);
     };
   }, [base]);
@@ -96,11 +125,11 @@ export function EvidenceSearch({
     () => ({
       start(question) {
         setQuery(question);
-        setMode('semantic');
+        setMode('corpus');
         document
           .getElementById(`evidence-search-${dossierId}`)
           ?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-        void search(question, 'semantic');
+        void search(question, 'corpus');
       },
     }),
     [search, dossierId],
@@ -189,8 +218,11 @@ export function EvidenceSearch({
               setError('');
             }}
           >
+            <NativeSelectOption value="corpus">
+              Meaning · all saved evidence
+            </NativeSelectOption>
             <NativeSelectOption value="semantic">
-              Meaning · local
+              Direct comparison · 12 records
             </NativeSelectOption>
             <NativeSelectOption value="literal">
               All words · no model
@@ -203,22 +235,43 @@ export function EvidenceSearch({
         </Button>
       </form>
       <p className="investigation-muted">
-        Meaning compares 12 records at a time, newest first. Continue to older
-        batches for more coverage. Words searches across the saved ledger.
-        Typing alone sends nothing.
+        Meaning ranks the whole available dossier, including older evidence.
+        First-time preparation is saved and can be resumed. Direct comparison
+        examines 12 records at a time; Words matches all search words. Typing
+        alone sends nothing.
       </p>
       {busy && (
         <LensProgress
           activity={{
-            state: mode === 'semantic' ? 'searching' : 'idle',
-            label: 'Searching saved evidence',
-            detail:
-              mode === 'semantic'
-                ? 'Checking permissions and comparing this batch locally.'
+            state: mode !== 'literal' ? 'searching' : 'idle',
+            label: progress
+              ? 'Preparing saved evidence'
+              : 'Searching saved evidence',
+            detail: progress
+              ? `${progress.prepared_records} of ${progress.total_records} records prepared locally. You can stop and resume.`
+              : mode !== 'literal'
+                ? 'Checking permissions and ranking permitted evidence locally.'
                 : 'Finding all-word matches in permitted evidence.',
           }}
         />
       )}
+      {busy && (
+        <Button
+          variant="outline"
+          onClick={() => {
+            epoch.current.value++;
+            controller.current?.abort();
+            setBusy(false);
+            setProgress(null);
+            setNotice(
+              'Search stopped. Prepared evidence is retained; search again to continue.',
+            );
+          }}
+        >
+          Stop search
+        </Button>
+      )}
+      {notice && <output>{notice}</output>}
       {error && (
         <p role="alert" className="investigation-error">
           {error}
@@ -229,7 +282,13 @@ export function EvidenceSearch({
           page={page}
           onOpen={onOpen}
           onPage={(offset) =>
-            void search(page.query, page.mode, offset, page.as_of)
+            void search(
+              page.query,
+              page.mode,
+              offset,
+              page.as_of,
+              page.mode === 'corpus' ? page.fingerprint : undefined,
+            )
           }
         />
       )}
@@ -247,6 +306,7 @@ export function EvidenceSearchResults({
   onPage: (offset: number) => void;
 }) {
   const literal = page.mode === 'literal';
+  const corpus = page.mode === 'corpus';
   return (
     <div className="evidence-search-results" aria-live="polite">
       <output>
@@ -257,13 +317,21 @@ export function EvidenceSearchResults({
         ·{' '}
         {literal
           ? `${page.matching_records} all-word matches`
-          : `${page.examined_records} records in this batch`}{' '}
+          : corpus
+            ? `${page.examined_records} records ranked across this dossier`
+            : `${page.examined_records} records in this batch`}{' '}
         · {page.total_records} saved records
       </output>
       {page.method === 'literal_fallback' && (
         <output>
           Local comparison was unavailable. These are word matches in this
           batch; switch to Words to search the full saved ledger.
+        </output>
+      )}
+      {corpus && page.measurement.error && (
+        <output>
+          Some direct model opinions are unavailable. The full dossier ranking
+          and exact sources remain available.
         </output>
       )}
       {!page.items.length && (
@@ -282,12 +350,20 @@ export function EvidenceSearchResults({
             variant="outline"
             onClick={() => onPage(Math.max(0, page.offset - page.batch_size))}
           >
-            Newer {literal ? 'matches' : 'evidence'}
+            {corpus ? (
+              'Previous results'
+            ) : (
+              <>Newer {literal ? 'matches' : 'evidence'}</>
+            )}
           </Button>
         )}
         {page.next_offset !== null && (
           <Button variant="outline" onClick={() => onPage(page.next_offset!)}>
-            Search older {literal ? 'matches' : 'evidence'}
+            {corpus ? (
+              'More ranked results'
+            ) : (
+              <>Search older {literal ? 'matches' : 'evidence'}</>
+            )}
           </Button>
         )}
       </div>
@@ -300,7 +376,10 @@ export function EvidenceSearchResults({
         </p>
         <p>{page.measurement.cost_scope}</p>
         <p>
-          Independent accuracy: not evaluated. {page.measurement.accuracy_basis}{' '}
+          {corpus
+            ? 'Quality evidence: independent retrieval sample; dossier accuracy is unknown.'
+            : 'Independent accuracy: not evaluated.'}{' '}
+          {page.measurement.accuracy_basis}{' '}
           {page.measurement.confidence_definition}
         </p>
         {!!page.measurement.models.length && (
@@ -358,11 +437,14 @@ export function EvidenceSearchResult({
       <details>
         <summary>Why this result & provenance</summary>
         <p>
-          {item.semantic_match
-            ? 'The local model judged this record relevant.'
-            : item.literal_match
-              ? 'This record matched the search words.'
-              : 'The model did not judge this record relevant. It remains visible for your review so an uncertain score cannot hide evidence.'}{' '}
+          {item.relevance_probability === null &&
+          item.semantic_similarity !== undefined
+            ? 'This record was ranked by local meaning and word similarity. A direct model opinion is unavailable.'
+            : item.semantic_match
+              ? 'The local model judged this record relevant.'
+              : item.literal_match
+                ? 'This record matched the search words.'
+                : 'The model did not judge this record relevant. It remains visible for your review so an uncertain score cannot hide evidence.'}{' '}
           {item.literal_match && item.semantic_match
             ? 'It also matched all search words.'
             : ''}{' '}
@@ -373,6 +455,16 @@ export function EvidenceSearchResult({
             Model relevance probability: {item.relevance_probability.toFixed(3)}{' '}
             · Confidence: {item.confidence?.toFixed(3) ?? 'Unknown'}. These are
             model signals, not measured accuracy.
+          </p>
+        )}
+        {item.semantic_similarity !== undefined && (
+          <p>
+            Whole-dossier ranking combines meaning and word similarity; direct
+            model opinions do not remove or reorder candidates.
+            {item.embedding_truncated
+              ? ' The preparation model read only the first 512 tokens of this record.'
+              : ''}{' '}
+            Similarity is not a truth or accuracy score.
           </p>
         )}
         <code>SHA-256 {item.sha256}</code>

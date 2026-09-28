@@ -1,5 +1,11 @@
 # Changes
 
+## 1.21.0 — whole-dossier meaning search
+
+Find older captured evidence without manually scanning twelve-record windows. Local multilingual retrieval and word ranking cover the current authorized dossier, with resumable preparation, reusable exact-input vectors, complete ranked paging and original citations. Laya opinions remain visible separately and never suppress candidates. Questions are not persisted or sent to hosted search.
+
+Current native, team and guest permissions, both saved-page versions and source exclusions apply before counts/cache reads/ranking and after local calls. Source-contained derived vectors cascade with retained evidence. Preparation/ranking limits and unknown compute cost are explicit; Words and Direct comparison remain available. Independent human-labeled multilingual retrieval samples inform the selected method, without claiming medical/legal accuracy, all-file coverage or a complete internet index.
+
 ## 1.20.0 — personal research updates
 
 Follow a private or public dossier to receive personal in-app updates when research finishes with newly captured evidence. The Following page shows your current workspace, accepted guest dossiers and public subscriptions. Expand a dossier to inspect paginated research history, literal source excerpts and possible contradictions with both original citations. Links open the exact investigation, claim or source.

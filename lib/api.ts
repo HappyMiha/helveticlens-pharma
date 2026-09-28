@@ -6,6 +6,7 @@ export async function api<T = unknown>(
   path: string,
   body?: unknown,
   method?: string,
+  signal?: AbortSignal,
 ): Promise<T> {
   const verb = method || (body === undefined ? 'GET' : 'POST');
   const headers: Record<string, string> = {};
@@ -29,6 +30,7 @@ export async function api<T = unknown>(
           ? JSON.stringify(body)
           : undefined,
     cache: 'no-store',
+    signal,
   });
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
