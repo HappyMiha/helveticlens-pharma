@@ -20,6 +20,8 @@ export async function proxy(
     !(
       allowed.test(route) ||
       (request.method === 'GET' &&
+        route === `products/${product.id}/templates`) ||
+      (request.method === 'GET' &&
         new RegExp(
           `^products/${product.id}/public-dossiers/[\\p{L}\\p{N}_-]{1,180}$`,
           'u',

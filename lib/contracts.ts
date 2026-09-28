@@ -100,6 +100,7 @@ export interface Topic {
 }
 export interface DomainPack {
   context_schema_id?: string;
+  template_ids?: string[];
   id: 'LegalPack' | 'PharmaPack';
   version: string;
   domain: 'LEGAL' | 'PHARMA';
@@ -171,6 +172,8 @@ export interface ResearchPreview {
   };
 }
 export interface EntryData {
+  template_before?: Partial<import('./dossier-templates').DossierTemplate>;
+  template_after?: Partial<import('./dossier-templates').DossierTemplate>;
   before?: Partial<import('./structured-context').ContextSnapshot>;
   after?: import('./structured-context').ContextSnapshot;
   decision?: SourceDecision;
@@ -215,6 +218,7 @@ export interface Entry {
     | 'monitor'
     | 'context'
     | 'domain_context'
+    | 'dossier_template'
     | 'review'
     | 'action'
     | 'question'
@@ -270,6 +274,7 @@ export interface DocumentWatch {
   checked_at?: string;
 }
 export interface DossierRecord {
+  template?: import('./dossier-templates').TemplateState;
   access?: import('./dossier-team').DossierAccess;
   public_origin?: import('./public-following').PublicOrigin | null;
   id: string;

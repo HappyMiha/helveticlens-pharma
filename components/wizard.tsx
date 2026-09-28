@@ -1,4 +1,10 @@
 'use client';
+import { TemplatePicker, TemplateGuidance } from './dossier-template';
+import {
+  templateReference,
+  templateStarter,
+  type DossierTemplate,
+} from '@/lib/dossier-templates';
 import { PublicCopyOrigin } from './public-origin';
 import { DomainContext } from './domain-context';
 import { useEffect, useState } from 'react';
@@ -68,6 +74,7 @@ export function Wizard({
     [sourceUrl, setSourceUrl] = useState(''),
     [sourceName, setSourceName] = useState(''),
     [sourceAdvice, setSourceAdvice] = useState<SourceAdvice | null>(null);
+  const [template, setTemplate] = useState<DossierTemplate | null>(null);
   const [shareConfirmed, setShareConfirmed] = useState(false);
   const [monitoringAudience, setMonitoringAudience] = useState<
     'team' | 'workspace'
@@ -98,6 +105,7 @@ export function Wizard({
     if (!d) {
       d = await api<DossierRecord>(ROOT, {
         creation_key: creationKey,
+        template: templateReference(template),
         config: clean,
         step: next,
       });
@@ -307,6 +315,33 @@ export function Wizard({
           <DomainContext pack={doc?.profile.domain_pack} />
           {step === 0 && (
             <div className="form-stack">
+              {!doc ? (
+                <>
+                  <TemplatePicker
+                    value={template}
+                    disabled={!!busy}
+                    onChange={(value) => {
+                      setTemplate(value);
+                      setDirty(true);
+                    }}
+                  />
+                  {template &&
+                    (!config.goal.trim() || !config.sector.trim()) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!!busy}
+                        onClick={() =>
+                          change(templateStarter(config, template))
+                        }
+                      >
+                        Fill empty fields from template
+                      </Button>
+                    )}
+                </>
+              ) : doc.template?.selection ? (
+                <TemplateGuidance value={doc.template.selection} />
+              ) : null}
               <div className="field-pair">
                 <Field label="Dossier name">
                   <Input

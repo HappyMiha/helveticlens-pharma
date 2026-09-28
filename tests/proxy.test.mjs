@@ -1218,3 +1218,70 @@ test('neither legal spelling bypasses product isolation or cross-origin write pr
   }
   assert.equal(calls, 0);
 });
+
+test('template catalogue and selection use the own-product gateway and preserve write boundaries', async () => {
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.match(url, new RegExp('/api/products/' + product.id + '/'));
+    if (init.method === 'PUT')
+      assert.equal(init.headers.get('x-csrf-token'), 'fixture-token');
+    return Response.json({ items: [] });
+  };
+  const catalog = `products/${product.id}/templates`;
+  const get = await proxy(
+    new Request('https://product.test/api/' + catalog),
+    context(catalog),
+  );
+  assert.equal(get.status, 200);
+  assert.equal(get.headers.get('cache-control'), 'private, no-store');
+  const selection = `products/${product.id}/dossiers/11111111-1111-4111-8111-111111111111/template`;
+  const put = await proxy(
+    new Request('https://product.test/api/' + selection, {
+      method: 'PUT',
+      headers: {
+        origin: 'https://product.test',
+        'x-csrf-token': 'fixture-token',
+      },
+      body: '{}',
+    }),
+    context(selection),
+  );
+  assert.equal(put.status, 200);
+  const foreign = catalog.replace(
+    product.id,
+    product.id === 'pharma' ? 'legal' : 'pharma',
+  );
+  assert.equal(
+    (
+      await proxy(
+        new Request('https://product.test/api/' + foreign),
+        context(foreign),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await proxy(
+        new Request('https://product.test/api/' + catalog, { method: 'POST' }),
+        context(catalog),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await proxy(
+        new Request('https://product.test/api/' + selection, {
+          method: 'PUT',
+          headers: { origin: 'https://other.test' },
+          body: '{}',
+        }),
+        context(selection),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(calls, 2);
+});

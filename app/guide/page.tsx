@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const chapters = [
   ['products', 'Move between products'],
   ['dossier', 'Read a dossier'],
+  ['templates', 'Choose a research template'],
   ['subject', 'Record the dossier subject'],
   ['interface', 'Ask, read and trace evidence'],
   ['saved-evidence-search', 'Search your saved evidence'],
@@ -78,6 +79,38 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section id="templates" aria-labelledby="templates-title">
+              <span className="guide-step">OPTIONAL RESEARCH GUIDANCE</span>
+              <h2 id="templates-title">
+                Start with a structure. Keep your own question.
+              </h2>
+              <p>
+                Choose a dossier template in the first setup step, or open
+                Research approach in an existing dossier. Legal offers Legal
+                Question, Legislative Monitor and Case / Dispute. Pharma offers
+                Market Access, Regulatory Monitor and Safety. Each suggests
+                useful subject details and questions to investigate.
+              </p>
+              <p>
+                In a new draft, Fill empty fields from template inserts an
+                editable question and sector only where those fields are empty.
+                Your written question and chosen sources remain intact.
+              </p>
+              <p>
+                The dossier retains the selected template version and its
+                original guidance. Change or clear it explicitly in the dossier;
+                Template history records who changed it and when. A template
+                does not run research, choose sources, enable monitoring or
+                establish source coverage. Its guidance is not evidence.
+              </p>
+              <p>
+                Editors can change templates. If a save fails, the selection
+                remains available to retry; discard and reload to resolve a
+                stale revision. An unavailable saved format remains in the
+                private export. Public publication and public reuse do not copy
+                private template settings.
+              </p>
+            </section>
             <section id="dossier" aria-labelledby="dossier-title">
               <span className="guide-step">YOUR WORKING DOCUMENT</span>
               <h2 id="dossier-title">Open the dossier. Find your place.</h2>

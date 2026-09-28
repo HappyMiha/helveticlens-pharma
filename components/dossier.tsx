@@ -56,6 +56,7 @@ import { ActionDialog } from './action-dialog';
 import { PageWatches } from './page-watches';
 import { PublicationEditor } from './publication-editor';
 import { initialDossierSection } from '@/lib/dossier-sections';
+import { DossierTemplateSection } from './dossier-template';
 import { DossierSubject } from './structured-context';
 import {
   DropdownMenu,
@@ -312,6 +313,17 @@ export function Dossier({
             data-content-kind="dossier"
           >
             <p className="chapter-kicker">01 / Dossier</p>
+            <DossierTemplateSection
+              key={`template:${d.id}:${userId || ''}`}
+              value={d.template}
+              dossierId={d.id}
+              revision={d.work.revision}
+              entries={entries}
+              canEdit={canEdit}
+              busy={busy}
+              onChanged={reload}
+              notify={notify}
+            />
             <DossierSubject
               key={`${d.id}:${userId || ''}`}
               dossierId={d.id}
@@ -437,6 +449,7 @@ export function Dossier({
                                 correction: 'Correction added',
                                 research_request: 'Research question added',
                                 domain_context: 'Dossier subject updated',
+                                dossier_template: 'Dossier template changed',
                               } as Record<string, string>
                             )[e.kind] ||
                             'Dossier updated'}

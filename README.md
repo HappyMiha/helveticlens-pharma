@@ -1,5 +1,17 @@
 # HelveticLens Pharma
 
+## Choose a research template
+
+Choose optional versioned research guidance during setup or from Research
+approach inside a dossier. Legal offers Legal Question, Legislative Monitor and
+Case / Dispute; Pharma offers Market Access, Regulatory Monitor and Safety.
+Templates suggest subject fields and questions. An explicit starter action fills
+only empty question/sector fields. The dossier retains the chosen version and
+attributed selection history; changing it leaves existing content, sources,
+monitoring and publication decisions intact. Private settings stay out of public
+projections and reused public dossiers. Templates do not establish source coverage
+or an end-to-end validated Market Access result.
+
 ## Record the subject
 
 Dossier subject keeps optional domain details separate: Pharma products, active

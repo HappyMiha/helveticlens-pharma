@@ -1,5 +1,14 @@
 # Changes
 
+## 1.32.0 — Versioned dossier templates
+
+- Choose an optional registered research template in new-dossier setup or change it explicitly in an existing dossier.
+- Retain the exact selected guidance, pack/template revisions and attributed before/after history.
+- Keep suggested subject fields and research questions folded into the document; fill only empty starter fields on request.
+- Preserve questions, source choices, permissions, publication and monitoring. Catalogue failures, stale revisions and unknown saved formats remain explicit.
+- Shared Core migration and API, both-client rendered/helper and gateway tests; production evidence recorded separately in Core.
+
+
 ## 1.31.0 — Record the dossier subject
 
 - Save optional structured subject details through the shared Core: products,
