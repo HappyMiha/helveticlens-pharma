@@ -386,6 +386,17 @@ export default function Guide() {
                 comparisons to inspect the review history.
               </p>
               <p>
+                Open Entity matches across research to compare two mentions with
+                the same cited identifier, issuer and jurisdiction. Suggestions
+                examine up to 120 recent eligible mentions; older saved decisions
+                remain available separately. An editor can record Same entity,
+                Different entities or Not enough evidence after reading both
+                quotations. The review keeps original records and its history.
+                Changed evidence requires a new review. Public explanations need
+                your explicit confirmation before publication. Identity review
+                does not accept the claims or merge other related entities.
+              </p>
+              <p>
                 Public comparisons can be read without registration. Public
                 review notes require explicit publication confirmation.
                 Withdrawing a contribution, publication or source removes its

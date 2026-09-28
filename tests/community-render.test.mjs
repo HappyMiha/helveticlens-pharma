@@ -1846,3 +1846,126 @@ test('all native product navigation locales expose current location and external
     assert.ok(html.includes(copy.note));
   }
 });
+
+const {
+  EntityIdentities,
+  EntityIdentityCard,
+} = require('../components/entity-identity.tsx');
+const { currentIdentities } = require('../lib/entity-identity.ts');
+const entityMention = {
+  id: 'mention-one',
+  investigation_id: 'run-one',
+  name: 'Fictional Alpine Example',
+  kind: 'organization',
+  identifier: {
+    value: 'DEMO-123',
+    issuer: 'Demo Registry',
+    jurisdiction: 'Switzerland',
+    kind: 'organization',
+  },
+  quote: 'Fictional Alpine Example has identifier DEMO-123.',
+  locator: 'p1',
+  source: {
+    id: 'source-one',
+    title: 'Fictional registry',
+    url: 'https://example.test/registry',
+    kind: 'fixture',
+    sha256: 'a'.repeat(64),
+    captured_at: '2026-09-28T12:00:00Z',
+  },
+};
+const entityPair = {
+  id: 'one:two',
+  entity_id: 'one',
+  previous_entity_id: 'two',
+  first: entityMention,
+  second: { ...entityMention, id: 'mention-two', investigation_id: 'run-two' },
+  evidence_fingerprint: 'f'.repeat(64),
+  exact_identifier_match: true,
+  basis: 'Exact cited identifier; suggestion, not confirmed identity.',
+  boundary: 'Original records and claims are unchanged.',
+  revision: 0,
+  decision: 'unreviewed',
+  stale: false,
+  history: [],
+};
+test('entity matching is folded and does not expose reader content or editor controls in the dossier shell', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EntityIdentities, {
+      base: '/fixture',
+      onOpen() {},
+      onChange() {},
+    }),
+  );
+  assert.match(html, /Entity matches across research/);
+  assert.doesNotMatch(
+    html,
+    /<details[^>]* open|Save identity review|Matches to review|DEMO-123/,
+  );
+});
+test('entity cards retain both source quotations, identifiers and capture provenance without inferring acceptance', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EntityIdentityCard, { value: entityPair, onOpen() {} }),
+  );
+  assert.equal((html.match(/<blockquote>/g) || []).length, 2);
+  for (const text of [
+    'Possible match',
+    'awaiting review',
+    'First mention',
+    'Second mention',
+    'DEMO-123',
+    'Demo Registry',
+    'Switzerland',
+    'SHA-256',
+    'not a publication or effective date',
+  ])
+    assert.ok(html.includes(text), text);
+  assert.doesNotMatch(
+    html,
+    /Same entity · reviewed|ACCEPTED|Save identity review/,
+  );
+});
+test('stale identity decisions show review needed and retain past decisions, with invalid citations unavailable', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EntityIdentityCard, {
+      value: {
+        ...entityPair,
+        first: null,
+        stale: true,
+        revision: 1,
+        decision: 'same',
+        history: [
+          {
+            revision: 1,
+            decision: 'same',
+            reason: 'Previous evidence supported the pair.',
+            at: '2026-09-28T12:00:00Z',
+            reviewer: 'Former dossier editor',
+          },
+        ],
+      },
+      onOpen() {},
+    }),
+  );
+  for (const text of [
+    'Evidence changed',
+    'not a current identity confirmation',
+    'cannot currently be validated',
+    'Previous evidence supported the pair.',
+    'Former dossier editor',
+  ])
+    assert.ok(html.includes(text), text);
+  assert.doesNotMatch(html, /Save identity review/);
+});
+test('entity reader fences errors, pagination and changed public/private revision', () => {
+  const value = { items: [entityPair], offset: 0, publication_revision: 2 };
+  assert.equal(currentIdentities(value, '', 0, 2), value);
+  for (const args of [
+    [value, 'Access failed', 0, 2],
+    [value, '', 20, 2],
+    [value, '', 0, 3],
+    [value, '', 0],
+    [null, '', 0, 2],
+  ])
+    assert.equal(currentIdentities(...args), null);
+});

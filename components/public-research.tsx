@@ -1,4 +1,5 @@
 'use client';
+import { EntityIdentities } from './entity-identity';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
@@ -331,8 +332,23 @@ export function PublicResearchView({
         </div>
       )}
       {scopeValid && (
+        <EntityIdentities
+          key={`entity-identities:${publicationId}:${revision}:${identity?.user.id || ''}:${identity?.organization.id || ''}`}
+          base={`/products/${product.id}/public-dossiers/${publicationId}/entity-identities`}
+          publicationRevision={revision}
+          accountKey={
+            identity
+              ? `${identity.user.id}:${identity.organization.id}`
+              : undefined
+          }
+          refreshToken={tick}
+          onOpen={select}
+          onChange={refresh}
+        />
+      )}
+      {scopeValid && (
         <ClaimEvolution
-          key={`${publicationId}:${revision}:${identity?.user.id || ''}:${identity?.organization.id || ''}`}
+          key={`claim-evolution:${publicationId}:${revision}:${identity?.user.id || ''}:${identity?.organization.id || ''}`}
           base={`/products/${product.id}/public-dossiers/${publicationId}/evidence-changes`}
           publicationRevision={revision}
           accountKey={

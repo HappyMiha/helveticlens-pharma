@@ -2649,3 +2649,28 @@ code {
     margin: 0.25rem 0 0 1rem;
   }
 }
+
+.entity-identities {
+  margin-block: 1.5rem;
+  padding-block: 1.25rem;
+  border-block: 1px solid var(--border);
+}
+.entity-identities > summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 1.05rem;
+}
+.entity-identities > div > section {
+  margin-top: 1.5rem;
+}
+.entity-identities .compared-finding {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.entity-identities fieldset > label {
+  display: block;
+  margin-block: 1rem 0.5rem;
+}
+.entity-identities fieldset > .evolution-checkbox {
+  display: flex;
+}

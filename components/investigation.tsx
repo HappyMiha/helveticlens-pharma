@@ -1,4 +1,5 @@
 'use client';
+import { EntityIdentities } from './entity-identity';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ResearchQuestions } from './research-questions';
 import { ResearchBudget } from './research-budget';
@@ -666,6 +667,13 @@ export function DossierInvestigation({
           </div>
         </>
       )}
+      <EntityIdentities
+        key={`entity-identities:${dossierId}:${userId || ''}`}
+        base={`/products/${product.id}/dossiers/${dossierId}/entity-identities`}
+        refreshToken={value?.event_sequence || 0}
+        onOpen={onOpen}
+        onChange={() => void refresh()}
+      />
       <ClaimEvolution
         key={`claim-evolution:${dossierId}:${userId || ''}`}
         base={`/products/${product.id}/dossiers/${dossierId}/evidence-changes`}
