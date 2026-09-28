@@ -280,3 +280,15 @@ Empty captures and unavailable fingerprints remain explicit. The shared native
 reader adopts the same hierarchy and adds saved passage/character counts, declared
 document date and retained-file details in five locales. Exact references and
 current source rights are preserved; no completeness or truth score is inferred.
+
+
+### Saved comparison clarity
+
+Version 1.26 exposes both saved-page versions alongside the retained excerpt pair:
+capture times, recorded full-text character counts, revisions and fingerprints.
+A preview can omit later differences. Its full-reader actions stay pinned to the
+saved revision; dates and text changes do not establish effective legal order or
+changed findings. Native Monitoring uses the same reading hierarchy and separates
+an unsaved baseline choice from the exact persisted comparison. Background
+revision changes require an explicit return to the saved choice, and a committed
+write hides the earlier result until the current saved revision is read.

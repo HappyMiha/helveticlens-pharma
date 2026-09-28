@@ -10,6 +10,7 @@ import type {
 import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import { DossierSection } from './research-blocks';
+import { SavedPageComparison } from './saved-page-comparison';
 import { DocumentHistory } from './document-history';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -255,53 +256,11 @@ export function MonitoringTriggerRow({
         )}
       </details>
       {page && (
-        <details className="monitoring-page-change">
-          <summary>Inspect the saved change</summary>
-          <p className="investigation-muted">
-            Excerpts around the first textual difference, at character{' '}
-            {page.first_difference + 1}.{' '}
-            {page.partial || page.preview_partial
-              ? 'This is a partial view; more changes may appear elsewhere.'
-              : 'Both saved texts are shown in full.'}
-          </p>
-          <div className="monitoring-page-excerpts">
-            <section>
-              <h5>Earlier saved text</h5>
-              <p className="snapshot-text">
-                {page.before || 'No text in this part of the earlier version.'}
-              </p>
-              {dossierId && (
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setVersion({
-                      id: page.previous.version_id,
-                      revision: page.previous.revision,
-                    })
-                  }
-                >
-                  Read earlier version
-                </Button>
-              )}
-            </section>
-            <section>
-              <h5>New saved text</h5>
-              <p className="snapshot-text">
-                {page.after || 'No text in this part of the new version.'}
-              </p>
-              {dossierId && (
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setVersion({ id: page.version_id, revision: page.revision })
-                  }
-                >
-                  Read new version
-                </Button>
-              )}
-            </section>
-          </div>
-        </details>
+        <SavedPageComparison
+          page={page}
+          capturedAt={item.matched_at}
+          onRead={dossierId ? (position) => setVersion(position) : undefined}
+        />
       )}
       {page && version && dossierId && (
         <DocumentHistory

@@ -206,11 +206,16 @@ export default function Guide() {
               <h3>Let saved page changes update your research.</h3>
               <p>
                 In a dossier shared with your workspace, select Include changes
-                to saved source pages. Existing automatic-research settings stay
-                topic-only until you choose this scope. Only future versions
-                from linked active daily page watches are considered.
-                Members-only dossiers continue to use topic matches; they do not
-                create workspace page watches.
+                to saved source pages. Inspect the saved change to compare each
+                version’s capture time, retained text size, evidence revision
+                and fingerprint. A partial preview can omit later differences;
+                use Read earlier version or Read new version for the exact saved
+                revision. Capture time does not establish a document’s effective
+                date. Existing automatic-research settings stay topic-only until
+                you choose this scope. Only future versions from linked active
+                daily page watches are considered. Members-only dossiers
+                continue to use topic matches; they do not create workspace page
+                watches.
               </p>
               <p>
                 Open Inspect the saved change to compare earlier and new text,

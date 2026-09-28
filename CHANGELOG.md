@@ -1,5 +1,14 @@
 # Changes
 
+## 1.26.0 — Inspect saved comparisons
+
+- Compare retained page excerpts with each version’s capture time, actual saved
+  text size, evidence revision and recorded fingerprint.
+- Keep partial previews explicit and open the exact retained revision for context.
+- Share the comparison reading hierarchy with native Monitoring, where unsaved
+  baseline choices remain distinct from the persisted comparison and changed
+  revisions require review before another write.
+
 ## 1.25.0 — Read the evidence
 
 - Read retained source excerpts in a calmer, wider reader with clear origin,

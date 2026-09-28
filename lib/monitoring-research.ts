@@ -55,7 +55,15 @@ export type PageChange = {
   document_id: string;
   version_id: string;
   revision: number;
-  previous: { version_id: string; revision: number; captured_at: string };
+  content_hash?: string;
+  before_characters?: number;
+  after_characters?: number;
+  previous: {
+    version_id: string;
+    revision: number;
+    captured_at: string;
+    content_hash?: string;
+  };
   first_difference: number;
   excerpt_start: number;
   before: string;

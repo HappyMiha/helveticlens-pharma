@@ -3,6 +3,7 @@ import { THEME_BOOTSTRAP } from '@/lib/theme-preference';
 import './globals.css';
 import './visual-language.css';
 import './source-reading.css';
+import './saved-comparisons.css';
 import { ResearchEnvironment } from '@/components/app-shell';
 export const metadata: Metadata = {
   title: 'HelveticLens Pharma',
