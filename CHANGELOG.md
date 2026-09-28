@@ -1,5 +1,14 @@
 # Changes
 
+## 1.34.0 — Evidence-driven iterative research
+
+- Start a research dossier with a title and question, independently of monitoring.
+- Plan multiple directions, gate candidates before reading, and follow cited evidence gaps into new searches.
+- Keep exact claim revisions, identifier-based source mentions, relationship evidence and unresolved questions visible.
+- Choose hosted-first or local-first relevance routing; inspect budgets and explicitly continue pending research.
+- Preserve existing monitoring, source rights, team permissions and document/AI/source/comment boundaries.
+- Controlled end-to-end validation is distinct from live-provider quality and independent factual verification.
+
 ## 1.33.0 — Readable source coverage
 
 - A quiet Sources & files reader separates watched pages, shared topic sources

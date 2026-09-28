@@ -4,16 +4,18 @@ export function LargeMetric({
   value,
   label,
   detail,
+  href,
 }: {
   value: number;
   label: string;
   detail?: string;
+  href?: string;
 }) {
   return (
     <div className="large-metric">
-      <dt>{label}</dt>
+      <dt>{href ? <a href={href}>{label}</a> : label}</dt>
       <dd>
-        {value}
+        {href ? <a href={href}>{value}</a> : value}
         <small>{detail}</small>
       </dd>
     </div>

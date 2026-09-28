@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const chapters = [
   ['products', 'Move between products'],
   ['dossier', 'Read a dossier'],
+  ['research-engine', 'Investigate from a question'],
   ['templates', 'Choose a research template'],
   ['subject', 'Record the dossier subject'],
   ['interface', 'Ask, read and trace evidence'],
@@ -75,17 +76,34 @@ export default function Guide() {
               ))}
             </ol>
             <Link href="/">
-              Start a monitored topic <ArrowUpRight size={15} />
+              Start a dossier <ArrowUpRight size={15} />
             </Link>
           </nav>
           <div className="guide-chapters">
+            <section id="research-engine" aria-labelledby="research-engine-title">
+              <span className="guide-step">ITERATIVE RESEARCH</span>
+              <h2 id="research-engine-title">A discovery can lead to the next question.</h2>
+              <p>Choose New dossier, enter a title and a research question, then confirm public-source research.
+                Topics, source lists and monitoring rules are not required. Set up monitoring separately when you want ongoing updates.</p>
+              <p>Helvetic Lens plans research directions, checks candidate relevance before reading and records claims with exact source excerpts.
+                A gap in public evidence can create a follow-up question, another search and new support or a contradiction for an existing claim.</p>
+              <p>In AI research, Open questions shows what prompted each follow-up and which evidence came back.
+                New evidence found does not mean the question is settled. Names alone do not merge organisations;
+                complete cited identifiers can group mentions within one investigation. Identical document copies do not count as new support.</p>
+              <p>Open Research limits &amp; continuation to see the saved budget or continue pending directions with a larger total.
+                Pause retains progress. A failed or interrupted request is not silently repeated. Jev-first or Laya-first relevance routing is optional at creation;
+                uncertain candidates can use the configured workspace analysis model. Inspect candidate decisions and routing under Method.</p>
+              <p>The public question and queries derived from public evidence go to search providers. Private dossier material stays out of public query planning.
+                Accessible sources, retained excerpts and provider availability limit coverage; this is not an exhaustive search of every archive.</p>
+            </section>
+
             <section id="templates" aria-labelledby="templates-title">
               <span className="guide-step">OPTIONAL RESEARCH GUIDANCE</span>
               <h2 id="templates-title">
                 Start with a structure. Keep your own question.
               </h2>
               <p>
-                Choose a dossier template in the first setup step, or open
+                Choose a dossier template in monitoring setup, or open
                 Research approach in an existing dossier. Legal offers Legal
                 Question, Legislative Monitor and Case / Dispute. Pharma offers
                 Market Access, Regulatory Monitor and Safety. Each suggests

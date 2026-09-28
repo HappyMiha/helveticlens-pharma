@@ -52,10 +52,23 @@ export function investigationActivity(
       detail: 'Completed evidence remains available below.',
     };
   const phase = {
+    plan: { state: 'synthesizing', label: 'Planning research directions' },
+    gate: { state: 'verifying', label: 'Checking candidate relevance' },
+    gate_review: {
+      state: 'verifying',
+      label: 'Assessing an uncertain candidate',
+    },
+    reflect: {
+      state: 'cross-referencing',
+      label: 'Identifying evidence gaps and next questions',
+    },
     search: { state: 'searching', label: 'Discovering sources' },
     read: { state: 'reading', label: 'Reading source material' },
     extract: { state: 'extracting', label: 'Extracting claims and evidence' },
-    compare: { state: 'cross-referencing', label: 'Comparing earlier evidence' },
+    compare: {
+      state: 'cross-referencing',
+      label: 'Comparing earlier evidence',
+    },
   }[step.phase] as Pick<LensActivity, 'state' | 'label'> | undefined;
   return phase
     ? { ...phase, detail: branch?.query || '' }

@@ -1,3 +1,4 @@
+import type { ResearchState } from './research-engine';
 import type { MonitoringTrigger } from './monitoring-research';
 export type ContributionOriginal = {
   id: string;
@@ -11,6 +12,7 @@ export type ContributionOriginal = {
   created_at: string;
 };
 export type InvestigationSummary = {
+  engine?: string;
   created_by_user_id?: string | null;
   id: string;
   trigger_entry_id?: string | null;
@@ -34,8 +36,20 @@ export type EvidenceLink = {
   source_id: string;
   quote: string;
   locator: string;
+  claim_id?: string;
+  amount_text?: string;
+  period_text?: string;
+  identity?: string;
+  identifier?: {
+    value: string;
+    issuer: string;
+    jurisdiction: string;
+    kind: string;
+  } | null;
+  mentions?: (EvidenceLink & { name: string })[];
 };
 export type Investigation = InvestigationSummary & {
+  research?: ResearchState | null;
   monitoring_trigger?: MonitoringTrigger | null;
   web_research_trigger?: {
     id: string;
@@ -57,6 +71,27 @@ export type Investigation = InvestigationSummary & {
     phase: string;
     reason: string;
     error: string | null;
+    question_id?: string | null;
+    parent_branch_id?: string | null;
+    depth?: number | null;
+    outcome?: string;
+    decisions?: {
+      id: string;
+      url: string;
+      title: string;
+      verdict: string;
+      engine: string | null;
+      reason?: string;
+      basis?: string;
+      model?: string;
+    }[];
+    model_routes?: {
+      step_id: string;
+      phase: string;
+      model: string;
+      provider: string;
+      basis: string;
+    }[];
     steps: {
       id: string;
       phase: string;
@@ -74,6 +109,9 @@ export type Investigation = InvestigationSummary & {
     created_at: string;
     original?: ContributionOriginal | null;
     snapshot: {
+      source_class?: EvidenceLink & { category: string; basis: string };
+      duplicate_of?: string;
+      independence?: string;
       unchanged_from?: string | null;
       scope: string;
       excerpts: { text: string; passage: string }[];

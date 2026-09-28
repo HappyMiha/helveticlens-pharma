@@ -47,7 +47,21 @@ export function SourceMetadata({ source }: { source: Source }) {
       </div>
       <div>
         <dt>Source classification</dt>
-        <dd>Primary / secondary not established</dd>
+        <dd>
+          {source.snapshot?.source_class ? (
+            <>
+              {source.snapshot.source_class.category.replaceAll('_', ' ')} · AI
+              classification
+              <details>
+                <summary>Classification evidence</summary>
+                <blockquote>{source.snapshot.source_class.quote}</blockquote>
+                <p>{source.snapshot.source_class.basis}</p>
+              </details>
+            </>
+          ) : (
+            'Primary / secondary not established'
+          )}
+        </dd>
       </div>
       <div>
         <dt>Publication date</dt>
@@ -78,6 +92,10 @@ export function SourcePreview({ source }: { source: Source }) {
           when available.
         </p>
       )}
+      {source.snapshot.duplicate_of && <aside className="investigation-muted">
+        <p>This capture contains the same document bytes as an earlier source. It was not counted as new supporting evidence.</p>
+        <a href={`#source-${source.snapshot.duplicate_of}`}>Read the earlier capture</a>
+      </aside>}
       {source.snapshot.unchanged_from && (
         <p className="investigation-muted">
           This capture matches the latest successfully analysed source for this

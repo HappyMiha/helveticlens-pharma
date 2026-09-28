@@ -1,5 +1,22 @@
 # HelveticLens Pharma
 
+## Research from a question
+
+New dossier opens with a title and research question. Confirm public-source
+search to start a saved investigation; monitoring is a separate optional setup.
+The shared Core decomposes the question, gates candidates through Jev/Laya,
+reads accessible sources and follows evidence-grounded questions into new
+searches. Open questions show the triggering quote and later evidence. A new
+source can support or contest an existing claim without rewriting its history.
+
+Exact cited identifiers can group source mentions within a run; names alone
+cannot merge entities. Connections link their claim and original excerpt.
+Research limits, unresolved work, candidate decisions and configured model
+routing remain inspectable. Continue research explicitly adds a cumulative
+budget for pending directions. Full-web coverage, cross-run canonical identity
+and independent factual verification are not implied.
+
+
 ## See what was checked
 
 In Sources & files, What has been checked separates saved page checks, selected

@@ -1,5 +1,8 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ResearchQuestions } from './research-questions';
+import { ResearchBudget } from './research-budget';
+import type { ResearchLimits } from '@/lib/research-engine';
 import { Pause, Play, Square } from 'lucide-react';
 import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
@@ -251,6 +254,7 @@ export function DossierInvestigation({
         const next = await api<Investigation>(base, {
           ...pending.current,
           public_query_confirmed: true,
+          engine: 'iterative-v1',
         });
         pending.current = null;
         setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
@@ -269,13 +273,17 @@ export function DossierInvestigation({
     },
     [base, busy, canEdit, onReveal],
   );
-  async function control(action: 'pause' | 'resume' | 'cancel' | 'retry') {
+  async function control(
+    action: 'pause' | 'resume' | 'cancel' | 'retry' | 'deepen',
+    limits?: ResearchLimits,
+  ) {
     if (!value) return;
     setBusy(true);
     setError('');
     try {
       const next = await api<Investigation>(`${base}/${value.id}/control`, {
         action,
+        ...(limits ? { limits } : {}),
         expected_revision: value.revision,
       });
       setValue(next);
@@ -550,18 +558,45 @@ export function DossierInvestigation({
               appear in Changes over time.
             </p>
           )}
+          {value.research && (
+            <ResearchBudget
+              key={`${value.id}:${value.research.limits.branches}:${value.revision}`}
+              value={value.research}
+              canContinue={
+                canControl &&
+                !running &&
+                !activeElsewhere &&
+                value.status !== 'cancelled' &&
+                (value.branches.some((branch) => branch.status === 'blocked') ||
+                  value.research.questions.some(
+                    (question) => !question.branch_id,
+                  ))
+              }
+              busy={busy}
+              onContinue={(limits) => control('deepen', limits)}
+            />
+          )}
           <LensAnalysisState value={value} />
           {counts && (
             <dl
               className="research-metrics"
               aria-label="Evidence in this investigation"
             >
-              <LargeMetric value={counts.sources} label="Captured sources" />
+              <LargeMetric
+                value={counts.sources}
+                label="Captured sources"
+                href="#research-sources"
+              />
               <LargeMetric
                 value={counts.claims}
                 label="Evidence-linked claims"
+                href="#key-findings"
               />
-              <LargeMetric value={counts.contested} label="Contested claims" />
+              <LargeMetric
+                value={counts.contested}
+                label="Contested claims"
+                href="#key-findings"
+              />
             </dl>
           )}
           <nav className="dossier-section-nav" aria-label="Dossier sections">
@@ -595,32 +630,36 @@ export function DossierInvestigation({
                 Each path retains its scope and unfinished work. A completed
                 path does not establish exhaustive coverage.
               </p>
-              <ol className="investigation-branches">
-                {value.branches.map((branch) => (
-                  <li key={branch.id}>
-                    <span
-                      className="investigation-status"
-                      data-status={branch.status}
-                    >
-                      {readable(branch.status)}
-                    </span>
-                    <h4>{branch.query}</h4>
-                    <p>{branch.reason}</p>
-                    <small>
-                      {readable(branch.phase)} ·{' '}
-                      {
-                        branch.steps.filter(
-                          (step) => step.status === 'completed',
-                        ).length
-                      }{' '}
-                      completed steps
-                    </small>
-                    {branch.error && (
-                      <p className="investigation-error">{branch.error}</p>
-                    )}
-                  </li>
-                ))}
-              </ol>
+              {value.research && <ResearchQuestions value={value} />}
+              <details open={value.research ? undefined : true}>
+                <summary>Saved research paths & step status</summary>
+                <ol className="investigation-branches">
+                  {value.branches.map((branch) => (
+                    <li key={branch.id}>
+                      <span
+                        className="investigation-status"
+                        data-status={branch.status}
+                      >
+                        {readable(branch.status)}
+                      </span>
+                      <h4>{branch.query}</h4>
+                      <p>{branch.reason}</p>
+                      <small>
+                        {readable(branch.phase)} ·{' '}
+                        {
+                          branch.steps.filter(
+                            (step) => step.status === 'completed',
+                          ).length
+                        }{' '}
+                        completed steps
+                      </small>
+                      {branch.error && (
+                        <p className="investigation-error">{branch.error}</p>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </details>
             </DossierSection>
             <TransparencyPanel value={value} />
           </div>

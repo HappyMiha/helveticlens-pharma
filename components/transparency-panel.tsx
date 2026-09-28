@@ -28,7 +28,11 @@ export function DossierTimeline({ value }: { value: Investigation }) {
 export function TransparencyPanel({ value }: { value: Investigation }) {
   const steps = value.branches.flatMap((b) => b.steps);
   const actions = [
+    ['plan', 'Research planning'],
     ['search', 'Source discovery'],
+    ['gate', 'Candidate relevance decisions'],
+    ['gate_review', 'Uncertain candidate assessment'],
+    ['reflect', 'Evidence gaps and follow-up questions'],
     ['read', 'Source retrieval'],
     ['extract', 'Claim and entity extraction'],
   ];
@@ -43,7 +47,14 @@ export function TransparencyPanel({ value }: { value: Investigation }) {
         </div>
         <div>
           <dt>Primary / secondary classification</dt>
-          <dd>Not established</dd>
+          <dd>
+            {
+              value.sources.filter((source) => source.snapshot?.source_class)
+                .length
+            }{' '}
+            sources have cited AI classifications; these are not independent
+            verification.
+          </dd>
         </div>
         <div>
           <dt>Research plan</dt>
@@ -70,6 +81,34 @@ export function TransparencyPanel({ value }: { value: Investigation }) {
         })}
       </ul>
       <p>{value.coverage}</p>
+      {value.research && (
+        <details>
+          <summary>Candidate decisions & model routing</summary>
+          <p>
+            Rejected and uncertain candidates are research traces, not source
+            evidence.
+          </p>
+          {value.branches.map((branch) => (
+            <div key={branch.id} className="research-debug-branch">
+              <h4>{branch.query}</h4>
+              {(branch.decisions || []).map((decision, index) => (
+                <p key={`${decision.id}:${index}`}>
+                  {decision.title} · {readable(decision.verdict)} ·{' '}
+                  {decision.engine || 'No decision engine'}
+                  {decision.model ? ` (${decision.model})` : ''}.{' '}
+                  {decision.reason || decision.basis}
+                </p>
+              ))}
+              {(branch.model_routes || []).map((route) => (
+                <p key={route.step_id}>
+                  {readable(route.phase)} · {route.provider} / {route.model}.{' '}
+                  {route.basis}
+                </p>
+              ))}
+            </div>
+          ))}
+        </details>
+      )}
       <details>
         <summary>Research plan & available tools</summary>
         {value.plans.map((plan) => (

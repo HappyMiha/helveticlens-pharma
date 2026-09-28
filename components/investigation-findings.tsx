@@ -113,6 +113,19 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
               <li key={entity.id} id={`entity-${entity.id}`}>
                 <strong>{entity.name}</strong> <span>{entity.kind}</span>{' '}
                 <a href={`#source-${entity.evidence.source_id}`}>Evidence</a>
+                {!!entity.evidence.mentions?.length && <details><summary>Names & identity evidence</summary>
+                  {entity.evidence.mentions.map((mention, index) => <div key={`${mention.source_id}:${index}`}>
+                    <strong>{mention.name}</strong><Evidence value={mention} />
+                  </div>)}
+                </details>}
+                {entity.evidence.identifier && (
+                  <p className="investigation-muted">
+                    Source identifier: {entity.evidence.identifier.issuer}{' '}
+                    {entity.evidence.identifier.value} ·{' '}
+                    {entity.evidence.mentions?.length || 1} cited mentions.
+                    Identity is not independently verified.
+                  </p>
+                )}
               </li>
             ))}
           </ul>
@@ -120,10 +133,18 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
             <div key={relation.id} className="investigation-relationship">
               <p>
                 <strong>{names.get(relation.subject_id)}</strong> ·{' '}
-                {relation.predicate} ·{' '}
+                {readable(relation.predicate)} ·{' '}
                 <strong>{names.get(relation.object_id)}</strong>
               </p>
-              <Evidence value={relation.evidence} />
+              {relation.evidence.claim_id && (
+                <a href={`#claim-${relation.evidence.claim_id}`}>
+                  Inspect the linked claim
+                </a>
+              )}
+              <details>
+                <summary>Evidence for this connection</summary>
+                <Evidence value={relation.evidence} />
+              </details>
             </div>
           ))}
         </DossierSection>

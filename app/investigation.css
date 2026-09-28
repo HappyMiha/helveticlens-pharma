@@ -385,3 +385,104 @@
 .monitoring-research-history p {
   overflow-wrap: anywhere;
 }
+
+/* Question-first research preserves the document's reading rhythm. */
+.research-start {
+  max-width: 48rem;
+  margin: 1.5rem auto;
+}
+.research-start h2 {
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  line-height: 1.2;
+}
+.research-start > p,
+.research-start form > p {
+  line-height: 1.6;
+}
+.research-start form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+.research-start form > label {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.4rem;
+}
+.research-start input,
+.research-start textarea {
+  font-size: 1rem;
+}
+.research-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+.research-consent input {
+  margin-top: 0.35rem;
+}
+.research-start-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.6rem;
+}
+.research-mode-choice {
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+}
+.research-start details,
+.research-budget {
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.research-budget-table {
+  overflow-x: auto;
+}
+.research-budget table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.research-budget th,
+.research-budget td {
+  text-align: left;
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.research-budget input {
+  width: 6rem;
+  padding: 0.35rem;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+.research-question {
+  padding: 1.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.research-question h4 {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  margin: 0.6rem 0;
+}
+.research-question p {
+  line-height: 1.6;
+}
+.research-question-origin {
+  margin: 0.8rem 0;
+}
+.research-question blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  margin: 1rem 0;
+}
+.research-debug-branch {
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}

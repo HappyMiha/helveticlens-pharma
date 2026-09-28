@@ -72,7 +72,7 @@ type Result = {
 };
 
 export const PUBLIC_QUERY_DISCLOSURE =
-  'Investigate sends this question and newly found public entity names to public search. Saved dossier evidence uses your workspace AI. Keep confidential details out of this field.';
+  'Investigate sends this question and follow-up queries derived from public evidence to public search. Saved dossier evidence uses your workspace AI. Keep confidential details out of this field.';
 
 export function AskTrigger({
   label = 'Ask Helvetic Lens or search anything…',

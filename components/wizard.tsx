@@ -1,4 +1,5 @@
 'use client';
+import { ResearchStart } from './research-start';
 import { TemplatePicker, TemplateGuidance } from './dossier-template';
 import {
   templateReference,
@@ -61,6 +62,9 @@ export function Wizard({
   onActivated,
   onOpenDraft,
 }: WizardProps) {
+  const [mode, setMode] = useState<'research' | 'monitoring'>(
+    initial || seed ? 'monitoring' : 'research',
+  );
   const [doc, setDoc] = useState<DossierRecord | null>(initial),
     [config, setConfig] = useState<ProfileConfig>(
       initial?.profile.config || { ...emptyConfig(), ...seed },
@@ -249,6 +253,13 @@ export function Wizard({
     }
     await onActivated(d.id);
   }
+  if (mode === 'research')
+    return (
+      <ResearchStart
+        onCancel={onCancel}
+        onMonitoring={() => setMode('monitoring')}
+      />
+    );
   return (
     <div className="wizard">
       <PublicCopyOrigin origin={doc?.public_origin} />

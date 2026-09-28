@@ -396,7 +396,7 @@ export default function Workspace() {
     }
     if (!canEdit) {
       setError(
-        'Your workspace role is read-only. An administrator can create monitoring dossiers.',
+        'Your workspace role is read-only. An administrator can create dossiers.',
       );
       return;
     }
@@ -517,7 +517,7 @@ export default function Workspace() {
             <ChevronRight size={15} />
             <b>
               {view === 'wizard'
-                ? 'New monitoring'
+                ? 'New dossier'
                 : view === 'detail'
                   ? 'Dossier'
                   : view === 'sources'
@@ -682,7 +682,7 @@ export default function Workspace() {
                       onClick={() => start()}
                     >
                       <Plus size={18} />
-                      New monitoring
+                      New dossier
                     </Button>
                   </div>
                   <div className="overview-strip">
