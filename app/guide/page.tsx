@@ -340,9 +340,11 @@ export default function Guide() {
               </p>
               <p>
                 Use the theme control to cycle between system preference, light
-                and dark. This preference stays on this device. On smaller
-                screens, use the navigation drawer and open a source in its
-                full-screen reader.
+                and dark. Each Helvetic Lens site remembers your choice
+                separately in this browser. If preferences cannot be saved, the
+                choice still works until you reload. System follows your device
+                as it changes. On smaller screens, use the navigation drawer and
+                open a source in its full-screen reader.
               </p>
             </section>
             <section id="start" aria-labelledby="start-title">

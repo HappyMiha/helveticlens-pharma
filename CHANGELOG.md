@@ -1,5 +1,13 @@
 # Changes
 
+## 1.23.0 — Reliable reading preferences
+
+- Apply the saved dark/light/system choice before the first page content.
+- Keep the current choice when preference storage is unavailable; system changes
+  update only System mode, and other-tab changes apply only to this site's theme.
+- Share the preference contract and accessible control with native Monitoring.
+- Retain current research, drafts and permissions while appearance changes.
+
 ## 1.22.0 — Shared product navigation
 
 - Reach Pharma, Loyer and Monitoring from the sidebar, global Ask / Search or guide.

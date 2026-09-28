@@ -5,73 +5,18 @@ import {
   type ReactNode,
   type ComponentProps,
 } from 'react';
-import { Monitor, Moon, Sun } from 'lucide-react';
 import { Sidebar, SidebarProvider } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { UniversalAskSearch } from './universal-ask-search';
+import { ThemeProvider, ThemeControl } from './theme-provider';
 
-type Theme = 'system' | 'light' | 'dark';
 export function ResearchEnvironment({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark');
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      let selected: Theme = 'dark';
-      try {
-        const stored = localStorage.getItem('helvetic-lens-theme');
-        if (stored === 'dark' || stored === 'light' || stored === 'system')
-          selected = stored;
-      } catch {
-        /* Device preferences are optional. */
-      }
-      document.documentElement.dataset.theme = selected;
-      document.documentElement.classList.toggle(
-        'dark',
-        selected === 'dark' || (selected === 'system' && media.matches),
-      );
-      setTheme(selected);
-    };
-    apply();
-    media.addEventListener('change', apply);
-    window.addEventListener('storage', apply);
-    return () => {
-      media.removeEventListener('change', apply);
-      window.removeEventListener('storage', apply);
-    };
-  }, []);
-  function cycle() {
-    const next: Theme =
-      theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
-    try {
-      localStorage.setItem('helvetic-lens-theme', next);
-    } catch {
-      /* Still works for this page. */
-    }
-    document.documentElement.dataset.theme = next;
-    document.documentElement.classList.toggle(
-      'dark',
-      next === 'dark' ||
-        (next === 'system' &&
-          window.matchMedia('(prefers-color-scheme: dark)').matches),
-    );
-    setTheme(next);
-  }
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
   return (
-    <UniversalAskSearch>
-      {children}
-      <Button
-        className="theme-control"
-        variant="outline"
-        onClick={cycle}
-        aria-label={`Theme: ${theme}. Switch to ${theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system'} theme`}
-      >
-        <Icon size={17} />
-        <span>
-          {theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
-        </span>
-      </Button>
-    </UniversalAskSearch>
+    <ThemeProvider>
+      <UniversalAskSearch>
+        {children}
+        <ThemeControl />
+      </UniversalAskSearch>
+    </ThemeProvider>
   );
 }
 

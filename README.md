@@ -244,3 +244,15 @@ an opener or referrer; queries, dossier IDs, private drafts and credentials are
 never attached. Destination login/access checks remain in place. Version 1.22
 adds this shared journey and the native Brandbook navigation frame; broader native
 page themes and human visual/language acceptance remain open.
+
+
+### Reading preferences
+
+Version 1.23 applies the site's saved dark/light/system choice before first
+content, follows system changes in System mode and preserves the current page's
+choice if browser storage is blocked. Theme updates synchronize between tabs on
+the same origin; Pharma, Loyer and Monitoring retain separate device-local
+preferences. Appearance changes do not create research requests, change dossier
+visibility or save research text. The native platform adopts the same preference
+contract and Brandbook reading palettes; full visual/product acceptance remains
+separate from this scoped migration.
