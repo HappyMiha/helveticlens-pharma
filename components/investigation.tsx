@@ -185,7 +185,7 @@ export function DossierInvestigation({
     };
   }, [base, focusRequest]);
   useEffect(() => {
-    if (focusRequest?.id === value?.id) {
+    if (focusRequest && focusRequest.id === value?.id) {
       const target = document.getElementById(
         focusRequest?.anchor || `investigation-${value?.id}`,
       );
@@ -301,13 +301,14 @@ export function DossierInvestigation({
   }
   async function reloadLatest() {
     setBusy(true);
-    setError('');
+    setLoading(true);
     try {
       const page = await api<{ items: InvestigationSummary[]; total: number }>(
         base,
       );
       setHistory(page.items);
       setTotal(page.total);
+      setError('');
       const latest = page.items.find(isRunning) || page.items[0];
       setSelected(latest?.id || '');
       if (latest?.id === selected) await refresh();
@@ -399,12 +400,12 @@ export function DossierInvestigation({
             disabled={busy}
             onClick={() => void reloadLatest()}
           >
-            Refresh
+            {busy ? 'Reloading…' : 'Reload saved research'}
           </Button>
         </div>
       )}
       <EvidenceSearch
-        key={`${dossierId}:${userId || ''}`}
+        key={`saved-evidence:${dossierId}:${userId || ''}`}
         dossierId={dossierId}
         ref={evidenceSearch}
         onOpen={onOpen}
@@ -666,7 +667,7 @@ export function DossierInvestigation({
         </>
       )}
       <ClaimEvolution
-        key={`${dossierId}:${userId || ''}`}
+        key={`claim-evolution:${dossierId}:${userId || ''}`}
         base={`/products/${product.id}/dossiers/${dossierId}/evidence-changes`}
         refreshToken={value?.event_sequence || 0}
         onOpen={onOpen}
