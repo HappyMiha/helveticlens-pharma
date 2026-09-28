@@ -215,3 +215,8 @@ Apache-2.0 for the project code, with preserved upstream attribution in [NOTICE]
 
 
 Dossier teams (1.11): enable explicit roles from a saved dossier, invite existing workspace colleagues, accept through the invitation inbox and hand over ownership. Draft collaboration stays within the accepted team; activation requires explicit workspace-sharing confirmation and native monitoring authority. Active dossiers retain workspace visibility. No automatic email or organization membership is created. See the in-product guide’s Dossier team chapter.
+
+Recurring public research: dossier editors can explicitly save a public question
+and daily/weekly cadence, inspect actual provider and evidence history, and pause
+the schedule. New permitted evidence is compared with prior findings; unchanged
+captures skip extraction. Queries never include private notes automatically.

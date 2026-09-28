@@ -37,6 +37,11 @@ export type EvidenceLink = {
 };
 export type Investigation = InvestigationSummary & {
   monitoring_trigger?: MonitoringTrigger | null;
+  web_research_trigger?: {
+    id: string;
+    policy_revision: number;
+    scheduled_for: string;
+  } | null;
   original?: ContributionOriginal | null;
   plans: {
     id: string;
@@ -68,7 +73,11 @@ export type Investigation = InvestigationSummary & {
     sha256: string;
     created_at: string;
     original?: ContributionOriginal | null;
-    snapshot: { scope: string; excerpts: { text: string; passage: string }[] };
+    snapshot: {
+      unchanged_from?: string | null;
+      scope: string;
+      excerpts: { text: string; passage: string }[];
+    };
   }[];
   claims: {
     id: string;

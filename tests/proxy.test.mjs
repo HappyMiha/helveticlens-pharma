@@ -1023,3 +1023,43 @@ test('public research gateway allows scoped readers and blocks unrelated private
   }
   assert.equal(count, paths.length);
 });
+
+test('recurring private search forwards scoped controls and rejects public or wrong-product paths', async () => {
+  let count = 0;
+  globalThis.fetch = async (url, init) => {
+    count++;
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(init.headers.get('x-organization-id'), null);
+    return Response.json({ enabled: false });
+  };
+  const route = `products/${product.id}/dossiers/fixture/web-research`;
+  const response = await proxy(
+    new Request('https://product.test/api/' + route, {
+      method: 'POST',
+      headers: {
+        origin: 'https://product.test',
+        'x-csrf-token': 'csrf',
+        'x-organization-id': 'forged',
+      },
+      body: '{}',
+    }),
+    context(route),
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  for (const path of [
+    `products/${product.id}/public-dossiers/topic/web-research`,
+    `products/${product.id === 'pharma' ? 'loyer' : 'pharma'}/dossiers/fixture/web-research`,
+  ]) {
+    assert.equal(
+      (
+        await proxy(
+          new Request('https://product.test/api/' + path),
+          context(path),
+        )
+      ).status,
+      404,
+    );
+  }
+  assert.equal(count, 1);
+});

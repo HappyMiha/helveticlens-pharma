@@ -110,8 +110,33 @@ export default function Guide() {
                 inspectable. This mode performs no external discovery, makes no
                 public contribution and adds no email subscription. Existing
                 source admission, exclusions, dossier permissions and personal
-                notification choices still apply. Recurring open-web discovery
-                remains a separate capability still to come.
+                notification choices still apply. Recurring public search has
+                its own explicit schedule below.
+              </p>
+              <h3>Keep discovering new sources.</h3>
+              <p>
+                Open Keep discovering new sources in any dossier, including a
+                private draft. An editor can enter one public question, choose
+                daily or weekly searching and confirm recurring use by external
+                providers. The question is never expanded with private notes.
+                New findings stay in the dossier’s existing audience.
+              </p>
+              <p>
+                Each run uses Jev/TypeSafe with Laya fallback across the
+                configured public indexes, then reads up to three permitted
+                sources. Unchanged captured bodies and excerpts skip repeated
+                analysis. New evidence is extracted independently before
+                comparison with earlier findings. Search snippets are not
+                evidence.
+              </p>
+              <p>
+                Inspect the last check, next scheduled search and actual run
+                history. Two starts or explicit retries are allowed per UTC day,
+                within the shared platform query budget. Source reading still
+                runs for unchanged pages. Cost estimates cover only reported
+                decision inference; unavailable costs and unmeasured accuracy
+                remain explicit. Pause the schedule at any time. This adds no
+                publication or email subscription.
               </p>
               <h3>Let saved page changes update your research.</h3>
               <p>

@@ -4,6 +4,7 @@ import { PublicCopyOrigin } from './public-origin';
 import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
+import { WebResearchPanel } from './web-research';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useEffect, useState } from 'react';
 import {
@@ -236,6 +237,11 @@ export function Dossier({
       />
       <MonitoringResearchPanel
         key={`${d.id}:${userId || ''}`}
+        dossierId={d.id}
+        onOpen={openInvestigation}
+      />
+      <WebResearchPanel
+        key={`web:${d.id}:${userId || ''}`}
         dossierId={d.id}
         onOpen={openInvestigation}
       />

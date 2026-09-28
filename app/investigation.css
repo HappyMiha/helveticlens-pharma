@@ -380,3 +380,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.monitoring-research-status p,
+.monitoring-research-history p {
+  overflow-wrap: anywhere;
+}

@@ -1306,3 +1306,109 @@ test('saved page changes show escaped paired excerpts and exact retained-version
   assert.match(html, /&lt;script&gt;old/);
   assert.doesNotMatch(html, /<script>|signal matched the dossier/);
 });
+
+const { WebPolicyForm, WebPolicyStatus, WebTriggerRow } = require(
+  resolve('components/web-research.tsx'),
+);
+const { currentWebResearch } = require(resolve('lib/web-research.ts'));
+const webPolicy = {
+  enabled: false,
+  revision: 0,
+  question: '',
+  cadence_hours: 24,
+  daily_limit: 2,
+  used_today: 0,
+  readiness: {
+    configured: true,
+    reason: 'Configuration present; live checks occur during execution.',
+  },
+  next_run_at: null,
+  checked_at: null,
+  reason: 'Recurring search is off.',
+  disclosure: 'Only the explicitly public question is sent externally.',
+  history: [],
+};
+
+test('recurring public query requires deliberate text, cadence and unchecked standing consent', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(WebPolicyForm, {
+      base: '/web-research',
+      policy: webPolicy,
+      onSaved() {},
+    }),
+  );
+  assert.match(html, /Public search question/);
+  assert.match(html, /Daily · every 24 hours/);
+  assert.match(html, /Weekly · every 7 days/);
+  assert.match(html, /while I am signed out/);
+  assert.match(html, /type="submit"[^>]*disabled/);
+  assert.doesNotMatch(html, /aria-checked="true"|Pause recurring search/);
+});
+
+test('recurring status and access guard hide stale data without inventing a check', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(WebPolicyStatus, { policy: webPolicy }),
+  );
+  assert.match(html, /0 of 2 starts\/retries/);
+  assert.match(html, /Not scheduled/);
+  assert.match(html, /Not checked yet/);
+  assert.doesNotMatch(html, /lens-overlay|Verified|100%/);
+  const data = { dossier_id: 'one', policy: webPolicy };
+  assert.equal(currentWebResearch(data, '', 'one'), data);
+  assert.equal(currentWebResearch(data, 'Access revoked', 'one'), null);
+  assert.equal(currentWebResearch(data, '', 'another'), null);
+});
+
+test('recurring results expose fallback, unchanged captures and unknown cost without accuracy claims', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(WebTriggerRow, {
+      onOpen() {},
+      item: {
+        id: 'trigger',
+        question: '<script>untrusted()</script>',
+        policy_revision: 1,
+        created_at: '2026-09-28T00:00:00Z',
+        investigation: {
+          id: 'run',
+          status: 'completed',
+          stop_reason: 'Bounded check; unavailable steps remain visible.',
+        },
+        analysed_sources: 1,
+        unchanged_sources: 2,
+        coverage: [
+          {
+            selected_engine: 'laya',
+            latency_ms: 123,
+            error: null,
+            retrieval: {
+              lanes: [{ name: 'Bing web', status: 'unavailable', count: 0 }],
+            },
+            engines: [
+              {
+                engine: 'jev',
+                latency_ms: 4,
+                error: 'quota',
+                estimated_cost_usd: null,
+                mean_confidence: null,
+              },
+              {
+                engine: 'laya',
+                latency_ms: 50,
+                estimated_cost_usd: null,
+                mean_confidence: 0.91,
+                cost_scope: 'Decision inference only.',
+              },
+            ],
+          },
+        ],
+      },
+    }),
+  );
+  assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /2 unchanged captures skipped/);
+  assert.match(html, /Open search investigation/);
+  assert.match(html, /Decision cost estimate: Unknown/);
+  assert.match(html, /Independent accuracy: not evaluated/);
+  assert.match(html, /0.910/);
+  assert.doesNotMatch(html, /<script>|Accuracy: 91|\$0\.000000/);
+});

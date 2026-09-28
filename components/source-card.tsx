@@ -49,6 +49,13 @@ export function SourcePreview({ source }: { source: Source }) {
   return (
     <div className="source-preview">
       <p>{source.snapshot.scope}</p>
+      {source.snapshot.unchanged_from && (
+        <p className="investigation-muted">
+          This capture matches the latest successfully analysed source for this
+          question. Repeated extraction was skipped; the captured excerpts
+          remain inspectable.
+        </p>
+      )}
       {source.snapshot.excerpts.map((excerpt) => (
         <section key={excerpt.passage}>
           <h4>{excerpt.passage}</h4>

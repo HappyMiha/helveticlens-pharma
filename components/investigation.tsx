@@ -467,6 +467,18 @@ export function DossierInvestigation({
               ? connection || 'Waiting for the next saved checkpoint…'
               : value.stop_reason}
           </output>
+          {value.web_research_trigger && (
+            <aside className="monitoring-research-status">
+              <strong>Started by recurring public search</strong>
+              <p>
+                This run searches only the saved public question. Findings stay
+                within this dossier.
+              </p>
+              <a href={`#web-trigger-${value.web_research_trigger.id}`}>
+                View schedule and search measurements
+              </a>
+            </aside>
+          )}
           {value.monitoring_trigger && (
             <aside className="monitoring-research-status">
               <strong>
