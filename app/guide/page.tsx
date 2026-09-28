@@ -386,6 +386,13 @@ export default function Guide() {
                 comparisons to inspect the review history.
               </p>
               <p>
+                Open Review findings to inspect exact supporting and conflicting
+                quotations. An editor can accept, dismiss, or request more evidence
+                with an explanation. This updates the human claim ledger while the
+                original machine assessment stays intact. Changed evidence requires
+                review again; public explanations need your explicit consent.
+              </p>
+              <p>
                 Open Entity matches across research to compare two mentions with
                 the same cited identifier, issuer and jurisdiction. Suggestions
                 examine up to 120 recent eligible mentions; older saved decisions

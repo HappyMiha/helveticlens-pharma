@@ -1969,3 +1969,42 @@ test('entity reader fences errors, pagination and changed public/private revisio
   ])
     assert.equal(currentIdentities(...args), null);
 });
+
+const { ClaimReviewCard } = require(resolve('components/claim-review.tsx'));
+const { currentClaimReviews } = require(resolve('lib/claim-review.ts'));
+const reviewedFixture = {
+  id: 'claim', claim: { id: 'claim', investigation_id: 'run', statement: 'Fictional retained assertion', revision: 1, evidence_status: 'CONTESTED' },
+  evidence: [{ id: 'e', relation: 'CONTRADICTS', quote: '<script>Fictional contradiction</script>', locator: 'p1', valid: true,
+    source: { id: 's', title: 'Fictional evidence', url: 'javascript:unsafe()', sha256: 'a'.repeat(64), captured_at: '2026-09-29T00:00:00Z' } }],
+  comparisons: [], complete: true, reviewable: true, evidence_fingerprint: 'f'.repeat(64), limits: { citations: 100, comparisons: 20 },
+  revision: 1, decision: 'accepted', stale: false, human_status: 'ACCEPTED', finding_status: 'ACCEPTED', history_unavailable: false,
+  history: [{ revision: 1, decision: 'accepted', reason: 'Fictional reason', at: '2026-09-29T00:00:00Z', reviewer: 'Former dossier editor', evidence_fingerprint: 'f'.repeat(64), basis: { sources: [{ id: 's', sha256: 'a'.repeat(64) }], claims: [{ id: 'claim', revision: 1 }] } }],
+};
+test('human claim acceptance is separate from machine evidence and keeps exact contradictions safely escaped', () => {
+  const html = renderToStaticMarkup(React.createElement(ClaimReviewCard, { value: reviewedFixture, onOpen() {} }));
+  assert.match(html, /Accepted by an editor/);
+  assert.match(html, /Machine evidence assessment: contested/);
+  assert.match(html, /Contradicting evidence/);
+  assert.match(html, /Former dossier editor/);
+  assert.match(html, /&lt;script&gt;Fictional contradiction/);
+  assert.doesNotMatch(html, /href="javascript:|<script>/);
+});
+test('changed evidence removes current acceptance and inaccessible historical notes stay hidden', () => {
+  const html = renderToStaticMarkup(React.createElement(ClaimReviewCard, { value: { ...reviewedFixture, decision: null, stale: true, history: [], history_unavailable: true }, onOpen() {} }));
+  assert.match(html, /Evidence changed/);
+  assert.match(html, /earlier review explanations are hidden/);
+  assert.doesNotMatch(html, /Accepted by an editor|Fictional reason/);
+});
+test('partial claim evidence explains the review limit', () => {
+  const html = renderToStaticMarkup(React.createElement(ClaimReviewCard, { value: { ...reviewedFixture, complete: false, reviewable: false }, onOpen() {} }));
+  assert.match(html, /100 citations or 20 comparisons/);
+  assert.match(html, /partial review cannot be saved/);
+});
+test('claim review reader fences stale pages, publication revisions and errors', () => {
+  const page = { items: [], offset: 10, publication_revision: 4 };
+  assert.equal(currentClaimReviews(page, '', 10, 4), page);
+  assert.equal(currentClaimReviews(page, 'Forbidden', 10, 4), null);
+  assert.equal(currentClaimReviews(page, '', 0, 4), null);
+  assert.equal(currentClaimReviews(page, '', 10, 5), null);
+  assert.equal(currentClaimReviews(page, '', 10), null);
+});

@@ -1341,3 +1341,59 @@ test('entity identity read, controls and reviews use the existing product gatewa
   );
   assert.equal(calls, 3);
 });
+
+test('claim review read, controls and reviews use the existing product gateway with origin and route boundaries', async () => {
+  const base = `products/${product.id}/public-dossiers/11111111-1111-4111-8111-111111111111/claim-reviews`;
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    calls++;
+    assert.match(url, /\/claim-reviews/);
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=fixture');
+    return Response.json({ items: [] });
+  };
+  for (const suffix of ['', '/workspace', '/review']) {
+    const route = base + suffix;
+    const response = await proxy(
+      new Request(`https://product.test/api/${route}`, {
+        method: suffix === '/review' ? 'POST' : 'GET',
+        headers: {
+          origin: 'https://product.test',
+          cookie: 'helvetic_lens_session=fixture; unrelated=secret',
+        },
+        ...(suffix === '/review' ? { body: '{}' } : {}),
+      }),
+      context(route),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  assert.equal(calls, 3);
+  for (const route of [
+    base + '/export',
+    base + '/review/other',
+    base.replace(product.id, 'foreign'),
+  ])
+    assert.equal(
+      (
+        await proxy(
+          new Request(`https://product.test/api/${route}`),
+          context(route),
+        )
+      ).status,
+      404,
+    );
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${base}/review`, {
+          method: 'POST',
+          headers: { origin: 'https://foreign.test' },
+          body: '{}',
+        }),
+        context(base + '/review'),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(calls, 3);
+});

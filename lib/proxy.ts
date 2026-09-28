@@ -27,7 +27,7 @@ export async function proxy(
           'u',
         ).test(route)) ||
       new RegExp(
-        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-knowledge|public-dossiers(?:/[\\w-]{1,180}(?:/(?:entity-identities(?:/(?:workspace|review))?|evidence-changes(?:/(?:workspace|[0-9a-f-]{36}/review))?|files(?:/[0-9a-f-]{36})?|research(?:/[0-9a-f-]{36}(?:/(?:events|workspace|control))?)?|discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/(?:read|updates))?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|shared-dossiers|followed-dossiers|followed-private-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
+        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-knowledge|public-dossiers(?:/[\\w-]{1,180}(?:/(?:(?:entity-identities|claim-reviews)(?:/(?:workspace|review))?|evidence-changes(?:/(?:workspace|[0-9a-f-]{36}/review))?|files(?:/[0-9a-f-]{36})?|research(?:/[0-9a-f-]{36}(?:/(?:events|workspace|control))?)?|discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/(?:read|updates))?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|shared-dossiers|followed-dossiers|followed-private-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
       ).test(route)
     )
   )

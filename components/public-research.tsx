@@ -1,5 +1,6 @@
 'use client';
 import { EntityIdentities } from './entity-identity';
+import { ClaimReviews } from './claim-review';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
@@ -330,6 +331,21 @@ export function PublicResearchView({
           </section>
           <TransparencyPanel value={value} />
         </div>
+      )}
+      {scopeValid && (
+        <ClaimReviews
+          key={`claim-reviews:${publicationId}:${revision}:${identity?.user.id || ''}:${identity?.organization.id || ''}`}
+          base={`/products/${product.id}/public-dossiers/${publicationId}/claim-reviews`}
+          publicationRevision={revision}
+          accountKey={
+            identity
+              ? `${identity.user.id}:${identity.organization.id}`
+              : undefined
+          }
+          refreshToken={tick}
+          onOpen={select}
+          onChange={refresh}
+        />
       )}
       {scopeValid && (
         <EntityIdentities
