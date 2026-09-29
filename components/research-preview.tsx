@@ -15,6 +15,7 @@ import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import { researchRequest } from '@/lib/research-preview';
 import { dossierHref } from '@/lib/dossier-navigation';
+import { ResearchClaims } from './research-claims';
 import { ResearchSourceAccess } from './research-source-access';
 import type { Entry, ResearchPreview as Preview } from '@/lib/contracts';
 
@@ -41,7 +42,7 @@ export function ResearchPreview({
 }) {
   const root = `/products/${product.id}/dossiers/${encodeURIComponent(dossierId)}/discussion/${encodeURIComponent(questionId)}`;
   const { data, error, loading, refresh } = useResource<Preview>(
-    `${root}/research-preview`,
+    `${root}/research-preview?evidence_scope=claims_v1`,
   );
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -142,7 +143,7 @@ export function ResearchPreview({
               </p>
               <p className="muted">
                 Prepared {date(data.prepared_at)}. A changed question, goal,
-                source decision or selected excerpt requires a fresh preview.
+                source decision, claim review or selected excerpt requires a fresh preview.
               </p>
             </div>
             <details className="research-preview-context">
@@ -172,6 +173,10 @@ export function ResearchPreview({
                 relevant evidence.
               </p>
             </div>
+            {data.evidence_scope === 'claims_v1' && <>
+              <p className="muted">Up to {data.selection.claim_limit} complete claim groups from {data.selection.claim_candidates} candidates (limit {data.selection.claim_candidate_limit}), with at most {data.selection.claim_quote_limit} claim quotations. Current accepted claims come first within this selection. {data.selection.omitted_claim_groups} groups omitted because of selection, size or evidence validity. At least ten excerpt slots remain available for other saved evidence.</p>
+              <ResearchClaims claims={data.input.claims || []} sources={data.input.sources} />
+            </>}
             {!data.input.sources.length && (
               <div className="work-empty">
                 <h3>No saved excerpts available</h3>
@@ -189,7 +194,7 @@ export function ResearchPreview({
                     {source.id} · {source.title}
                   </h4>
                   <p className="muted">
-                    {source.kind.replaceAll('_', ' ')}
+                    {source.kind.replaceAll('_', ' ')}{source.relation ? ` · ${source.relation} · ${source.locator}` : ''}
                     {source.entry_kind ? ` · ${source.entry_kind}` : ''} · saved{' '}
                     {date(source.date)}
                   </p>

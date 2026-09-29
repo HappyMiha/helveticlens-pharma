@@ -90,3 +90,16 @@ test('missing or malformed previews never downgrade to unreviewed generation', (
     );
   }
 });
+
+test('claim input consent is explicit, versioned and retry keys never cross scopes', () => {
+  const legacy = { dossier_id: 'd', question_id: 'q', expected_revision: 1, evidence_fingerprint: 'a'.repeat(64) };
+  let count = 0;
+  const keys = new Map();
+  const key = () => String(++count);
+  const first = researchRequest(legacy, keys, key);
+  const claims = researchRequest({ ...legacy, evidence_scope: 'claims_v1' }, keys, key);
+  assert.equal(claims.evidence_scope, 'claims_v1');
+  assert.notEqual(first.request_key, claims.request_key);
+  assert.deepEqual(researchRequest({ ...legacy, evidence_scope: 'claims_v1' }, keys, key), claims);
+  assert.throws(() => researchRequest({ ...legacy, evidence_scope: 'future_scope' }, keys, key), /Refresh/);
+});

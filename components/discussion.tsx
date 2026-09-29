@@ -57,6 +57,7 @@ import { ActionDialog, WorkField } from './action-dialog';
 import { Discovery } from './discovery';
 import { ResearchFollowups } from './research-followups';
 import { SavedSearches } from './saved-searches';
+import { ResearchClaims } from './research-claims';
 import { ResearchPreview } from './research-preview';
 import { ResearchSourceAccess } from './research-source-access';
 
@@ -106,6 +107,13 @@ export function ResearchPost({
           {post.data.provider} · {post.data.model}
         </span>
       </div>
+      {post.data.claim_freshness && post.data.claim_freshness.status !== 'current' && (
+        <output className="banner">{post.data.claim_freshness.message}</output>
+      )}
+      {post.data.claims && <details>
+        <summary>Claim context and contradictions at generation</summary>
+        <ResearchClaims claims={post.data.claims} sources={post.data.sources || []} />
+      </details>}
       {post.data.findings?.length ? (
         post.data.findings.map((finding, i) => (
           <section key={i}>
@@ -119,7 +127,7 @@ export function ResearchPost({
                   <p>“{citation.quote}”</p>
                   <footer>
                     {source?.title || citation.source_id} ·{' '}
-                    {source?.kind.replaceAll('_', ' ')}
+                    {source?.kind.replaceAll('_', ' ')}{source?.relation ? ` · ${source.relation}` : ''}
                     {source?.url && safeSource(source.url) && (
                       <a href={source.url} target="_blank" rel="noreferrer">
                         Open source <ArrowUpRight size={13} />
@@ -151,7 +159,7 @@ export function ResearchPost({
           {post.data.unknowns?.map((gap, i) => (
             <li key={i}>
               <span>{gap}</span>
-              {onFollowup && (
+              {onFollowup && (!post.data.claim_freshness || post.data.claim_freshness.status === 'current') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -285,6 +293,7 @@ export function Discussion({
           dossierHref({ id: dossier.id, questionId: id }),
         );
       } catch (error) {
+        setSelected(null);
         setFailure((error as Error).message);
         setFailedQuestion({ id, offset: page });
         setOpeningQuestion(null);
@@ -309,6 +318,17 @@ export function Discussion({
     if (questionToOpen) void fetchQuestion(questionToOpen);
     return () => currentReads.cancel();
   }, [initialQuestionId, fetchQuestion]);
+  const claimQuestionId = selected && (selected.accepted?.data.evidence_scope === 'claims_v1' || selected.replies.some(post => post.data.evidence_scope === 'claims_v1')) ? selected.id : null;
+  useEffect(() => {
+    if (!claimQuestionId || openingQuestion || busy) return;
+    const refreshEvidence = () => { void fetchQuestion(claimQuestionId, postOffset); };
+    const timer = setInterval(refreshEvidence, 15000);
+    window.addEventListener('focus', refreshEvidence);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refreshEvidence);
+    };
+  }, [claimQuestionId, openingQuestion, busy, fetchQuestion, postOffset]);
   function returnToQuestions() {
     reads.current.cancel();
     setSelected(null);

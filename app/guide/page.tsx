@@ -849,6 +849,16 @@ export default function Guide() {
                 open gaps and suggested next searches.
               </p>
               <p>
+                Claim inputs include the editor’s current decision, the original
+                machine assessment and exact supporting or contradicting quotes.
+                Accepted claims come first within a limited candidate selection;
+                acceptance does not verify truth. Groups that cannot fit with all
+                their quotations are omitted and counted in the preview. A changed
+                claim or review requires a new note before accepting the answer.
+                A note whose supporting evidence becomes unavailable is hidden,
+                including its linked follow-ups and exported copies.
+              </p>
+              <p>
                 Use <strong>Read saved document</strong> on page citations to
                 inspect the recorded source and evidence revision, with capture
                 time and coverage. Older notes may have an unknown original

@@ -133,7 +133,17 @@ export interface ResearchDocumentTarget {
   expected_revision: number | null;
   revision_recorded: boolean;
 }
+export interface ResearchClaim {
+  id: string;
+  statement: string;
+  machine_status: string;
+  human_review: { revision: number; decision: string | null; stale: boolean; human_status: string };
+  citations: string[];
+  comparisons: { kind: string; status: string; statement: string; machine_status: string; citations: string[] }[];
+}
 export interface ResearchSource {
+  relation?: string;
+  locator?: string;
   document_id?: string;
   evidence_revision?: number;
   id: string;
@@ -147,6 +157,7 @@ export interface ResearchSource {
   sha256: string;
 }
 export interface ResearchPreview {
+  evidence_scope?: "saved" | "claims_v1";
   dossier_id: string;
   question_id: string;
   expected_revision: number;
@@ -160,6 +171,7 @@ export interface ResearchPreview {
     context: string;
     monitoring_goal: string | null;
     sources: ResearchSource[];
+    claims?: ResearchClaim[];
   };
   selection: {
     team_candidate_limit: number;
@@ -169,9 +181,17 @@ export interface ResearchPreview {
     snapshot_limit: number;
     excerpt_char_limit: number;
     excluded_urls: number;
+    claim_candidate_limit?: number;
+    claim_limit?: number;
+    claim_quote_limit?: number;
+    claim_candidates?: number;
+    omitted_claim_groups?: number;
   };
 }
 export interface EntryData {
+  evidence_scope?: "saved" | "claims_v1";
+  claims?: ResearchClaim[];
+  claim_freshness?: { status: 'current' | 'changed' | 'unavailable'; message: string; fingerprint: string };
   template_before?: Partial<import('./dossier-templates').DossierTemplate>;
   template_after?: Partial<import('./dossier-templates').DossierTemplate>;
   before?: Partial<import('./structured-context').ContextSnapshot>;

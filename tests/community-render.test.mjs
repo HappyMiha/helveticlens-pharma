@@ -2031,3 +2031,20 @@ for (const [decision, stale, expected] of [
   assert.match(html, /&lt;script&gt;/);
   if (stale) assert.doesNotMatch(html, /Accepted by an editor/);
 });
+
+const { ResearchClaims } = require(resolve('components/research-claims.tsx'));
+test('claim research displays human review separately and preserves dismissed contradictions and exact quotes', () => {
+  const claims = [{ id: 'claim', statement: 'Fictional <script>claim</script>', machine_status: 'CONTESTED',
+    human_review: { revision: 1, decision: 'accepted', stale: false, human_status: 'ACCEPTED' }, citations: ['S1'],
+    comparisons: [{ kind: 'CONTRADICTS', status: 'dismissed', statement: 'Different source interpretation', machine_status: 'SUPPORTED', citations: ['S2'] }] }];
+  const sources = [{ id: 'S1', kind: 'investigation_quote', relation: 'SUPPORTS', title: 'Retained source', locator: 'p1', text: 'Exact <script>quotation</script>' },
+    { id: 'S2', kind: 'investigation_quote', relation: 'CONTRADICTS', title: 'Counter source', locator: 'p2', text: 'Exact contrary quotation' }];
+  const html = renderToStaticMarkup(React.createElement(ResearchClaims, { claims, sources }));
+  for (const value of ['CONTESTED', 'accepted', 'CONTRADICTS', 'dismissed', 'Exact contrary quotation', 'not independent verification']) assert.ok(html.includes(value), value);
+  assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(!html.includes('<script>'));
+  claims[0].human_review.stale = true;
+  const stale = renderToStaticMarkup(React.createElement(ResearchClaims, { claims, sources }));
+  assert.ok(stale.includes('Changed — review again'));
+  assert.ok(!stale.includes('Human review: accepted'));
+});
