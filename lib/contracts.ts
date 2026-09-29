@@ -133,13 +133,45 @@ export interface ResearchDocumentTarget {
   expected_revision: number | null;
   revision_recorded: boolean;
 }
+export type ResearchScope = 'saved' | 'claims_v1' | 'claims_typed_v1';
+export interface ResearchEditorContext {
+  schema_version: 1;
+  status: 'current' | 'stale' | 'unreviewed';
+  interpretation: import('./claim-review').ClaimInterpretation | null;
+  source_assessments: {
+    domain_pack: string | null;
+    domain_pack_version: string | null;
+    items: {
+      citation_id: string;
+      source_record_id: string;
+      category: string;
+      label: string;
+      status: string;
+    }[];
+  };
+}
 export interface ResearchClaim {
+  editor_context?: ResearchEditorContext;
   id: string;
   statement: string;
   machine_status: string;
-  human_review: { revision: number; decision: string | null; stale: boolean; human_status: string };
+  human_review: {
+    revision: number;
+    decision: string | null;
+    stale: boolean;
+    human_status: string;
+  };
   citations: string[];
-  comparisons: { kind: string; status: string; statement: string; machine_status: string; citations: string[] }[];
+  comparisons: {
+    id?: string;
+    kind: string;
+    status: string;
+    statement: string;
+    machine_status: string;
+    citations: string[];
+    human_review?: ResearchClaim['human_review'];
+    editor_context?: ResearchEditorContext;
+  }[];
 }
 export interface ResearchSource {
   relation?: string;
@@ -157,7 +189,7 @@ export interface ResearchSource {
   sha256: string;
 }
 export interface ResearchPreview {
-  evidence_scope?: "saved" | "claims_v1";
+  evidence_scope?: ResearchScope;
   dossier_id: string;
   question_id: string;
   expected_revision: number;
@@ -189,9 +221,13 @@ export interface ResearchPreview {
   };
 }
 export interface EntryData {
-  evidence_scope?: "saved" | "claims_v1";
+  evidence_scope?: ResearchScope;
   claims?: ResearchClaim[];
-  claim_freshness?: { status: 'current' | 'changed' | 'unavailable'; message: string; fingerprint: string };
+  claim_freshness?: {
+    status: 'current' | 'changed' | 'unavailable';
+    message: string;
+    fingerprint: string;
+  };
   template_before?: Partial<import('./dossier-templates').DossierTemplate>;
   template_after?: Partial<import('./dossier-templates').DossierTemplate>;
   before?: Partial<import('./structured-context').ContextSnapshot>;

@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowUpRight, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from '@/components/ui/native-select';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +21,11 @@ import { researchRequest } from '@/lib/research-preview';
 import { dossierHref } from '@/lib/dossier-navigation';
 import { ResearchClaims } from './research-claims';
 import { ResearchSourceAccess } from './research-source-access';
-import type { Entry, ResearchPreview as Preview } from '@/lib/contracts';
+import type {
+  Entry,
+  ResearchPreview as Preview,
+  ResearchScope,
+} from '@/lib/contracts';
 
 function sourceUrl(value: string) {
   try {
@@ -41,8 +49,10 @@ export function ResearchPreview({
   onSaved: () => Promise<void>;
 }) {
   const root = `/products/${product.id}/dossiers/${encodeURIComponent(dossierId)}/discussion/${encodeURIComponent(questionId)}`;
+  const scopeId = useId();
+  const [scope, setScope] = useState<ResearchScope>('claims_v1');
   const { data, error, loading, refresh } = useResource<Preview>(
-    `${root}/research-preview?evidence_scope=claims_v1`,
+    `${root}/research-preview?evidence_scope=${scope}`,
   );
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,7 +82,7 @@ export function ResearchPreview({
       saving ||
       refreshing ||
       (!saved && !canEdit) ||
-      (!saved && (!data || error))
+      (!saved && (!data || error || data.evidence_scope !== scope))
     )
       return;
     setSaving(true);
@@ -114,6 +124,34 @@ export function ResearchPreview({
             runs only when you choose Generate below.
           </DialogDescription>
         </DialogHeader>
+        <label htmlFor={scopeId}>
+          Include in this AI request
+          <NativeSelect
+            id={scopeId}
+            className="w-full max-w-full"
+            value={scope}
+            disabled={waiting || !!saved}
+            onChange={(event) => {
+              setFailure('');
+              setScope(event.target.value as ResearchScope);
+            }}
+          >
+            <NativeSelectOption value="claims_v1">
+              Claims and saved excerpts
+            </NativeSelectOption>
+            <NativeSelectOption value="claims_typed_v1">
+              Also include editor context
+            </NativeSelectOption>
+          </NativeSelect>
+        </label>
+        {scope === 'claims_typed_v1' && (
+          <p className="muted">
+            The preview includes each claim’s current editor classification and
+            source roles. Reviewer explanations, identities and history are not
+            sent. Stale assessments are marked unknown. These are editorial
+            opinions; the generated note remains an AI draft.
+          </p>
+        )}
         {loading && <output>Preparing saved evidence…</output>}
         {error && (
           <div className="banner error" role="alert">
@@ -143,7 +181,8 @@ export function ResearchPreview({
               </p>
               <p className="muted">
                 Prepared {date(data.prepared_at)}. A changed question, goal,
-                source decision, claim review or selected excerpt requires a fresh preview.
+                source decision, claim review or selected excerpt requires a
+                fresh preview.
               </p>
             </div>
             <details className="research-preview-context">
@@ -173,10 +212,24 @@ export function ResearchPreview({
                 relevant evidence.
               </p>
             </div>
-            {data.evidence_scope === 'claims_v1' && <>
-              <p className="muted">Up to {data.selection.claim_limit} complete claim groups from {data.selection.claim_candidates} candidates (limit {data.selection.claim_candidate_limit}), with at most {data.selection.claim_quote_limit} claim quotations. Current accepted claims come first within this selection. {data.selection.omitted_claim_groups} groups omitted because of selection, size or evidence validity. At least ten excerpt slots remain available for other saved evidence.</p>
-              <ResearchClaims claims={data.input.claims || []} sources={data.input.sources} />
-            </>}
+            {data.input.claims && (
+              <>
+                <p className="muted">
+                  Up to {data.selection.claim_limit} complete claim groups from{' '}
+                  {data.selection.claim_candidates} candidates (limit{' '}
+                  {data.selection.claim_candidate_limit}), with at most{' '}
+                  {data.selection.claim_quote_limit} claim quotations. Current
+                  accepted claims come first within this selection.{' '}
+                  {data.selection.omitted_claim_groups} groups omitted because
+                  of selection, size or evidence validity. At least ten excerpt
+                  slots remain available for other saved evidence.
+                </p>
+                <ResearchClaims
+                  claims={data.input.claims || []}
+                  sources={data.input.sources}
+                />
+              </>
+            )}
             {!data.input.sources.length && (
               <div className="work-empty">
                 <h3>No saved excerpts available</h3>
@@ -194,9 +247,17 @@ export function ResearchPreview({
                     {source.id} · {source.title}
                   </h4>
                   <p className="muted">
-                    {source.kind.replaceAll('_', ' ')}{source.relation ? ` · ${source.relation} · ${source.locator}` : ''}
-                    {source.entry_kind ? ` · ${source.entry_kind}` : ''} · saved{' '}
+                    {source.kind.replaceAll('_', ' ')}
+                    {source.relation
+                      ? ` · ${source.relation} · ${source.locator}`
+                      : ''}
+                    {source.entry_kind ? ` · ${source.entry_kind}` : ''} ·{' '}
+                    {source.kind === 'investigation_quote'
+                      ? 'captured'
+                      : 'saved'}{' '}
                     {date(source.date)}
+                    {source.kind === 'investigation_quote' &&
+                      ' · Publication and effective dates are not established by this timestamp.'}
                   </p>
                   <p className="research-preview-excerpt">{source.text}</p>
                   <div className="research-preview-links">
@@ -249,7 +310,9 @@ export function ResearchPreview({
           )}
           <Button
             disabled={
-              waiting || (!saved && !canEdit) || (!saved && (!data || !!error))
+              waiting ||
+              (!saved && !canEdit) ||
+              (!saved && (!data || !!error || data.evidence_scope !== scope))
             }
             onClick={() => void generate()}
           >

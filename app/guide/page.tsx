@@ -903,6 +903,19 @@ export default function Guide() {
                 hidden, including its linked follow-ups and exported copies.
               </p>
               <p>
+                In the AI preview, choose{' '}
+                <strong>
+                  Also include editor context
+                </strong>{' '}
+                to include each claim’s reviewed type and source assessments.
+                Inspect the separate context for related claims. Missing or
+                stale assessments stay unknown; reviewer explanations,
+                identities and history are not sent. Source roles do not prove
+                authority or applicability, and generated findings remain AI
+                drafts. Capture dates do not establish publication or effective
+                dates.
+              </p>
+              <p>
                 Use <strong>Read saved document</strong> on page citations to
                 inspect the recorded source and evidence revision, with capture
                 time and coverage. Older notes may have an unknown original

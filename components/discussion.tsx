@@ -58,6 +58,7 @@ import { Discovery } from './discovery';
 import { ResearchFollowups } from './research-followups';
 import { SavedSearches } from './saved-searches';
 import { ResearchClaims } from './research-claims';
+import { hasClaimInputs } from '@/lib/research-preview';
 import { ResearchPreview } from './research-preview';
 import { ResearchSourceAccess } from './research-source-access';
 
@@ -107,13 +108,21 @@ export function ResearchPost({
           {post.data.provider} · {post.data.model}
         </span>
       </div>
-      {post.data.claim_freshness && post.data.claim_freshness.status !== 'current' && (
-        <output className="banner">{post.data.claim_freshness.message}</output>
+      {post.data.claim_freshness &&
+        post.data.claim_freshness.status !== 'current' && (
+          <output className="banner">
+            {post.data.claim_freshness.message}
+          </output>
+        )}
+      {post.data.claims && (
+        <details>
+          <summary>Claim context and contradictions at generation</summary>
+          <ResearchClaims
+            claims={post.data.claims}
+            sources={post.data.sources || []}
+          />
+        </details>
       )}
-      {post.data.claims && <details>
-        <summary>Claim context and contradictions at generation</summary>
-        <ResearchClaims claims={post.data.claims} sources={post.data.sources || []} />
-      </details>}
       {post.data.findings?.length ? (
         post.data.findings.map((finding, i) => (
           <section key={i}>
@@ -127,7 +136,8 @@ export function ResearchPost({
                   <p>“{citation.quote}”</p>
                   <footer>
                     {source?.title || citation.source_id} ·{' '}
-                    {source?.kind.replaceAll('_', ' ')}{source?.relation ? ` · ${source.relation}` : ''}
+                    {source?.kind.replaceAll('_', ' ')}
+                    {source?.relation ? ` · ${source.relation}` : ''}
                     {source?.url && safeSource(source.url) && (
                       <a href={source.url} target="_blank" rel="noreferrer">
                         Open source <ArrowUpRight size={13} />
@@ -159,16 +169,18 @@ export function ResearchPost({
           {post.data.unknowns?.map((gap, i) => (
             <li key={i}>
               <span>{gap}</span>
-              {onFollowup && (!post.data.claim_freshness || post.data.claim_freshness.status === 'current') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => onFollowup(post, i)}
-                >
-                  <ClipboardList size={14} /> Create follow-up
-                </Button>
-              )}
+              {onFollowup &&
+                (!post.data.claim_freshness ||
+                  post.data.claim_freshness.status === 'current') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => onFollowup(post, i)}
+                  >
+                    <ClipboardList size={14} /> Create follow-up
+                  </Button>
+                )}
             </li>
           ))}
         </ul>
@@ -318,10 +330,17 @@ export function Discussion({
     if (questionToOpen) void fetchQuestion(questionToOpen);
     return () => currentReads.cancel();
   }, [initialQuestionId, fetchQuestion]);
-  const claimQuestionId = selected && (selected.accepted?.data.evidence_scope === 'claims_v1' || selected.replies.some(post => post.data.evidence_scope === 'claims_v1')) ? selected.id : null;
+  const claimQuestionId =
+    selected &&
+    (hasClaimInputs(selected.accepted?.data.evidence_scope) ||
+      selected.replies.some((post) => hasClaimInputs(post.data.evidence_scope)))
+      ? selected.id
+      : null;
   useEffect(() => {
     if (!claimQuestionId || openingQuestion || busy) return;
-    const refreshEvidence = () => { void fetchQuestion(claimQuestionId, postOffset); };
+    const refreshEvidence = () => {
+      void fetchQuestion(claimQuestionId, postOffset);
+    };
     const timer = setInterval(refreshEvidence, 15000);
     window.addEventListener('focus', refreshEvidence);
     return () => {

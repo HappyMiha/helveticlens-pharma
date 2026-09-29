@@ -1973,15 +1973,63 @@ test('entity reader fences errors, pagination and changed public/private revisio
 const { ClaimReviewCard } = require(resolve('components/claim-review.tsx'));
 const { currentClaimReviews } = require(resolve('lib/claim-review.ts'));
 const reviewedFixture = {
-  id: 'claim', claim: { id: 'claim', investigation_id: 'run', statement: 'Fictional retained assertion', revision: 1, evidence_status: 'CONTESTED' },
-  evidence: [{ id: 'e', relation: 'CONTRADICTS', quote: '<script>Fictional contradiction</script>', locator: 'p1', valid: true,
-    source: { id: 's', title: 'Fictional evidence', url: 'javascript:unsafe()', sha256: 'a'.repeat(64), captured_at: '2026-09-29T00:00:00Z' } }],
-  comparisons: [], complete: true, reviewable: true, evidence_fingerprint: 'f'.repeat(64), limits: { citations: 100, comparisons: 20 },
-  revision: 1, decision: 'accepted', stale: false, human_status: 'ACCEPTED', finding_status: 'ACCEPTED', history_unavailable: false,
-  history: [{ revision: 1, decision: 'accepted', reason: 'Fictional reason', at: '2026-09-29T00:00:00Z', reviewer: 'Former dossier editor', evidence_fingerprint: 'f'.repeat(64), basis: { sources: [{ id: 's', sha256: 'a'.repeat(64) }], claims: [{ id: 'claim', revision: 1 }] } }],
+  id: 'claim',
+  claim: {
+    id: 'claim',
+    investigation_id: 'run',
+    statement: 'Fictional retained assertion',
+    revision: 1,
+    evidence_status: 'CONTESTED',
+  },
+  evidence: [
+    {
+      id: 'e',
+      relation: 'CONTRADICTS',
+      quote: '<script>Fictional contradiction</script>',
+      locator: 'p1',
+      valid: true,
+      source: {
+        id: 's',
+        title: 'Fictional evidence',
+        url: 'javascript:unsafe()',
+        sha256: 'a'.repeat(64),
+        captured_at: '2026-09-29T00:00:00Z',
+      },
+    },
+  ],
+  comparisons: [],
+  complete: true,
+  reviewable: true,
+  evidence_fingerprint: 'f'.repeat(64),
+  limits: { citations: 100, comparisons: 20 },
+  revision: 1,
+  decision: 'accepted',
+  stale: false,
+  human_status: 'ACCEPTED',
+  finding_status: 'ACCEPTED',
+  history_unavailable: false,
+  history: [
+    {
+      revision: 1,
+      decision: 'accepted',
+      reason: 'Fictional reason',
+      at: '2026-09-29T00:00:00Z',
+      reviewer: 'Former dossier editor',
+      evidence_fingerprint: 'f'.repeat(64),
+      basis: {
+        sources: [{ id: 's', sha256: 'a'.repeat(64) }],
+        claims: [{ id: 'claim', revision: 1 }],
+      },
+    },
+  ],
 };
 test('human claim acceptance is separate from machine evidence and keeps exact contradictions safely escaped', () => {
-  const html = renderToStaticMarkup(React.createElement(ClaimReviewCard, { value: reviewedFixture, onOpen() {} }));
+  const html = renderToStaticMarkup(
+    React.createElement(ClaimReviewCard, {
+      value: reviewedFixture,
+      onOpen() {},
+    }),
+  );
   assert.match(html, /Accepted by an editor/);
   assert.match(html, /Machine evidence assessment: contested/);
   assert.match(html, /Contradicting evidence/);
@@ -1990,13 +2038,29 @@ test('human claim acceptance is separate from machine evidence and keeps exact c
   assert.doesNotMatch(html, /href="javascript:|<script>/);
 });
 test('changed evidence removes current acceptance and inaccessible historical notes stay hidden', () => {
-  const html = renderToStaticMarkup(React.createElement(ClaimReviewCard, { value: { ...reviewedFixture, decision: null, stale: true, history: [], history_unavailable: true }, onOpen() {} }));
+  const html = renderToStaticMarkup(
+    React.createElement(ClaimReviewCard, {
+      value: {
+        ...reviewedFixture,
+        decision: null,
+        stale: true,
+        history: [],
+        history_unavailable: true,
+      },
+      onOpen() {},
+    }),
+  );
   assert.match(html, /Evidence changed/);
   assert.match(html, /earlier review explanations are hidden/);
   assert.doesNotMatch(html, /Accepted by an editor|Fictional reason/);
 });
 test('partial claim evidence explains the review limit', () => {
-  const html = renderToStaticMarkup(React.createElement(ClaimReviewCard, { value: { ...reviewedFixture, complete: false, reviewable: false }, onOpen() {} }));
+  const html = renderToStaticMarkup(
+    React.createElement(ClaimReviewCard, {
+      value: { ...reviewedFixture, complete: false, reviewable: false },
+      onOpen() {},
+    }),
+  );
   assert.match(html, /100 citations or 20 comparisons/);
   assert.match(html, /partial review cannot be saved/);
 });
@@ -2015,36 +2079,210 @@ for (const [decision, stale, expected] of [
   ['needs_more_evidence', false, 'More evidence requested'],
   [null, false, 'Not reviewed'],
   ['accepted', true, 'Evidence changed — review again'],
-]) test(`search keeps human ${decision}/${stale} separate from contested source evidence`, () => {
-  const html = renderToStaticMarkup(React.createElement(EvidenceSearchResult, {
-    item: { ...evidenceItem, citation_relation: 'CONTRADICTS', human_review: {
-      revision: 1, decision, stale, human_status: stale ? 'UNRESOLVED' : 'ACCEPTED',
-      complete: false, reviewable: false, has_conflicting_evidence: true,
-    } }, onOpen() {},
-  }));
-  assert.ok(html.includes(expected));
-  assert.match(html, /Finding · Contested|Finding · contested/);
-  assert.match(html, /Citation relationship:.*Contradicts|Citation relationship:.*contradicts/);
-  assert.match(html, /Conflicting evidence is recorded/);
-  assert.match(html, /Review context is incomplete/);
-  assert.match(html, /&lt;img/);
-  assert.match(html, /&lt;script&gt;/);
-  if (stale) assert.doesNotMatch(html, /Accepted by an editor/);
-});
+])
+  test(`search keeps human ${decision}/${stale} separate from contested source evidence`, () => {
+    const html = renderToStaticMarkup(
+      React.createElement(EvidenceSearchResult, {
+        item: {
+          ...evidenceItem,
+          citation_relation: 'CONTRADICTS',
+          human_review: {
+            revision: 1,
+            decision,
+            stale,
+            human_status: stale ? 'UNRESOLVED' : 'ACCEPTED',
+            complete: false,
+            reviewable: false,
+            has_conflicting_evidence: true,
+          },
+        },
+        onOpen() {},
+      }),
+    );
+    assert.ok(html.includes(expected));
+    assert.match(html, /Finding · Contested|Finding · contested/);
+    assert.match(
+      html,
+      /Citation relationship:.*Contradicts|Citation relationship:.*contradicts/,
+    );
+    assert.match(html, /Conflicting evidence is recorded/);
+    assert.match(html, /Review context is incomplete/);
+    assert.match(html, /&lt;img/);
+    assert.match(html, /&lt;script&gt;/);
+    if (stale) assert.doesNotMatch(html, /Accepted by an editor/);
+  });
 
 const { ResearchClaims } = require(resolve('components/research-claims.tsx'));
 test('claim research displays human review separately and preserves dismissed contradictions and exact quotes', () => {
-  const claims = [{ id: 'claim', statement: 'Fictional <script>claim</script>', machine_status: 'CONTESTED',
-    human_review: { revision: 1, decision: 'accepted', stale: false, human_status: 'ACCEPTED' }, citations: ['S1'],
-    comparisons: [{ kind: 'CONTRADICTS', status: 'dismissed', statement: 'Different source interpretation', machine_status: 'SUPPORTED', citations: ['S2'] }] }];
-  const sources = [{ id: 'S1', kind: 'investigation_quote', relation: 'SUPPORTS', title: 'Retained source', locator: 'p1', text: 'Exact <script>quotation</script>' },
-    { id: 'S2', kind: 'investigation_quote', relation: 'CONTRADICTS', title: 'Counter source', locator: 'p2', text: 'Exact contrary quotation' }];
-  const html = renderToStaticMarkup(React.createElement(ResearchClaims, { claims, sources }));
-  for (const value of ['CONTESTED', 'accepted', 'CONTRADICTS', 'dismissed', 'Exact contrary quotation', 'not independent verification']) assert.ok(html.includes(value), value);
+  const claims = [
+    {
+      id: 'claim',
+      statement: 'Fictional <script>claim</script>',
+      machine_status: 'CONTESTED',
+      human_review: {
+        revision: 1,
+        decision: 'accepted',
+        stale: false,
+        human_status: 'ACCEPTED',
+      },
+      citations: ['S1'],
+      comparisons: [
+        {
+          kind: 'CONTRADICTS',
+          status: 'dismissed',
+          statement: 'Different source interpretation',
+          machine_status: 'SUPPORTED',
+          citations: ['S2'],
+        },
+      ],
+    },
+  ];
+  const sources = [
+    {
+      id: 'S1',
+      kind: 'investigation_quote',
+      relation: 'SUPPORTS',
+      title: 'Retained source',
+      locator: 'p1',
+      text: 'Exact <script>quotation</script>',
+    },
+    {
+      id: 'S2',
+      kind: 'investigation_quote',
+      relation: 'CONTRADICTS',
+      title: 'Counter source',
+      locator: 'p2',
+      text: 'Exact contrary quotation',
+    },
+  ];
+  const html = renderToStaticMarkup(
+    React.createElement(ResearchClaims, { claims, sources }),
+  );
+  for (const value of [
+    'CONTESTED',
+    'accepted',
+    'CONTRADICTS',
+    'dismissed',
+    'Exact contrary quotation',
+    'not independent verification',
+  ])
+    assert.ok(html.includes(value), value);
   assert.ok(html.includes('&lt;script&gt;'));
   assert.ok(!html.includes('<script>'));
   claims[0].human_review.stale = true;
-  const stale = renderToStaticMarkup(React.createElement(ResearchClaims, { claims, sources }));
+  const stale = renderToStaticMarkup(
+    React.createElement(ResearchClaims, { claims, sources }),
+  );
   assert.ok(stale.includes('Changed — review again'));
   assert.ok(!stale.includes('Human review: accepted'));
+});
+
+test('reviewed synthesis keeps each claim classification and citation role distinct and escapes editor labels', () => {
+  const context = (kind, label, role) => ({
+    schema_version: 1,
+    status: 'current',
+    interpretation: {
+      kind,
+      kind_label: kind,
+      label,
+      claim_type: 'fixture',
+      domain_pack: 'LegalPack',
+      domain_pack_version: '1.4.0',
+    },
+    source_assessments: {
+      domain_pack: 'LegalPack',
+      domain_pack_version: '1.4.0',
+      items: [
+        {
+          citation_id: 'S1',
+          source_record_id: 'capture',
+          category: 'fixture',
+          label: role,
+          status: 'current',
+        },
+      ],
+    },
+  });
+  const claims = [
+    {
+      id: 'own',
+      statement: 'Own statement',
+      machine_status: 'CONTESTED',
+      human_review: {
+        revision: 1,
+        decision: 'accepted',
+        stale: false,
+        human_status: 'ACCEPTED',
+      },
+      citations: ['S1'],
+      editor_context: context(
+        'SOURCE_STATEMENT',
+        'Court holding',
+        'Primary binding material',
+      ),
+      comparisons: [
+        {
+          id: 'related',
+          kind: 'CONTRADICTS',
+          status: 'active',
+          statement: 'Related statement',
+          machine_status: 'SUPPORTED',
+          citations: ['S1'],
+          human_review: {
+            revision: 1,
+            decision: 'needs_more_evidence',
+            stale: false,
+            human_status: 'UNRESOLVED',
+          },
+          editor_context: context(
+            'AI_INTERPRETATION',
+            '<script>Interpretation</script>',
+            'User document',
+          ),
+        },
+      ],
+    },
+  ];
+  const html = renderToStaticMarkup(
+    React.createElement(ResearchClaims, { claims, sources: [] }),
+  );
+  assert.ok(
+    html.includes('Court holding') && html.includes('AI_INTERPRETATION'),
+  );
+  assert.ok(
+    html.includes('Primary binding material') && html.includes('User document'),
+  );
+  assert.ok(
+    html.includes('&lt;script&gt;Interpretation&lt;/script&gt;') &&
+      !html.includes('<script>'),
+  );
+  assert.equal((html.match(/Editor context supplied to AI/g) || []).length, 2);
+  assert.ok(html.includes('needs more evidence'));
+  claims[0].editor_context = {
+    schema_version: 1,
+    status: 'stale',
+    interpretation: null,
+    source_assessments: {
+      domain_pack: null,
+      domain_pack_version: null,
+      items: [
+        {
+          citation_id: 'S1',
+          source_record_id: 'capture',
+          category: 'UNASSESSED',
+          label: 'Not assessed',
+          status: 'stale',
+        },
+      ],
+    },
+  };
+  const stale = renderToStaticMarkup(
+    React.createElement(ResearchClaims, { claims, sources: [] }),
+  );
+  assert.ok(stale.includes('assessments unknown'));
+  assert.ok(
+    !stale.includes('Court holding') &&
+      !stale.includes('Primary binding material'),
+  );
+  assert.ok(stale.includes('User document'));
 });
