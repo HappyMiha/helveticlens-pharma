@@ -63,7 +63,45 @@ export type QuestionAssessment = {
   }[];
   limitations: string[];
 };
+export type ResearchScope =
+  | {
+      contract: 'observed-research-scope/v1';
+      status: 'unknown' | 'evidence_changed';
+    }
+  | {
+      contract: 'observed-research-scope/v1';
+      status: 'ready';
+      activity: string;
+      searches: ResearchAttempts;
+      indexes: {
+        completed: number;
+        unavailable: number;
+        unknown_searches: number;
+      };
+      reads: ResearchAttempts;
+      candidates: {
+        retrieved: number;
+        not_evaluated: number;
+        evaluation_unavailable: number;
+        selected_not_read: number;
+      };
+      material: {
+        sources: number;
+        passages: number;
+        truncated_sources: number;
+        unknown_reader_scope: number;
+      };
+      questions: { open: number; not_started: number };
+      budget_stops: string[];
+    };
+type ResearchAttempts = {
+  completed: number;
+  unavailable: number;
+  interrupted: number;
+  running: number;
+};
 export type ExplorationState = {
+  research_scope?: ResearchScope;
   capture_progress?: CaptureProgress | null;
   next_check?: SavedCheck | null;
   continuation?:

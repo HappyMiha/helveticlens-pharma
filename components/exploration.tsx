@@ -563,6 +563,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         <ContinuedCheck state={state} />
         <EarlyOrientation state={state} />
         <InterpretationChanges state={state} />
+        <ObservedResearchScope state={state} />
       </>
     );
   const background = (
@@ -613,6 +614,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
       <>
         <ContinuedCheck state={state} />
         {background}
+        <ObservedResearchScope state={state} />
       </>
     );
   const label = {
@@ -669,12 +671,129 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           An interpretation of the cited material, still open to review.
         </p>
       </section>
+      <ObservedResearchScope state={state} />
       <details className="dossier-secondary">
         <summary>Research context & earlier understanding</summary>
         <ContinuedCheck state={state} />
         {background}
       </details>
     </>
+  );
+}
+
+function ObservedResearchScope({ state }: { state: ExplorationState }) {
+  const scope = state.research_scope;
+  if (
+    scope?.status === 'evidence_changed' ||
+    state.status === 'evidence_changed'
+  )
+    return (
+      <p className="muted">
+        The research scope is hidden because supporting access or evidence
+        changed.
+      </p>
+    );
+  if (!scope || scope.status === 'unknown')
+    return (
+      <p className="muted">
+        This earlier episode has no reliable record of its research scope. Its
+        coverage is unknown.
+      </p>
+    );
+  if (scope.status !== 'ready') return null;
+  const { material, searches, reads, candidates, questions, indexes } = scope;
+  if (scope.activity === 'queued' && !material.sources) return null;
+  const gaps =
+    searches.unavailable +
+    searches.interrupted +
+    reads.unavailable +
+    reads.interrupted;
+  const count = (n: number, singular: string, plural = singular + 's') =>
+    `${n} ${n === 1 ? singular : plural}`;
+  const budgets: Record<string, string> = {
+    search_requests: 'search budget',
+    source_fetches: 'source reading budget',
+    model_calls: 'analysis budget',
+    decision_calls: 'source selection budget',
+    active_seconds: 'time budget',
+    branch_budget: 'number of research directions',
+    depth_budget: 'depth of follow-up research',
+  };
+  return (
+    <div aria-label="Observed research scope">
+      <p className="muted">
+        {material.passages
+          ? `${count(material.passages, 'saved passage')} from ${count(material.sources, 'captured source')}.`
+          : 'No public source passages captured in this episode.'}{' '}
+        {gaps > 0 &&
+          `${count(gaps, 'search or reading attempt')} did not complete. `}
+        {indexes.unavailable > 0 &&
+          `${count(indexes.unavailable, 'search index request')} unavailable. `}
+        {questions.open > 0 &&
+          `${count(questions.open, 'research question')} still open. `}
+        Selected passages; wider coverage remains unverified.
+      </p>
+      <details className="dossier-secondary">
+        <summary>What was checked and what remains</summary>
+        <ul>
+          <li>
+            Search: {searches.completed} completed, {searches.unavailable}{' '}
+            unavailable, {searches.interrupted} interrupted, {searches.running}{' '}
+            in progress.
+          </li>
+          <li>
+            Search indexes: {indexes.completed} completed requests,{' '}
+            {indexes.unavailable} unavailable.{' '}
+            {indexes.unknown_searches > 0 &&
+              `Index outcomes were not recorded for ${count(indexes.unknown_searches, 'search step')}.`}
+          </li>
+          <li>
+            Source reading: {reads.completed} completed, {reads.unavailable}{' '}
+            unavailable, {reads.interrupted} interrupted, {reads.running} in
+            progress. A completed reading captures selected passages, not the
+            whole document.
+          </li>
+          <li>
+            {count(candidates.retrieved, 'candidate appearance')} in search
+            results; {candidates.not_evaluated} not evaluated,{' '}
+            {candidates.evaluation_unavailable} without a usable relevance
+            decision, {candidates.selected_not_read} selected with reading not yet started.
+            Repeated appearances can refer to the same source.
+          </li>
+          <li>
+            {count(questions.open, 'question')} open or unresolved;{' '}
+            {questions.not_started} not yet started. Other questions may have
+            evidence without a settled answer.
+          </li>
+          {material.truncated_sources > 0 && (
+            <li>
+              {count(material.truncated_sources, 'capture')} used only the
+              beginning of the extracted text.
+            </li>
+          )}
+          {material.unknown_reader_scope > 0 && (
+            <li>
+              Reading limits were not recorded for{' '}
+              {count(material.unknown_reader_scope, 'capture')}.
+            </li>
+          )}
+          {scope.budget_stops.length > 0 && (
+            <li>
+              Work remains outside this episode’s{' '}
+              {scope.budget_stops
+                .map((key) => budgets[key])
+                .filter(Boolean)
+                .join(', ')}
+              .
+            </li>
+          )}
+        </ul>
+        <p className="muted">
+          Recorded public research work only. These counts do not establish
+          independent sources or answer quality.
+        </p>
+      </details>
+    </div>
   );
 }
 

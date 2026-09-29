@@ -913,3 +913,134 @@ test('invalidated assessment is absent while retained public passages remain rea
   assert.ok(text(tree).includes('The source passage is here.'));
   await act(async () => tree.unmount());
 });
+
+for (const kind of ['brief', 'no_evidence', 'assessment']) {
+  test(`observed scope stays visible with ${kind}; details folded and history read-only`, async () => {
+    const value = episode();
+    value.exploration.research_scope = {
+      contract: 'observed-research-scope/v1',
+      status: 'ready',
+      activity: 'paused',
+      searches: { completed: 2, unavailable: 1, interrupted: 0, running: 0 },
+      indexes: { completed: 2, unavailable: 1, unknown_searches: 1 },
+      reads: { completed: 2, unavailable: 1, interrupted: 1, running: 0 },
+      material: {
+        sources: 2,
+        passages: 5,
+        truncated_sources: 1,
+        unknown_reader_scope: 1,
+      },
+      candidates: {
+        retrieved: 10,
+        not_evaluated: 3,
+        evaluation_unavailable: 1,
+        selected_not_read: 2,
+      },
+      questions: { open: 2, not_started: 1 },
+      budget_stops: ['source_fetches'],
+    };
+    if (kind === 'no_evidence') {
+      value.exploration.status = 'no_evidence';
+      value.exploration.briefing = null;
+      value.exploration.research_scope.material = {
+        sources: 0,
+        passages: 0,
+        truncated_sources: 0,
+        unknown_reader_scope: 0,
+      };
+    }
+    if (kind === 'assessment')
+      value.exploration.briefing.assessment = {
+        status: 'partial',
+        question: 'A selected question',
+        points: [],
+        limitations: ['Other periods remain unchecked.'],
+      };
+    let writes = 0;
+    serve(value, () => {
+      writes++;
+      throw new Error('Reading must not write');
+    });
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Observed research scope' })
+        .length,
+      1,
+    );
+    assert.ok(
+      text(tree).includes(
+        kind === 'no_evidence'
+          ? 'No public source passages captured'
+          : '5 saved passages',
+      ),
+    );
+    assert.ok(text(tree).includes('3 search or reading attempts'));
+    assert.ok(text(tree).includes('1 search index request unavailable'));
+    assert.ok(text(tree).includes('2 research questions still open'));
+    const details = tree.root
+      .findAllByType('details')
+      .find((n) =>
+        n
+          .findAllByType('summary')
+          .some(
+            (s) => s.props.children === 'What was checked and what remains',
+          ),
+      );
+    assert.ok(details && !details.props.open);
+    assert.ok(text(tree).includes('source reading budget'));
+    assert.ok(text(tree).includes('wider coverage remains unverified'));
+    assert.equal(writes, 0);
+    await act(async () => tree.unmount());
+    const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Observed research scope' })
+        .length,
+      1,
+    );
+    assert.equal(tree.root.findAllByType('button').length, 0);
+    await act(async () => tree.unmount());
+  });
+}
+
+for (const status of ['unknown', 'evidence_changed']) {
+  test(`scope ${status} never invents or retains operation counts`, async () => {
+    const value = episode();
+    value.exploration.research_scope = {
+      contract: 'observed-research-scope/v1',
+      status,
+    };
+    if (status === 'evidence_changed') {
+      value.exploration.status = status;
+      value.exploration.briefing = null;
+    }
+    serve(value, () => {
+      throw new Error('No automatic research');
+    });
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.ok(
+      text(tree).includes(
+        status === 'unknown'
+          ? 'coverage is unknown'
+          : 'research scope is hidden',
+      ),
+    );
+    assert.ok(!text(tree).includes('What was checked and what remains'));
+    assert.ok(!text(tree).includes('0 completed'));
+    await act(async () => tree.unmount());
+  });
+}

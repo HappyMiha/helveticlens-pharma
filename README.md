@@ -455,3 +455,11 @@ exact selected question. Supporting, contrary and contextual passages remain
 expandable, with limitations visible; earlier understanding and general findings
 remain in closed research context. Capture counts never establish an answer.
 Legacy briefs, history, source invalidation and explicit monitoring stay intact.
+
+## Observed research scope — 1.57
+
+The existing research reader separates saved passages, incomplete search/reading,
+unexamined candidates and open questions. Details stay folded alongside the
+conclusion. Recorded work does not establish exhaustive coverage or answer quality.
+Old episodes retain unknown scope; revoked evidence hides dependent scope.
+No extra inference or monitoring starts when reading this summary.
