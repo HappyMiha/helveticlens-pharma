@@ -206,7 +206,9 @@ function ExplorationEpisode({
   const active = page && ['queued', 'running'].includes(page.status);
   return (
     <section className="exploration" aria-label="Developing your research">
-      <p className="chapter-kicker">Research in progress</p>
+      <p className="chapter-kicker">
+        {active ? 'Research in progress' : 'Research checkpoint'}
+      </p>
       <h2>
         {brief
           ? 'What the first evidence suggests'
@@ -255,7 +257,9 @@ function ExplorationEpisode({
                   disabled={busy}
                   onClick={() => void control('pause')}
                 >
-                  Pause research
+                  {state.orientation?.status === 'ready'
+                    ? 'Pause to change direction'
+                    : 'Pause research'}
                 </Button>
               )}
               {page.status === 'paused' && state.status === 'exploring' && (
@@ -284,25 +288,27 @@ function ExplorationEpisode({
                   : 'There is not enough validated evidence for a briefing yet. Saved passages remain below; you can correct the question and try another bounded episode.'}
             </output>
           )}
-          {brief && <ExplorationBrief state={state} />}
-          {!brief && !!state.sources.length && (
-            <section>
-              <h3>Read so far</h3>
-              {state.sources.slice(0, 3).map((source) => (
-                <article key={source.id}>
-                  <span className="content-origin">
-                    Source passage · not an AI conclusion
-                  </span>
-                  <blockquote>
-                    {source.excerpts[0]?.text.slice(0, 600)}
-                  </blockquote>
-                  <a href={source.url} target="_blank" rel="noreferrer">
-                    {source.title}
-                  </a>
-                </article>
-              ))}
-            </section>
-          )}
+          <ExplorationBrief state={state} />
+          {!brief &&
+            state.orientation?.status !== 'ready' &&
+            !!state.sources.length && (
+              <section>
+                <h3>Read so far</h3>
+                {state.sources.slice(0, 3).map((source) => (
+                  <article key={source.id}>
+                    <span className="content-origin">
+                      Source passage · not an AI conclusion
+                    </span>
+                    <blockquote>
+                      {source.excerpts[0]?.text.slice(0, 600)}
+                    </blockquote>
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}
+                    </a>
+                  </article>
+                ))}
+              </section>
+            )}
           {!active &&
             (state.status !== 'exploring' ||
               page.status === 'paused' ||
@@ -391,7 +397,9 @@ function ExplorationEpisode({
               {page.branches
                 .filter(
                   (branch) =>
-                    !['plan', 'brief', 'compare'].includes(branch.phase),
+                    !['plan', 'brief', 'orient', 'compare'].includes(
+                      branch.phase,
+                    ),
                 )
                 .map((branch) => (
                   <li key={branch.id}>
@@ -508,7 +516,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
       </details>
     );
   }
-  if (!brief) return null;
+  if (!brief) return <EarlyOrientation state={state} />;
   return (
     <>
       <section className="exploration-understanding">
@@ -538,6 +546,96 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           ))}
         </ul>
       </section>
+      {state.orientation && (
+        <details className="dossier-secondary">
+          <summary>Earlier working interpretation</summary>
+          <p className="muted">
+            This is the earlier checkpoint, before the completed briefing above.
+            It may have been revised by later evidence.
+          </p>
+          <EarlyOrientation state={state} historical />
+        </details>
+      )}
     </>
+  );
+}
+
+function EarlyOrientation({
+  state,
+  historical = false,
+}: {
+  state: ExplorationState;
+  historical?: boolean;
+}) {
+  const orientation = state.orientation;
+  if (!orientation || orientation.status === 'scheduled') return null;
+  const brief = orientation.briefing;
+  if (orientation.status !== 'ready' || !brief)
+    return (
+      <p className="muted">
+        {orientation.status === 'evidence_changed'
+          ? 'An earlier working interpretation is hidden because its supporting sources changed.'
+          : 'No validated early interpretation was saved. Read the captured passages below; the research journal records any remaining work.'}
+      </p>
+    );
+  return (
+    <section
+      className="exploration-orientation"
+      aria-label="Early source-backed understanding"
+    >
+      <span className="content-origin">AI · early working interpretation</span>
+      <h3>
+        {historical
+          ? 'How the question first appeared'
+          : 'A first reading of your question'}
+      </h3>
+      <p>
+        These possible meanings come from the passages read so far. They are
+        tentative; your original question stays unchanged.
+      </p>
+      {orientation.saved_at && (
+        <p className="muted">Saved {date(orientation.saved_at)}</p>
+      )}
+      <div className="exploration-findings">
+        {brief.interpretations.map((item, index) => {
+          const source = state.sources.find(
+            (source) => source.id === item.source_id,
+          );
+          return (
+            <article key={index}>
+              <span className="content-origin">
+                {item.signal === 'questioned'
+                  ? 'Evidence questions this interpretation'
+                  : 'Possible meaning · not confirmed'}
+              </span>
+              <p>
+                <strong>{item.meaning}</strong>
+              </p>
+              <p>{item.why}</p>
+              {source && (
+                <details className="exploration-citation">
+                  <summary>Read the passage behind this interpretation</summary>
+                  <blockquote>{item.quote}</blockquote>
+                  <a href={source.url} target="_blank" rel="noreferrer">
+                    {source.title}
+                  </a>
+                  <p className="muted">
+                    Captured {date(source.captured_at)} · {item.locator}
+                  </p>
+                </details>
+              )}
+            </article>
+          );
+        })}
+      </div>
+      <p>
+        <strong>Still to establish</strong>
+      </p>
+      <ul>
+        {brief.uncertainties.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </section>
   );
 }

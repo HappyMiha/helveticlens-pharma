@@ -12,6 +12,19 @@ export type ExplorationState = {
     | 'evidence_changed';
   revision: number;
   continued_by?: string;
+  orientation?: {
+    status: 'scheduled' | 'ready' | 'unavailable' | 'evidence_changed';
+    saved_at?: string;
+    revision?: number;
+    briefing: null | {
+      interpretations: (ExplorationCitation & {
+        meaning: string;
+        why: string;
+        signal: 'possible' | 'questioned';
+      })[];
+      uncertainties: string[];
+    };
+  };
   briefing: null | {
     understanding: string;
     findings: (ExplorationCitation & {

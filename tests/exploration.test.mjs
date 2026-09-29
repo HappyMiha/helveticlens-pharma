@@ -273,3 +273,186 @@ test('early captured passages and a real pause are available before a briefing',
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+const orientation = () => ({
+  status: 'ready',
+  revision: 12,
+  saved_at: '2026-09-29T10:01:00Z',
+  briefing: {
+    interpretations: [
+      {
+        source_id: 's',
+        quote: 'The source passage is here.',
+        locator: 'p1',
+        meaning: 'A possible interpretation of the rough question.',
+        why: 'The passage names the possible subject.',
+        signal: 'possible',
+      },
+      {
+        source_id: 's',
+        quote: 'The source passage is here.',
+        locator: 'p1',
+        meaning: 'Another interpretation is now in doubt.',
+        why: 'The passage does not describe that intended scope.',
+        signal: 'questioned',
+      },
+    ],
+    uncertainties: ['The intended purpose is still unconfirmed.'],
+  },
+});
+
+test('early understanding is tentative, cited and does not request a direction or enable monitoring while work continues', async () => {
+  let tree;
+  const value = episode({
+    status: 'running',
+    branches: [
+      {
+        id: 'early',
+        phase: 'orient',
+        query: 'Internal orientation identifier',
+      },
+    ],
+  });
+  value.exploration.briefing = null;
+  value.exploration.status = 'exploring';
+  value.exploration.orientation = orientation();
+  serve(value, () => {
+    throw new Error('Reading must not create work');
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    assert.match(text(tree), /A rough question/);
+    assert.match(text(tree), /A first reading of your question/);
+    assert.match(text(tree), /Possible meaning · not confirmed/);
+    assert.match(text(tree), /Evidence questions this interpretation/);
+    assert.match(text(tree), /The source passage is here/);
+    assert.doesNotMatch(
+      text(tree),
+      /Internal orientation identifier|Keep watching this topic|Where would you like to go next/,
+    );
+    assert.ok(findButton(tree, 'Pause to change direction'));
+    assert.equal(tree.root.findAllByType('form').length, 0);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('pausing before any briefing uses the refreshed checkpoint for a corrected public question', async () => {
+  let tree;
+  const writes = [];
+  const value = episode({ status: 'running' });
+  value.exploration.briefing = null;
+  value.exploration.status = 'exploring';
+  value.exploration.revision = 0;
+  serve(value, async (url, init) => {
+    writes.push({ url, body: JSON.parse(init.body) });
+    if (url.endsWith('/control')) {
+      value.status = 'paused';
+      value.exploration.revision = 21;
+    }
+    return Response.json({ id: 'next' });
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    await act(async () => findButton(tree, 'Pause research').props.onClick());
+    assert.match(text(tree), /Change direction in your own words/);
+    await act(async () =>
+      tree.root.findByType('textarea').props.onChange({
+        target: { value: 'A corrected question for public research.' },
+      }),
+    );
+    await act(async () =>
+      tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),
+    );
+    assert.equal(writes.length, 2);
+    assert.equal(writes[1].url, `${base}/r/exploration/reply`);
+    assert.equal(writes[1].body.expected_revision, 21);
+    assert.equal(
+      writes[1].body.question,
+      'A corrected question for public research.',
+    );
+    assert.equal(writes[1].body.public_query_confirmed, true);
+    assert.equal(value.question, 'A rough question');
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('completed reading retains the earlier working interpretation separately and access failure hides both', async () => {
+  let tree;
+  const value = episode();
+  value.exploration.orientation = orientation();
+  serve(value, () => {
+    throw new Error('Read only');
+  });
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.match(text(tree), /AI · tentative understanding/);
+    assert.match(text(tree), /Earlier working interpretation/);
+    assert.match(text(tree), /may have been revised by later evidence/);
+    const history = tree.root
+      .findAllByType('details')
+      .find((item) =>
+        item
+          .findAllByType('summary')
+          .some((s) => s.props.children === 'Earlier working interpretation'),
+      );
+    assert.ok(history);
+    assert.equal(history.props.open, undefined);
+    globalThis.fetch = async () => Response.json({}, { status: 403 });
+    await act(async () =>
+      tree.update(
+        React.createElement(Exploration, {
+          ...props,
+          dossierId: 'revoked',
+          initialId: 'denied',
+        }),
+      ),
+    );
+    assert.doesNotMatch(
+      text(tree),
+      /possible interpretation of the rough question|An AI interpretation/,
+    );
+    assert.match(text(tree), /hidden until access/);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('withheld early interpretation has an honest explanation and no stale generated text', async () => {
+  let tree;
+  const value = episode({ status: 'running' });
+  value.exploration.briefing = null;
+  value.exploration.status = 'exploring';
+  value.exploration.orientation = {
+    ...orientation(),
+    status: 'evidence_changed',
+    briefing: null,
+  };
+  serve(value, () => {
+    throw new Error('Read only');
+  });
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.match(text(tree), /hidden because its supporting sources changed/);
+    assert.match(text(tree), /Source passage · not an AI conclusion/);
+    assert.doesNotMatch(
+      text(tree),
+      /possible interpretation of the rough question|Keep watching this topic/,
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});

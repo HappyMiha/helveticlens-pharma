@@ -409,3 +409,13 @@ the legacy consented start remain compatible.
 The overview separates AI interpretation, source quotations and the actual
 research journal. Pause, stop, safe reply retry and current-access/source fences
 remain active. No live-provider accuracy or professional acceptance is claimed.
+
+## Early source-backed orientation (1.52)
+
+During a bounded exploratory episode, eligible captured public sources may support
+one early, tentative interpretation while research continues. Each possible meaning
+links to an exact retained passage; uncertainty and counterevidence remain visible.
+The original question is unchanged. Pause to correct direction; the previous episode
+and its evidence remain available. The final briefing keeps the earlier checkpoint
+in an expandable history. This never enables recurring monitoring. Missing evidence
+or a failed optional orientation leaves source reading and the final briefing intact.
