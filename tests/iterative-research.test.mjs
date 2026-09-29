@@ -63,16 +63,17 @@ const render = (component, props) =>
 
 test('question-first creation asks no mandatory sources, topics or monitoring rules', () => {
   const html = render(ResearchStart, { onMonitoring() {}, onCancel() {} });
-  assert.match(html, /Dossier title/);
-  assert.match(html, /Research question/);
-  assert.match(html, /Use this question for public-source research/);
-  assert.match(html, /Set up monitoring/);
-  assert.match(html, /Laya local/);
-  assert.match(html, /Jev hosted/);
-  assert.match(html, /<button[^>]*disabled[^>]*>Start research/);
+  assert.match(html, /Your question/);
+  assert.match(html, /daily checks/);
+  assert.match(html, /Set up topics and sources manually/);
+  assert.match(
+    html,
+    /<button[^>]*disabled[^>]*>Start research &amp; monitoring/,
+  );
+  assert.equal((html.match(/<textarea/g) || []).length, 1);
   assert.doesNotMatch(
     html,
-    /source_pack_ids|Fedlex|Create topic|Select sources/,
+    /Dossier title|<select|type="checkbox"|source_pack_ids|Jev hosted|Laya local/,
   );
 });
 

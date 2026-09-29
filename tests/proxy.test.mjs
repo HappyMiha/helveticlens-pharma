@@ -1397,3 +1397,47 @@ test('claim review read, controls and reviews use the existing product gateway w
   );
   assert.equal(calls, 3);
 });
+
+test('one-question start forwards only the product POST with consent, cookies and CSRF', async () => {
+  const route = `products/${product.id}/start`;
+  const command = {
+    request_key: 'fixture',
+    question: 'A public question',
+    public_monitoring_confirmed: true,
+  };
+  let count = 0;
+  globalThis.fetch = async (url, init) => {
+    count++;
+    assert.equal(url, `https://helveticlens.ch/api/${route}`);
+    assert.equal(init.headers.get('x-csrf-token'), 'csrf');
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=fixture');
+    assert.deepEqual(JSON.parse(new TextDecoder().decode(init.body)), command);
+    return Response.json({ dossier_id: 'saved' }, { status: 202 });
+  };
+  const write = (path, origin = 'https://product.test') =>
+    proxy(
+      new Request(`https://product.test/api/${path}`, {
+        method: 'POST',
+        headers: {
+          origin,
+          'x-csrf-token': 'csrf',
+          cookie: 'helvetic_lens_session=fixture; other=discard',
+        },
+        body: JSON.stringify(command),
+      }),
+      context(path),
+    );
+  assert.equal((await write(route)).status, 202);
+  assert.equal((await write(route, 'https://foreign.test')).status, 403);
+  assert.equal((await write(route.replace(product.id, 'foreign'))).status, 404);
+  assert.equal(
+    (
+      await proxy(
+        new Request(`https://product.test/api/${route}`),
+        context(route),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(count, 1);
+});

@@ -2,91 +2,66 @@
 import { useRef, useState } from 'react';
 import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
-import type { DossierRecord } from '@/lib/contracts';
-import type { Investigation } from '@/lib/investigation';
-import { defaultResearchLimits } from '@/lib/research-engine';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { PUBLIC_QUERY_DISCLOSURE } from './universal-ask-search';
 
 export function ResearchStart({
   onMonitoring,
   onCancel,
+  signedIn = true,
+  canCreate = true,
+  onSignIn,
 }: {
-  onMonitoring: () => void;
-  onCancel: () => void;
+  onMonitoring?: () => void;
+  onCancel?: () => void;
+  signedIn?: boolean;
+  canCreate?: boolean;
+  onSignIn?: () => void;
 }) {
-  const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
-  const [confirmed, setConfirmed] = useState(false);
-  const [order, setOrder] = useState<'jev_first' | 'laya_first'>('jev_first');
   const [busy, setBusy] = useState(false);
   const [frozen, setFrozen] = useState(false);
   const [error, setError] = useState('');
-  const [saved, setSaved] = useState<DossierRecord | null>(null);
+  const sending = useRef(false);
   const pending = useRef<{
-    key: string;
-    title: string;
+    request_key: string;
     question: string;
-    order: typeof order;
+    public_monitoring_confirmed: true;
   } | null>(null);
   async function start() {
-    if (
-      busy ||
-      !confirmed ||
-      title.trim().length < 2 ||
-      question.trim().length < 5
-    )
+    if (sending.current || question.trim().length < 5) return;
+    if (!signedIn) {
+      onSignIn?.();
       return;
+    }
+    if (!canCreate) return;
     pending.current ||= {
-      key: uid(),
-      title: title.trim(),
+      request_key: uid(),
       question: question.trim(),
-      order,
+      public_monitoring_confirmed: true,
     };
-    const value = pending.current;
+    sending.current = true;
     setFrozen(true);
     setBusy(true);
     setError('');
     try {
-      const root = `/products/${product.id}/dossiers`;
-      const dossier =
-        saved ||
-        (await api<DossierRecord>(root, {
-          creation_key: value.key,
-          step: 0,
-          config: {
-            name: value.title,
-            goal: value.question,
-            topics: [],
-            source_pack_ids: [],
-            source_requests: [],
-            delivery: 'off',
-            delivery_consent: false,
-          },
-        }));
-      setSaved(dossier);
-      const research = await api<Investigation>(
-        `${root}/${dossier.id}/investigations`,
-        {
-          request_key: value.key,
-          question: value.question,
-          public_query_confirmed: true,
-          engine: 'iterative-v1',
-          decision_order: value.order,
-          limits: defaultResearchLimits,
-        },
-      );
+      const result = await api<{
+        dossier_id: string;
+        investigation: { id: string } | null;
+      }>(`/products/${product.id}/start`, pending.current);
+      const focus = result.investigation
+        ? `&research=${encodeURIComponent(result.investigation.id)}`
+        : '';
       window.location.assign(
-        `/?dossier=${encodeURIComponent(dossier.id)}&research=${encodeURIComponent(research.id)}`,
+        `/?dossier=${encodeURIComponent(result.dossier_id)}${focus}`,
       );
     } catch (failure) {
       setError(
         failure instanceof Error
           ? failure.message
-          : 'Could not start research. Your saved dossier is retained.',
+          : 'Could not start. Retry safely with the same question.',
       );
+      sending.current = false;
       setBusy(false);
     }
   }
@@ -95,11 +70,13 @@ export function ResearchStart({
       className="research-start"
       aria-labelledby="research-start-heading"
     >
-      <p className="chapter-kicker">New dossier / Research</p>
-      <h2 id="research-start-heading">What would you like to understand?</h2>
+      <p className="chapter-kicker">{product.eyebrow} / Your next dossier</p>
+      <h2 id="research-start-heading">
+        What would you like to understand and follow?
+      </h2>
       <p>
-        Start with a question. Helvetic Lens plans the research, follows the
-        evidence and keeps unanswered questions visible.
+        Ask once. We look for sources, build an evidence-backed dossier and
+        check for changes.
       </p>
       <form
         onSubmit={(event) => {
@@ -107,18 +84,7 @@ export function ResearchStart({
           void start();
         }}
       >
-        <label htmlFor="research-title">Dossier title</label>
-        <Input
-          id="research-title"
-          required
-          minLength={2}
-          maxLength={160}
-          value={title}
-          disabled={busy || frozen}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="A name for this dossier"
-        />
-        <label htmlFor="research-question">Research question</label>
+        <label htmlFor="research-question">Your question</label>
         <Textarea
           id="research-question"
           required
@@ -127,83 +93,91 @@ export function ResearchStart({
           value={question}
           disabled={busy || frozen}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="What do you want to find out, and which evidence would help?"
-          rows={5}
+          rows={4}
+          placeholder={
+            product.id === 'pharma'
+              ? 'What is changing in Swiss GLP-1 approvals and safety evidence?'
+              : 'What is changing in Swiss rules on using AI at work?'
+          }
         />
-        <p className="investigation-muted">{PUBLIC_QUERY_DISCLOSURE}</p>
-        <label className="research-consent">
-          <input
-            type="checkbox"
-            checked={confirmed}
-            disabled={busy || frozen}
-            onChange={(event) => setConfirmed(event.target.checked)}
-          />
-          Use this question for public-source research.
-        </label>
-        <details>
-          <summary>Research scope & decision routing</summary>
-          <p>
-            Up to 8 directions, 4 follow-up levels, 24 search requests and 12
-            source reads. You can continue from saved progress with an
-            additional budget.
-          </p>
-          <label htmlFor="research-routing">First relevance decision</label>
-          <select
-            id="research-routing"
-            value={order}
-            disabled={busy || frozen}
-            onChange={(event) => setOrder(event.target.value as typeof order)}
-          >
-            <option value="jev_first">Jev hosted · Laya fallback</option>
-            <option value="laya_first">Laya local · Jev fallback</option>
-          </select>
-          <p>
-            Uncertain candidates can be assessed by the workspace analysis
-            model. Provider failures and research limits remain visible.
-          </p>
-        </details>
+        <p className="investigation-muted" id="question-start-disclosure">
+          Starting sends your question to public research providers and enables
+          daily checks. Your dossier stays private. Updates appear here; you can
+          pause monitoring at any time.
+        </p>
         {error && (
           <p role="alert" className="investigation-error">
             {error}
           </p>
         )}
+        {signedIn && !canCreate && (
+          <p>
+            Your workspace role can read dossiers. An administrator can start a
+            new one.
+          </p>
+        )}
         <div className="research-start-actions">
           <Button
             type="submit"
+            aria-describedby="question-start-disclosure"
             disabled={
-              busy ||
-              !confirmed ||
-              title.trim().length < 2 ||
-              question.trim().length < 5
+              busy || question.trim().length < 5 || (signedIn && !canCreate)
             }
           >
             {busy
-              ? 'Starting research…'
-              : frozen
-                ? 'Retry starting research'
-                : 'Start research'}
+              ? 'Starting your dossier…'
+              : !signedIn
+                ? 'Sign in to start'
+                : frozen
+                  ? 'Retry safely'
+                  : 'Start research & monitoring'}
           </Button>
-          {saved && (
-            <a href={`/?dossier=${encodeURIComponent(saved.id)}`}>
-              Open saved dossier
-            </a>
+          {onCancel && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
           )}
+        </div>
+        {!signedIn && (
+          <p className="investigation-muted">
+            Your question stays here while you sign in.
+          </p>
+        )}
+      </form>
+      <details className="question-start-details">
+        <summary>How it works</summary>
+        <p>
+          We plan the investigation, search public sources, read the evidence
+          and show findings with citations. Gaps and unavailable sources remain
+          visible.
+        </p>
+        <p>
+          The first investigation can use up to 24 searches and 12 source reads.
+          Daily checks begin tomorrow, using one question and up to 3 source
+          reads per check. Capacity and source access can delay a check.
+        </p>
+        <p>
+          Follow-up search questions come from public evidence. Selected
+          evidence is analysed by the workspace model. Private notes and files
+          are not sent as public search queries. No emails or public publication
+          are enabled.
+        </p>
+        {onMonitoring && (
           <Button
             type="button"
             variant="ghost"
             disabled={busy}
-            onClick={onCancel}
+            onClick={onMonitoring}
           >
-            Cancel
+            Set up topics and sources manually
           </Button>
-        </div>
-      </form>
-      <div className="research-mode-choice">
-        <p>Want to follow changes in known topics and sources?</p>
-        <Button variant="outline" disabled={busy} onClick={onMonitoring}>
-          Set up monitoring
-        </Button>
-      </div>
+        )}
+      </details>
     </section>
   );
 }

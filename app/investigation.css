@@ -486,3 +486,60 @@
   border-top: 1px solid var(--border);
   overflow-wrap: anywhere;
 }
+
+/* One question is the primary working surface on narrow and wide screens. */
+.research-start {
+  margin: 1rem auto 2rem;
+  width: 100%;
+}
+.research-start textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+.research-start .question-start-details {
+  border: 0;
+  padding: 0;
+  color: var(--muted-foreground);
+}
+.question-start-details summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 0.5rem 0;
+}
+.question-monitoring {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block: 1px solid var(--border);
+  padding: 1rem 0;
+  margin: 1rem 0;
+}
+.question-monitoring p {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+}
+.question-monitoring > div {
+  flex: 1 1 17rem;
+  min-width: 0;
+}
+.dossier-secondary {
+  margin: 1rem 0 1.5rem;
+}
+.dossier-secondary > summary {
+  cursor: pointer;
+  padding: 0.7rem 0;
+  color: var(--muted-foreground);
+}
+@media (max-width: 640px) {
+  .research-start {
+    margin-top: 0.5rem;
+  }
+  .research-start form {
+    margin-top: 1.25rem;
+  }
+  .research-start-actions > button:first-child {
+    width: 100%;
+  }
+}

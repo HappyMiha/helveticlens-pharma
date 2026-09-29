@@ -7,6 +7,7 @@ import { DossierContributions } from './dossier-contributions';
 import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
+import { QuestionMonitoring } from './question-monitoring';
 import { DossierCoveragePanel } from './dossier-coverage';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -295,18 +296,31 @@ export function Dossier({
               <Users size={14} />
               {p.status === 'draft'
                 ? d.access?.audience === 'invited_team'
-                  ? 'Private draft · invited dossier team'
-                  : 'Private draft · creator only'
+                  ? d.research_monitoring
+                    ? 'Private dossier · invited dossier team'
+                    : 'Private draft · invited dossier team'
+                  : d.research_monitoring
+                    ? 'Private dossier · creator only'
+                    : 'Private draft · creator only'
                 : d.access?.audience === 'team'
                   ? 'Private monitoring · invited dossier team'
                   : 'Shared with your organization'}
             </span>
-            <span>
-              <Globe size={14} />
-              {c.requested_jurisdictions || 'Switzerland'}
-            </span>
+            {c.requested_jurisdictions && (
+              <span>
+                <Globe size={14} />
+                {c.requested_jurisdictions}
+              </span>
+            )}
             <span>Created {date(p.created_at)}</span>
           </div>
+          {d.research_monitoring && (
+            <QuestionMonitoring
+              key={`question-monitoring:${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              onChanged={reload}
+            />
+          )}
           <PublicCopyOrigin origin={d.public_origin} />
           <TabsContent
             value="overview"
@@ -314,39 +328,48 @@ export function Dossier({
             data-content-kind="dossier"
           >
             <p className="chapter-kicker">01 / Dossier</p>
-            <DossierTemplateSection
-              key={`template:${d.id}:${userId || ''}`}
-              value={d.template}
-              dossierId={d.id}
-              revision={d.work.revision}
-              entries={entries}
-              canEdit={canEdit}
-              busy={busy}
-              onChanged={reload}
-              notify={notify}
-            />
-            <DossierSubject
-              key={`${d.id}:${userId || ''}`}
-              dossierId={d.id}
-              revision={d.work.revision}
-              entries={entries}
-              canEdit={canEdit}
-              busy={busy}
-              onChanged={reload}
-              notify={notify}
-            />
+            <details className="dossier-secondary">
+              <summary>Optional dossier details</summary>
+              <p className="muted">
+                These details organise your dossier. The research question and
+                monitoring settings determine what is searched.
+              </p>
+              <DossierTemplateSection
+                key={`template:${d.id}:${userId || ''}`}
+                value={d.template}
+                dossierId={d.id}
+                revision={d.work.revision}
+                entries={entries}
+                canEdit={canEdit}
+                busy={busy}
+                onChanged={reload}
+                notify={notify}
+              />
+              <DossierSubject
+                key={`${d.id}:${userId || ''}`}
+                dossierId={d.id}
+                revision={d.work.revision}
+                entries={entries}
+                canEdit={canEdit}
+                busy={busy}
+                onChanged={reload}
+                notify={notify}
+              />
+            </details>
 
             <div className="detail-columns">
               <section>
                 <div className="section-header">
                   <h2>What this dossier follows</h2>
-                  <span className="tag">{p.topics?.length || 0} topics</span>
+                  {!!p.topics?.length && (
+                    <span className="tag">{p.topics.length} topics</span>
+                  )}
                 </div>
                 {!p.topics?.length && (
                   <p className="muted">
-                    No monitoring topics saved yet. You can collect sources,
-                    discuss the question and start AI research while preparing
-                    the monitoring scope.
+                    {d.research_monitoring
+                      ? 'Your question is the starting point. Open AI research to see progress, findings and their sources.'
+                      : 'Collect sources, discuss your question or start AI research. Optional monitoring settings are available in Monitoring.'}
                   </p>
                 )}
                 {p.topics?.map((t) => (
@@ -407,24 +430,38 @@ export function Dossier({
                 ) : (
                   <Empty
                     title={
-                      p.status === 'draft'
-                        ? 'Monitoring has not started'
-                        : 'Waiting for matching evidence'
+                      d.research_monitoring
+                        ? 'Findings and sources'
+                        : p.status === 'draft'
+                          ? 'Monitoring has not started'
+                          : 'Waiting for matching evidence'
                     }
                     icon={Globe}
                   >
-                    {p.status === 'draft'
-                      ? 'Review the topics, sources and audience to start monitoring this dossier.'
-                      : 'No saved match has been reported yet. This does not establish that no change occurred.'}
-                    {p.status === 'draft' && canConfigure && (
+                    {d.research_monitoring
+                      ? 'Open AI research to follow the investigation and read findings with their source evidence.'
+                      : p.status === 'draft'
+                        ? 'Review the topics, sources and audience to start monitoring this dossier.'
+                        : 'No saved match has been reported yet. This does not establish that no change occurred.'}
+                    {d.research_monitoring && (
                       <Button
                         variant="outline"
-                        disabled={!!busy}
-                        onClick={onSetup}
+                        onClick={() => setTab('research')}
                       >
-                        Complete monitoring setup
+                        Open research
                       </Button>
                     )}
+                    {!d.research_monitoring &&
+                      p.status === 'draft' &&
+                      canConfigure && (
+                        <Button
+                          variant="outline"
+                          disabled={!!busy}
+                          onClick={onSetup}
+                        >
+                          Complete monitoring setup
+                        </Button>
+                      )}
                   </Empty>
                 )}
               </section>

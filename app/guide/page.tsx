@@ -89,10 +89,13 @@ export default function Guide() {
                 A discovery can lead to the next question.
               </h2>
               <p>
-                Choose New dossier, enter a title and a research question, then
-                confirm public-source research. Topics, source lists and
-                monitoring rules are not required. Set up monitoring separately
-                when you want ongoing updates.
+                Enter one question on your research desk and choose Start
+                research &amp; monitoring. We create a private dossier, start
+                the investigation and enable daily public-source checks from
+                tomorrow, with in-app updates. Pause monitoring directly in the
+                dossier. Topics, source lists and model choices are not
+                required. Optional manual setup remains available for specific
+                topics and source subscriptions.
               </p>
               <p>
                 Helvetic Lens plans research directions, checks candidate

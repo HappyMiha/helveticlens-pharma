@@ -406,12 +406,6 @@ export function DossierInvestigation({
           </Button>
         </div>
       )}
-      <EvidenceSearch
-        key={`saved-evidence:${dossierId}:${userId || ''}`}
-        dossierId={dossierId}
-        ref={evidenceSearch}
-        onOpen={onOpen}
-      />
       {loading && <output>Loading saved investigations…</output>}
       {!!history.length && (
         <div className="investigation-history">
@@ -668,6 +662,12 @@ export function DossierInvestigation({
           </div>
         </>
       )}
+      <EvidenceSearch
+        key={`saved-evidence:${dossierId}:${userId || ''}`}
+        dossierId={dossierId}
+        ref={evidenceSearch}
+        onOpen={onOpen}
+      />
       <ClaimReviews
         key={`claim-reviews:${dossierId}:${userId || ''}`}
         base={`/products/${product.id}/dossiers/${dossierId}/claim-reviews`}

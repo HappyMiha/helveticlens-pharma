@@ -342,6 +342,7 @@ export interface DocumentWatch {
   checked_at?: string;
 }
 export interface DossierRecord {
+  research_monitoring?: { enabled: boolean; cadence_hours: number };
   template?: import('./dossier-templates').TemplateState;
   access?: import('./dossier-team').DossierAccess;
   public_origin?: import('./public-following').PublicOrigin | null;

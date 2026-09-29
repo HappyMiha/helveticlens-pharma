@@ -245,3 +245,17 @@ test('an AI interpretation stays distinct from the exact quoted source and its u
   assert.match(html, /The source says “uncertain”; &lt;script&gt; is text\./);
   assert.doesNotMatch(html, /<script>|Human accepted|Verified source/);
 });
+
+test('a one-question dossier does not send readers back to the old setup questionnaire', () => {
+  const p = props();
+  p.dossier.profile.status = 'draft';
+  p.dossier.research_monitoring = { enabled: true, cadence_hours: 24 };
+  const text = visibleText(render(p));
+  assert.match(text, /Private dossier/);
+  assert.match(text, /Open AI research/);
+  assert.match(text, /Optional dossier details/);
+  assert.doesNotMatch(
+    text,
+    /Monitoring has not started|Complete monitoring setup|Private draft/,
+  );
+});

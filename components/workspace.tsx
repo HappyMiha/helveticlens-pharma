@@ -1,4 +1,5 @@
 'use client';
+import { dossierStatus } from '@/lib/dossier-status';
 import { DossierInvitationInbox } from './dossier-team';
 import { SharedDossiers } from './shared-dossiers';
 
@@ -406,7 +407,7 @@ export default function Workspace() {
   }
   const filtered = items.filter(
     (x) =>
-      (filter === 'all' || x.profile.status === filter) &&
+      (filter === 'all' || dossierStatus(x) === filter) &&
       `${x.profile.config.name} ${x.profile.config.goal} ${x.work?.context.subject || ''} ${x.work?.context.reference || ''}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -635,6 +636,10 @@ export default function Workspace() {
                   busy={busy}
                   run={run}
                   onStart={start}
+                  onSignIn={() => {
+                    setCreating(false);
+                    setLogin(true);
+                  }}
                   onOpen={openDossier}
                   onMore={async () => {
                     const next = await api<DossiersPage>(
@@ -752,7 +757,7 @@ export default function Workspace() {
                               <span className="dossier-icon">
                                 <FolderOpen size={22} />
                               </span>
-                              <Status status={d.profile.status} />
+                              <Status status={dossierStatus(d)} />
                             </div>
                             <h2>{d.profile.config.name || 'Untitled draft'}</h2>
                             <p>
@@ -771,20 +776,29 @@ export default function Workspace() {
                                 Review due · {d.work.next_review_on}
                               </span>
                             )}
-                            <div className="dossier-meta">
-                              <span>
-                                {
-                                  d.profile.config.topics.filter(
-                                    (x) => x.selected,
-                                  ).length
-                                }{' '}
-                                topics
-                              </span>
-                              <span>
-                                {d.profile.config.source_pack_ids.length} source
-                                collections
-                              </span>
-                            </div>
+                            {d.research_monitoring &&
+                            !d.profile.config.topics.some(
+                              (topic) => topic.selected,
+                            ) ? (
+                              <p className="muted">
+                                Research and source evidence in one dossier.
+                              </p>
+                            ) : (
+                              <div className="dossier-meta">
+                                <span>
+                                  {
+                                    d.profile.config.topics.filter(
+                                      (x) => x.selected,
+                                    ).length
+                                  }{' '}
+                                  topics
+                                </span>
+                                <span>
+                                  {d.profile.config.source_pack_ids.length}{' '}
+                                  source collections
+                                </span>
+                              </div>
+                            )}
                             <div className="card-bottom">
                               <span>Updated {date(d.profile.updated_at)}</span>
                               <ArrowRight size={17} />

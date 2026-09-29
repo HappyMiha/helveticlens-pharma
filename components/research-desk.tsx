@@ -1,20 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ArrowRight,
-  MessageSquare,
-  Plus,
-  Radar,
-  Search,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, MessageSquare, Radar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { DossierRecord, Identity, Preset, Run } from '@/lib/contracts';
 import { date } from '@/lib/api';
-import { product } from '@/lib/product';
+import { dossierStatus } from '@/lib/dossier-status';
 import { Discovery } from './discovery';
 import { AskTrigger } from './universal-ask-search';
+import { ResearchStart } from './research-start';
 
 export function ResearchDesk({
   identity,
@@ -23,6 +17,7 @@ export function ResearchDesk({
   busy,
   run,
   onStart,
+  onSignIn,
   onOpen,
   onMore,
 }: {
@@ -32,6 +27,7 @@ export function ResearchDesk({
   busy: string;
   run: Run;
   onStart: (seed?: Preset) => void;
+  onSignIn: () => void;
   onOpen: (
     id: string,
     threadId?: string | null,
@@ -45,53 +41,37 @@ export function ResearchDesk({
       filter === 'all' ||
       (filter === 'open'
         ? (d.discussion?.open_questions || 0) > 0
-        : d.profile.status === filter),
+        : dossierStatus(d) === filter),
   );
   return (
     <>
-      <div className="page-heading research-heading">
-        <div>
-          <div className="eyebrow">{product.eyebrow} · SHARED KNOWLEDGE</div>
-          <h1>Every question, a living topic.</h1>
-          <p>
-            {product.id === 'pharma'
-              ? 'Build shared understanding around medicines, evidence and regulatory change.'
-              : 'Build shared understanding around clients, legal questions and regulatory change.'}
-          </p>
-        </div>
-        <Button onClick={() => onStart()}>
-          <Plus size={17} />
-          New topic
-        </Button>
-      </div>
-      <section className="research-search surface">
-        <div className="section-header">
-          <h2>What do you need to understand?</h2>
-          <Search size={21} />
-        </div>
+      <ResearchStart
+        signedIn={!!identity}
+        canCreate={identity?.role === 'organization_admin'}
+        onSignIn={onSignIn}
+        onMonitoring={() => onStart({ name: '', goal: '', sector: '' })}
+      />
+      <details className="source-tools research-search surface">
+        <summary>Search existing knowledge</summary>
         <AskTrigger />
         <p className="search-scope">
-          Search public dossiers, explore source evidence or ask a question
-          inside a dossier.
+          Explore public dossiers or search saved evidence.
         </p>
         {identity && (
-          <details className="source-tools">
-            <summary>Saved searches & source tools</summary>
-            <Discovery
-              key={`${identity.user.id}:${identity.organization.id}`}
-              canPlan={identity.role === 'organization_admin'}
-              onOpen={(id, thread, source) =>
-                void run('Opening topic', () => onOpen(id, thread, source))
-              }
-              onCreate={onStart}
-            />
-          </details>
+          <Discovery
+            key={`${identity.user.id}:${identity.organization.id}`}
+            canPlan={identity.role === 'organization_admin'}
+            onOpen={(id, thread, source) =>
+              void run('Opening dossier', () => onOpen(id, thread, source))
+            }
+            onCreate={onStart}
+          />
         )}
-      </section>
+      </details>
       <section className="research-topics">
         <div className="section-header">
           <div>
-            <h2>Your team’s living topics</h2>
+            <h2>Your dossiers</h2>
             <p className="muted">
               Questions, sources, discussion and monitoring in one place.
             </p>
@@ -102,9 +82,10 @@ export function ResearchDesk({
           <>
             <div className="filters topic-filters">
               {[
-                ['all', 'All topics'],
+                ['all', 'All dossiers'],
                 ['open', 'Open questions'],
                 ['active', 'Monitoring'],
+                ['paused', 'Paused'],
                 ['draft', 'Drafts'],
               ].map(([value, label]) => (
                 <Button
@@ -137,13 +118,17 @@ export function ResearchDesk({
                       <span>
                         {d.work?.context.subject || d.profile.config.sector}
                       </span>
-                      {d.profile.status === 'active' ? (
+                      {dossierStatus(d) === 'active' ? (
                         <span className="topic-live">
                           <Radar size={13} />
                           Monitoring
                         </span>
                       ) : (
-                        <span>{d.profile.status}</span>
+                        <span>
+                          {d.research_monitoring
+                            ? 'Monitoring paused'
+                            : d.profile.status}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -176,41 +161,9 @@ export function ResearchDesk({
             )}
           </>
         ) : (
-          <div className="research-onboarding">
-            <div>
-              <span>
-                <Search size={22} />
-              </span>
-              <h3>Frame the question</h3>
-              <p>
-                Start from what you need to know, then choose relevant sources
-                and monitoring.
-              </p>
-            </div>
-            <div>
-              <span>
-                <Users size={22} />
-              </span>
-              <h3>Develop it together</h3>
-              <p>
-                Ask focused questions, add sources and accept a working answer
-                as a team.
-              </p>
-            </div>
-            <div>
-              <span>
-                <Radar size={22} />
-              </span>
-              <h3>Keep learning</h3>
-              <p>
-                Monitor new evidence and refine the topic as your understanding
-                changes.
-              </p>
-            </div>
-            <Button onClick={() => onStart()}>
-              Create your first topic <ArrowRight size={17} />
-            </Button>
-          </div>
+          <p className="muted">
+            Your dossiers and their latest updates will appear here.
+          </p>
         )}
       </section>
     </>
