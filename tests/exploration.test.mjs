@@ -675,3 +675,115 @@ for (const mode of ['ready', 'changed', 'readonly', 'running'])
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+for (const mode of [
+  'mixed',
+  'repeated',
+  'empty',
+  'changed',
+  'running',
+  'partial',
+])
+  test(`continued episode explains observed capture progress without starting work: ${mode}`, async () => {
+    let tree;
+    const value = episode({
+      status: mode === 'running' ? 'running' : 'completed',
+    });
+    value.exploration.continuation = { status: 'ready', ...savedCheck() };
+    const classes =
+      mode === 'empty'
+        ? []
+        : mode === 'mixed'
+          ? ['unmatched', 'changed_capture', 'repeated']
+          : ['repeated'];
+    const items = classes.map((classification, index) => ({
+      classification,
+      current: {
+        id: `capture-${index}`,
+        investigation_id: 'r',
+        title: `Current comparison source ${index}`,
+        url: `https://example.org/current-${index}`,
+        captured_at: '2026-09-29T12:00:00Z',
+      },
+      previous:
+        classification === 'unmatched'
+          ? null
+          : {
+              id: `prior-${index}`,
+              investigation_id: 'earlier',
+              title: `Prior comparison source ${index}`,
+              url: `https://example.org/prior-${index}`,
+              captured_at: '2026-09-28T12:00:00Z',
+            },
+      comparison: {
+        basis: 'Saved content relationship, not independent confirmation.',
+        temporal_basis: 'Capture dates do not establish event dates.',
+      },
+    }));
+    value.exploration.capture_progress =
+      mode === 'changed'
+        ? { status: 'evidence_changed' }
+        : {
+            status: 'ready',
+            items,
+            counts: Object.fromEntries(
+              ['unmatched', 'changed_capture', 'repeated', 'unestablished'].map(
+                (key) => [key, classes.filter((c) => c === key).length],
+              ),
+            ),
+            scope: {
+              current_captures: items.length,
+              previous_captures: 3,
+              previous_episodes: 1,
+              truncated: mode === 'partial',
+            },
+          };
+    serve(value, () => {
+      throw new Error('A comparison must never start work');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      const content = text(tree);
+      assert.equal(findButton(tree, 'Continue this check'), undefined);
+      if (mode === 'changed') {
+        assert.match(content, /comparison's source material changed/);
+        assert.doesNotMatch(
+          content,
+          /Current comparison source|Compare the saved sources/,
+        );
+      } else {
+        assert.match(content, /What this check added/);
+        const detail = tree.root
+          .findAllByType('details')
+          .find((node) =>
+            node
+              .findAllByType('summary')
+              .some((s) => s.props.children === 'Compare the saved sources'),
+          );
+        assert.ok(detail && !detail.props.open);
+        if (mode === 'mixed') {
+          assert.match(
+            content,
+            /1 new to this comparison · 1 changed · 1 repeated/,
+          );
+          assert.match(content, /Saved content changed/);
+        }
+        if (mode === 'repeated' || mode === 'running')
+          assert.match(content, /Only previously captured content was read/);
+        if (mode === 'empty')
+          assert.match(
+            content,
+            /No eligible source material has been captured/,
+          );
+        if (mode === 'partial')
+          assert.match(content, /covers part of the saved history/);
+        assert.match(content, /do not establish independent confirmation/);
+      }
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

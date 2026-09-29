@@ -437,3 +437,12 @@ in a bounded next episode. Earlier source context stays distinct from newly read
 evidence; source/dependency changes withhold derived context and stop further work.
 Alternatives remain secondary, with free-text correction and monitoring separate.
 Shared Core scope: `docs/PRODUCT_SAVED_CHECK_CONTINUATION.md`.
+
+### What a continued check added (1.55)
+
+New typed continuations compare permitted public captures with bounded earlier
+linked episodes. Existing analysis receives those source relationships; the
+selected-check reader shows repeated, changed and unmatched captured material.
+Comparisons describe saved content, not independent confirmation or new facts.
+Source changes withhold dependent context. Core scope and acceptance:
+`docs/PRODUCT_EPISODE_PROGRESS.md`.

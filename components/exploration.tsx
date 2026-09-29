@@ -12,6 +12,7 @@ import { currentWebResearch, type WebResearch } from '@/lib/web-research';
 import type {
   ExplorationState,
   SavedCheck,
+  CaptureProgress,
   ExplorationCitation as Citation,
 } from '@/lib/exploration';
 
@@ -789,6 +790,76 @@ function ContinuedCheck({ state }: { state: ExplorationState }) {
       </span>
       <p>{check.purpose}</p>
       <SavedCheckPassage check={check} />
+      <EpisodeProgress progress={state.capture_progress} />
     </section>
+  );
+}
+
+function EpisodeProgress({ progress }: { progress?: CaptureProgress | null }) {
+  if (!progress) return null;
+  if (progress.status !== 'ready')
+    return (
+      <p className="muted">
+        The comparison&apos;s source material changed. Its results are hidden until
+        the evidence is reviewed.
+      </p>
+    );
+  const { counts, scope, items } = progress;
+  const onlyRepeated =
+    counts.repeated > 0 &&
+    counts.unmatched + counts.changed_capture + counts.unestablished === 0;
+  const labels = {
+    repeated: 'Previously captured content',
+    changed_capture: 'Saved content changed',
+    unmatched: 'Not seen in the compared material',
+    unestablished: 'Comparison unavailable',
+  };
+  return (
+    <div aria-label="What this check added">
+      <h3>What this check added</h3>
+      {scope.current_captures === 0 ? (
+        <p>No eligible source material has been captured in this episode.</p>
+      ) : (
+        <>
+          <p>{`${counts.unmatched} new to this comparison · ${counts.changed_capture} changed · ${counts.repeated} repeated${counts.unestablished ? ` · ${counts.unestablished} unestablished` : ''}.`}</p>
+          {onlyRepeated && (
+            <p>
+              Only previously captured content was read.
+            </p>
+          )}
+        </>
+      )}
+      {scope.truncated && (
+        <p className="muted">
+          This comparison covers part of the saved history.
+        </p>
+      )}
+      <details>
+        <summary>Compare the saved sources</summary>
+        <p className="muted">{`Compared with ${scope.previous_captures} saved sources from ${scope.previous_episodes} earlier episodes. Capture comparisons do not establish independent confirmation or an answer to the question.`}</p>
+        {items.map((item) => (
+          <article key={item.current.id}>
+            <strong>{labels[item.classification]}</strong>
+            <p>
+              <a href={item.current.url} target="_blank" rel="noreferrer">
+                {item.current.title}
+              </a>
+              {` · captured ${date(item.current.captured_at)}`}
+            </p>
+            {item.previous && (
+              <p>
+                Earlier:{' '}
+                <a href={item.previous.url} target="_blank" rel="noreferrer">
+                  {item.previous.title}
+                </a>
+                {` · captured ${date(item.previous.captured_at)}`}
+              </p>
+            )}
+            <p>{item.comparison.basis}</p>
+            <p className="muted">{item.comparison.temporal_basis}</p>
+          </article>
+        ))}
+      </details>
+    </div>
   );
 }

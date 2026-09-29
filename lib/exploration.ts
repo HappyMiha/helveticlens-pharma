@@ -14,7 +14,42 @@ export type SavedCheck = {
   locator: string;
   source: { id: string; title: string; url: string; captured_at: string };
 };
+export type CaptureReference = {
+  id: string;
+  investigation_id: string;
+  title: string;
+  url: string;
+  captured_at: string;
+};
+export type CaptureProgress =
+  | { status: 'evidence_changed' }
+  | {
+      status: 'ready';
+      counts: {
+        repeated: number;
+        changed_capture: number;
+        unmatched: number;
+        unestablished: number;
+      };
+      scope: {
+        previous_episodes: number;
+        previous_captures: number;
+        current_captures: number;
+        truncated: boolean;
+      };
+      items: {
+        current: CaptureReference;
+        previous: CaptureReference | null;
+        classification:
+          | 'repeated'
+          | 'changed_capture'
+          | 'unmatched'
+          | 'unestablished';
+        comparison: { basis: string; temporal_basis: string };
+      }[];
+    };
 export type ExplorationState = {
+  capture_progress?: CaptureProgress | null;
   next_check?: SavedCheck | null;
   continuation?:
     | (SavedCheck & { status: 'ready' })
