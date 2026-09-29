@@ -30,5 +30,9 @@ export function useResource<T>(url: string | null, refreshToken = 0) {
       reader.deactivate();
     };
   }, [reader, refreshToken]);
-  return { ...state, refresh: reader.refresh };
+  return {
+    ...state,
+    refresh: reader.refresh,
+    readStartedAt: reader.readStartedAt(),
+  };
 }

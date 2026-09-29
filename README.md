@@ -463,3 +463,11 @@ unexamined candidates and open questions. Details stay folded alongside the
 conclusion. Recorded work does not establish exhaustive coverage or answer quality.
 Old episodes retain unknown scope; revoked evidence hides dependent scope.
 No extra inference or monitoring starts when reading this summary.
+
+## Current research activity — 1.58
+
+The active reader shows a recorded public question and research stage, with a
+separate latest captured-source link. Current activity is bounded by the worker
+receipt and expires in the browser, including delayed responses or refreshes.
+Queue, pause, unavailable activity and old metadata remain honest. Reading history
+starts no work; the existing refresh and explicit monitoring remain unchanged.

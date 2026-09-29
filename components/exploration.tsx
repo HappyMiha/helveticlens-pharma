@@ -262,10 +262,15 @@ function ExplorationEpisode({
               {page.question}
             </p>
           )}
+          {(active || page.status === 'paused') && (
+            <ResearchActivity
+              state={state}
+              readStartedAt={resource.readStartedAt}
+              originalQuestion={page.question}
+            />
+          )}
           {active && (
-            <p>
-              Checking possible meanings and reading sources. Findings appear
-              here as they are saved. This episode ends at a short briefing.{' '}
+            <p className="muted">
               {monitoringEnabled
                 ? 'Your previously enabled monitoring continues.'
                 : 'Monitoring stays off until you enable it.'}
@@ -537,6 +542,120 @@ function ExplorationMonitor({
   );
 }
 
+export function ResearchActivity({
+  state,
+  readStartedAt,
+  originalQuestion,
+}: {
+  state: ExplorationState;
+  readStartedAt: number | null;
+  originalQuestion?: string;
+}) {
+  const activity = state.current_activity;
+  const deadline =
+    activity?.status === 'working' && readStartedAt !== null
+      ? readStartedAt + Math.max(0, Math.min(90000, activity.valid_for_ms))
+      : null;
+  return (
+    <CurrentResearchReceipt
+      key={deadline ?? 'unconfirmed'}
+      state={state}
+      deadline={deadline}
+      originalQuestion={originalQuestion}
+    />
+  );
+}
+
+function CurrentResearchReceipt({
+  state,
+  deadline,
+  originalQuestion,
+}: {
+  state: ExplorationState;
+  deadline: number | null;
+  originalQuestion?: string;
+}) {
+  const activity = state.current_activity;
+  const [valid, setValid] = useState(
+    () =>
+      deadline !== null &&
+      Number.isFinite(deadline) &&
+      deadline > performance.now(),
+  );
+  useEffect(() => {
+    if (deadline === null || !Number.isFinite(deadline)) return;
+    const wait = deadline - performance.now();
+    const timer = setTimeout(() => setValid(false), Math.max(0, wait) + 1);
+    return () => clearTimeout(timer);
+  }, [deadline]);
+  if (
+    state.status === 'evidence_changed' ||
+    activity?.status === 'evidence_changed'
+  )
+    return (
+      <output>
+        Current research details are hidden because supporting access or
+        evidence changed.
+      </output>
+    );
+  if (activity?.status === 'finished') return null;
+  if (activity?.status === 'paused')
+    return (
+      <output>
+        Research is paused. Saved passages remain available below.
+      </output>
+    );
+  if (activity?.status === 'waiting')
+    return (
+      <output>
+        Waiting for the next research step to start. Saved progress is kept.
+      </output>
+    );
+  const labels: Record<string, string> = {
+    plan: 'Planning the first checks',
+    search: 'Searching for sources',
+    gate: 'Checking which sources may help',
+    gate_review: 'Reviewing an uncertain source match',
+    read: 'Reading selected source passages',
+    extract: 'Analysing captured passages',
+    reflect: 'Checking what to investigate next',
+    orient: 'Preparing a first interpretation',
+    brief: 'Preparing the research briefing',
+    compare: 'Comparing saved evidence',
+  };
+  if (
+    activity?.status !== 'working' ||
+    deadline === null ||
+    !Number.isFinite(deadline) ||
+    !valid ||
+    !labels[activity.phase]
+  )
+    return (
+      <output>
+        Current activity is not confirmed. Saved progress is kept; waiting for
+        an update.
+      </output>
+    );
+  return (
+    <div aria-label="Current research step">
+      <output>
+        <strong>{labels[activity.phase]}</strong>
+        {activity.question !== originalQuestion && <> · {activity.question}</>}
+      </output>
+      {activity.latest_source && (
+        <p className="muted">
+          Latest captured source:{' '}
+          <a href={activity.latest_source.url} target="_blank" rel="noreferrer">
+            {activity.latest_source.title}
+          </a>{' '}
+          · {date(activity.latest_source.captured_at)}. Selected passages, not
+          the whole document.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function ExplorationBrief({ state }: { state: ExplorationState }) {
   const brief = state.briefing;
   function quote(item: Citation) {
@@ -757,8 +876,8 @@ function ObservedResearchScope({ state }: { state: ExplorationState }) {
             {count(candidates.retrieved, 'candidate appearance')} in search
             results; {candidates.not_evaluated} not evaluated,{' '}
             {candidates.evaluation_unavailable} without a usable relevance
-            decision, {candidates.selected_not_read} selected with reading not yet started.
-            Repeated appearances can refer to the same source.
+            decision, {candidates.selected_not_read} selected with reading not
+            yet started. Repeated appearances can refer to the same source.
           </li>
           <li>
             {count(questions.open, 'question')} open or unresolved;{' '}

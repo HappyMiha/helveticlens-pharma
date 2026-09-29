@@ -176,3 +176,45 @@ test('subscriptions see actual read progress, unsubscribe cleanly, and unexpecte
   assert.equal(events[1].loading, false);
   assert.match(events[1].error, /retry/);
 });
+
+test('read timing belongs to the accepted request and survives a pending refresh without renewal', async (t) => {
+  let clock = 10;
+  t.mock.method(performance, 'now', () => clock);
+  const { reader, pending } = fixture();
+  let done = reader.refresh();
+  clock = 500;
+  pending[0].resolve({ valid_for_ms: 100 });
+  await done;
+  assert.equal(reader.readStartedAt(), 10);
+  clock = 600;
+  done = reader.refresh();
+  assert.equal(reader.readStartedAt(), 10);
+  clock = 700;
+  pending[1].resolve({ valid_for_ms: 100 });
+  await done;
+  assert.equal(reader.readStartedAt(), 600);
+  done = reader.refresh();
+  pending[2].reject(new Error('Access withdrawn'));
+  await done;
+  assert.equal(reader.readStartedAt(), null);
+});
+
+test('late and retired responses cannot renew the accepted read timestamp', async (t) => {
+  let clock = 10;
+  t.mock.method(performance, 'now', () => clock);
+  const { reader, pending } = fixture();
+  const old = reader.refresh();
+  clock = 20;
+  const fresh = reader.refresh();
+  pending[1].resolve({ value: 'fresh' });
+  await fresh;
+  pending[0].resolve({ value: 'late' });
+  await old;
+  assert.equal(reader.readStartedAt(), 20);
+  const reset = reader.reset();
+  assert.equal(reader.readStartedAt(), null);
+  pending[2].resolve({ value: 'current session' });
+  await reset;
+  reader.deactivate();
+  assert.equal(reader.readStartedAt(), null);
+});

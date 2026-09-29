@@ -1044,3 +1044,144 @@ for (const status of ['unknown', 'evidence_changed']) {
     await act(async () => tree.unmount());
   });
 }
+
+const liveActivity = () => ({
+  contract: 'research-activity/v1',
+  status: 'working',
+  phase: 'search',
+  question: 'Which recipient record explains the difference?',
+  observed_at: '2026-09-29T22:00:00Z',
+  valid_for_ms: 50,
+  latest_source: {
+    id: 's',
+    title: 'Previously captured registry',
+    url: 'https://example.org/captured',
+    captured_at: '2026-09-29T21:59:00Z',
+  },
+});
+
+test('active research shows its actual question and an earlier captured source, then expires without fetching', async (t) => {
+  let clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const value = episode({ status: 'running' });
+  value.exploration.status = 'exploring';
+  value.exploration.briefing = null;
+  value.exploration.current_activity = liveActivity();
+  serve(value, () => {
+    throw new Error('Activity must not write');
+  });
+  const fetcher = globalThis.fetch;
+  let requests = 0;
+  globalThis.fetch = async (...args) => {
+    requests++;
+    return fetcher(...args);
+  };
+  let tree;
+  await act(async () => {
+    tree = create(
+      React.createElement(Exploration, { ...props, canEdit: false }),
+    );
+  });
+  assert.ok(text(tree).includes('Searching for sources'));
+  assert.ok(
+    text(tree).includes('Which recipient record explains the difference?'),
+  );
+  assert.ok(text(tree).includes('Latest captured source:'));
+  const link = tree.root
+    .findAllByType('a')
+    .find((n) => n.props.children === 'Previously captured registry');
+  assert.equal(link.props.href, 'https://example.org/captured');
+  assert.ok(
+    !text(tree).includes('Checking possible meanings and reading sources.'),
+  );
+  const initialRequests = requests;
+  clock = 151;
+  await act(async () => {
+    t.mock.timers.tick(51);
+  });
+  assert.ok(!text(tree).includes('Searching for sources'));
+  assert.ok(!text(tree).includes('Previously captured registry'));
+  assert.ok(text(tree).includes('Current activity is not confirmed'));
+  assert.equal(requests, initialRequests);
+  await act(async () => tree.unmount());
+});
+
+test('a delayed response cannot revive work after its conservative validity window', async (t) => {
+  const clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  const { ResearchActivity } = require(resolve('components/exploration.tsx'));
+  const value = episode();
+  value.exploration.current_activity = liveActivity();
+  let tree;
+  await act(async () => {
+    tree = create(
+      React.createElement(ResearchActivity, {
+        state: value.exploration,
+        readStartedAt: 10,
+      }),
+    );
+  });
+  assert.ok(text(tree).includes('Current activity is not confirmed'));
+  assert.ok(!text(tree).includes('Previously captured registry'));
+  await act(async () => tree.unmount());
+});
+
+test('queue, pause, legacy and access changes replace prior working details; finished history has no live activity', async () => {
+  const { ResearchActivity, ExplorationBrief } = require(
+    resolve('components/exploration.tsx'),
+  );
+  const value = episode();
+  let tree;
+  for (const [status, message] of [
+    ['waiting', 'Waiting for the next research step'],
+    ['paused', 'Research is paused'],
+    ['unknown', 'Current activity is not confirmed'],
+    ['stale', 'Current activity is not confirmed'],
+    ['evidence_changed', 'supporting access or evidence changed'],
+  ]) {
+    value.exploration.current_activity = { ...liveActivity(), status };
+    await act(async () => {
+      if (!tree)
+        tree = create(
+          React.createElement(ResearchActivity, {
+            state: value.exploration,
+            readStartedAt: performance.now(),
+          }),
+        );
+      else
+        tree.update(
+          React.createElement(ResearchActivity, {
+            state: value.exploration,
+            readStartedAt: performance.now(),
+          }),
+        );
+    });
+    assert.ok(text(tree).includes(message));
+    assert.ok(!text(tree).includes('Previously captured registry'));
+    assert.ok(!text(tree).includes('Which recipient record explains'));
+    assert.equal(tree.root.findAllByType('button').length, 0);
+  }
+  value.exploration.current_activity = {
+    contract: 'research-activity/v1',
+    status: 'finished',
+  };
+  await act(async () =>
+    tree.update(
+      React.createElement(ResearchActivity, {
+        state: value.exploration,
+        readStartedAt: null,
+      }),
+    ),
+  );
+  assert.equal(tree.toJSON(), null);
+  value.exploration.current_activity = liveActivity();
+  await act(async () =>
+    tree.update(
+      React.createElement(ExplorationBrief, { state: value.exploration }),
+    ),
+  );
+  assert.ok(!text(tree).includes('Searching for sources'));
+  assert.equal(tree.root.findAllByType('button').length, 0);
+  await act(async () => tree.unmount());
+});

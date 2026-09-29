@@ -12,6 +12,8 @@ export class ResourceReader<T> {
   private controller: AbortController | null = null;
   private listeners = new Set<() => void>();
   private state: ReadState<T>;
+  private dataReadStartedAt: number | null = null;
+  readStartedAt = () => this.dataReadStartedAt;
   readonly initial: ReadState<T>;
 
   constructor(
@@ -40,6 +42,7 @@ export class ResourceReader<T> {
   }
   deactivate() {
     this.active = false;
+    this.dataReadStartedAt = null;
     this.generation++;
     this.controller?.abort();
     this.controller = null;
@@ -47,6 +50,7 @@ export class ResourceReader<T> {
 
   /** Drop the previous session's contents before checking current authority. */
   reset = () => {
+    this.dataReadStartedAt = null;
     this.generation++;
     this.controller?.abort();
     this.controller = null;
@@ -69,12 +73,16 @@ export class ResourceReader<T> {
       loading: !this.state.data && !this.state.error,
       refreshing: true,
     });
+    const readStartedAt = performance.now();
     try {
       const data = await this.load(this.url, controller.signal);
-      if (current())
+      if (current()) {
+        this.dataReadStartedAt = readStartedAt;
         this.publish({ data, error: '', loading: false, refreshing: false });
+      }
     } catch (cause) {
-      if (current())
+      if (current()) {
+        this.dataReadStartedAt = null;
         this.publish({
           data: null,
           error:
@@ -84,6 +92,7 @@ export class ResourceReader<T> {
           loading: false,
           refreshing: false,
         });
+      }
     } finally {
       if (current()) this.controller = null;
     }

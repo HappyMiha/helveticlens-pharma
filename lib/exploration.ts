@@ -100,7 +100,33 @@ type ResearchAttempts = {
   interrupted: number;
   running: number;
 };
+export type ResearchActivity =
+  | {
+      contract: 'research-activity/v1';
+      status:
+        | 'unknown'
+        | 'evidence_changed'
+        | 'paused'
+        | 'finished'
+        | 'waiting'
+        | 'stale';
+    }
+  | {
+      contract: 'research-activity/v1';
+      status: 'working';
+      phase: string;
+      question: string;
+      observed_at: string;
+      valid_for_ms: number;
+      latest_source: {
+        id: string;
+        title: string;
+        url: string;
+        captured_at: string;
+      } | null;
+    };
 export type ExplorationState = {
+  current_activity?: ResearchActivity;
   research_scope?: ResearchScope;
   capture_progress?: CaptureProgress | null;
   next_check?: SavedCheck | null;
