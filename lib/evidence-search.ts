@@ -1,5 +1,7 @@
+import type { ClaimInterpretation } from './claim-review';
 export type EvidenceSearchMode = 'corpus' | 'semantic' | 'literal';
 export type SearchReview = {
+  interpretation?: ClaimInterpretation;
   revision: number;
   decision: 'accepted' | 'dismissed' | 'needs_more_evidence' | null;
   stale: boolean;

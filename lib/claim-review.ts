@@ -1,3 +1,19 @@
+export type ClaimInterpretation = {
+  schema_version: 1;
+  domain_pack: string;
+  domain_pack_version: string;
+  kind: string;
+  kind_label: string;
+  claim_type: string;
+  label: string;
+  authority: 'UNASSESSED';
+};
+export type InterpretationOptions = {
+  schema_version: 1;
+  domain_pack: string;
+  domain_pack_version: string;
+  types: Pick<ClaimInterpretation, 'kind' | 'claim_type' | 'kind_label' | 'label'>[];
+};
 export type ClaimDecision = 'accepted' | 'dismissed' | 'needs_more_evidence';
 export type ClaimCitation = {
   id: string;
@@ -45,6 +61,7 @@ export type ReviewedClaim = {
   human_status: string;
   finding_status: string;
   history_unavailable: boolean;
+  interpretation?: ClaimInterpretation;
   history: {
     revision: number;
     decision: ClaimDecision;
@@ -54,6 +71,7 @@ export type ReviewedClaim = {
     evidence_fingerprint: string;
     basis: {
       schema_version: number;
+      interpretation?: ClaimInterpretation;
       sources: { id: string; sha256: string }[];
       claims: { id: string; revision: number }[];
     };
@@ -66,6 +84,7 @@ export type ClaimReviewsPage = {
   page_size: number;
   publication_revision: number | null;
   can_review?: boolean;
+  interpretation_options?: InterpretationOptions;
   boundary: string;
 };
 export const claimDecisionLabels = {

@@ -243,6 +243,11 @@ export default function Guide() {
                 to the evidence requires review again. If a decision or access
                 changes while results are open, search again for current status.
                 Human acceptance does not verify truth or change relevance rank.
+                Review findings also lets an editor classify a source statement,
+                user assertion or AI interpretation using this dossier’s domain
+                types. Leave uncertain claims unclassified. Earlier choices stay
+                in review history; evidence changes require review again.
+                Classification does not assess source authority or applicability.
               </p>
               <p>
                 Meaning supports up to 20,000 saved records. Local preparation

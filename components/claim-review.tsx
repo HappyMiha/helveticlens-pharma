@@ -11,6 +11,9 @@ import type {
 } from '@/lib/claim-review';
 import { useResource } from '@/lib/use-resource';
 import { Button } from './ui/button';
+import { NativeSelect, NativeSelectOption } from './ui/native-select';
+import { ClaimInterpretation } from './claim-interpretation';
+import type { InterpretationOptions } from '@/lib/claim-review';
 import { Checkbox } from './ui/checkbox';
 import { Textarea } from './ui/textarea';
 
@@ -103,9 +106,10 @@ function ReviewReader({
             <ClaimReviewCard key={value.id} value={value} onOpen={onOpen}>
               {canReview && value.reviewable && value.revision < 100 && (
                 <ClaimReviewForm
-                  key={`${value.id}:${value.revision}:${value.evidence_fingerprint}`}
+                  key={`${value.id}:${value.revision}:${value.evidence_fingerprint}:${page.interpretation_options?.domain_pack_version || "legacy"}`}
                   base={base}
                   value={value}
+                  options={page.interpretation_options}
                   publicView={publicView}
                   onSaved={() => {
                     refresh();
@@ -169,6 +173,7 @@ export function ClaimReviewCard({
         Machine evidence assessment: {value.claim.evidence_status.toLowerCase()}
         . Source support does not mean human acceptance.
       </p>
+      <ClaimInterpretation value={value.interpretation} stale={value.stale} />
       {value.stale && (
         <p>
           The earlier decision does not confirm the current evidence. Read the
@@ -230,6 +235,8 @@ export function ClaimReviewCard({
                 <strong>{claimDecisionLabels[entry.decision]}</strong> ·{' '}
                 {date(entry.at)}
                 <p>{entry.reason}</p>
+                <ClaimInterpretation value={entry.basis.interpretation} />
+                {entry.basis.interpretation && <p className="claim-method">Recorded with {entry.basis.interpretation.domain_pack} {entry.basis.interpretation.domain_pack_version}.</p>}
                 <small>
                   {entry.reviewer} · review {entry.revision}
                 </small>
@@ -286,27 +293,32 @@ function Citation({ value }: { value: ClaimCitation }) {
         <summary>Captured source record</summary>
         <p>
           Captured {date(value.source.captured_at)}. This is not a publication
-          or effective date.
+          or effective date. Source authority and applicability have not been assessed.
         </p>
         <p className="evidence-hash">SHA-256: {value.source.sha256}</p>
       </details>
     </figure>
   );
 }
-function ClaimReviewForm({
+export function ClaimReviewForm({
   base,
   value,
+  options,
   publicView,
   onSaved,
 }: {
   base: string;
   value: ReviewedClaim;
+  options?: InterpretationOptions;
   publicView: boolean;
   onSaved: () => void;
 }) {
   const id = useId();
   const [decision, setDecision] = useState<ClaimDecision | null>(null);
   const [reason, setReason] = useState('');
+  const [type, setType] = useState(value.interpretation ? `${value.interpretation.kind}:${value.interpretation.claim_type}` : 'UNKNOWN:UNCLASSIFIED');
+  const selectedType = options?.types.find(item => `${item.kind}:${item.claim_type}` === type);
+  const typeUnavailable = !!options && !selectedType;
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -323,6 +335,7 @@ function ClaimReviewForm({
     if (
       busy ||
       !decision ||
+      typeUnavailable ||
       reason.trim().length < 5 ||
       (publicView && !confirm)
     )
@@ -334,6 +347,12 @@ function ClaimReviewForm({
       decision,
       reason: reason.trim(),
       confirm_public: publicView && confirm,
+      ...(options && selectedType ? { interpretation: {
+        schema_version: options.schema_version,
+        domain_pack_version: options.domain_pack_version,
+        kind: selectedType.kind,
+        claim_type: selectedType.claim_type,
+      } } : {}),
     };
     const fingerprint = JSON.stringify(data);
     if (pending.current?.fingerprint !== fingerprint)
@@ -382,6 +401,20 @@ function ClaimReviewForm({
               </Button>
             ))}
           </div>
+          {options && <div className="claim-type-choice">
+            <label htmlFor={`${id}-claim-type`}>What does this claim represent?</label>
+            <NativeSelect id={`${id}-claim-type`} value={type} onChange={event => {
+              setType(event.target.value);
+              setConfirm(false);
+            }}>
+              {options.types.map(item => <NativeSelectOption key={`${item.kind}:${item.claim_type}`} value={`${item.kind}:${item.claim_type}`}>
+                {item.kind === 'UNKNOWN' ? item.label : `${item.kind_label} · ${item.label}`}
+              </NativeSelectOption>)}
+            </NativeSelect>
+            {selectedType && <p>{selectedType.label}</p>}
+            <p className="investigation-muted">Choose “Not classified” when uncertain. A source statement records what a source says; it does not establish truth, binding authority or applicability. The original machine proposal and exact quotations stay unchanged.</p>
+            {typeUnavailable && <p role="alert">The earlier type is unavailable. Choose a current type before saving.</p>}
+          </div>}
           <label htmlFor={`${id}-reason`}>
             Explain what the cited evidence establishes
           </label>
@@ -403,7 +436,7 @@ function ClaimReviewForm({
                 checked={confirm}
                 onCheckedChange={(checked) => setConfirm(checked === true)}
               />
-              Publish this explanation in the public dossier. It contains no
+              Publish this explanation and claim classification in the public dossier. It contains no
               confidential information.
             </label>
           )}
@@ -416,6 +449,7 @@ function ClaimReviewForm({
             disabled={
               busy ||
               !decision ||
+              typeUnavailable ||
               reason.trim().length < 5 ||
               (publicView && !confirm)
             }

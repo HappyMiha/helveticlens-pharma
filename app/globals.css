@@ -2682,3 +2682,9 @@ code {
 .claim-review-citation figcaption { font-weight: 600; font-size: .875rem; }
 .claim-review-citation blockquote { margin: .5rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .human-review-status { margin-block: 1rem .5rem; }
+
+/* Keep the domain type choice readable inside the existing folded review. */
+.claim-type-choice { margin-block: 1.25rem; }
+.claim-type-choice label { display: block; margin-bottom: .5rem; }
+.claim-type-choice [data-slot="native-select-wrapper"] { width: 100%; max-width: 100%; }
+.claim-type-choice select { min-height: 2.75rem; font-size: 1rem; }

@@ -51,7 +51,7 @@ globalThis.window = {
   addEventListener() {},
   removeEventListener() {},
 };
-const { ClaimReviews } = require(resolve('components/claim-review.tsx'));
+const { ClaimReviews, ClaimReviewForm, ClaimReviewCard } = require(resolve('components/claim-review.tsx'));
 after(() => {
   Module._load = originalLoad;
   Module._resolveFilename = originalResolve;
@@ -191,4 +191,58 @@ test('folded findings make no request; choice is explicit; failure retains retry
     if (tree) await act(async () => tree.unmount());
     console.error = originalError;
   }
+});
+
+const interpretationOptions = {
+  schema_version: 1, domain_pack: 'LegalPack', domain_pack_version: '1.3.0',
+  types: [
+    { kind: 'UNKNOWN', claim_type: 'UNCLASSIFIED', kind_label: 'Not classified', label: 'Not classified' },
+    { kind: 'SOURCE_STATEMENT', claim_type: 'CASE_HOLDING', kind_label: 'Source statement', label: 'Court holding' },
+    { kind: 'AI_INTERPRETATION', claim_type: 'AI_ANALYSIS', kind_label: 'AI interpretation', label: 'AI analysis' },
+  ],
+};
+const interpretation = { ...interpretationOptions.types[1], schema_version: 1, domain_pack: 'LegalPack', domain_pack_version: '1.3.0', authority: 'UNASSESSED' };
+
+test('review type selection is explicit, preserved on retry, and changing it creates a new request identity', async () => {
+  const writes = [];
+  globalThis.fetch = async (url, init) => {
+    writes.push({ url, init, body: JSON.parse(init.body) });
+    return new Response('', { status: 503 });
+  };
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(ClaimReviewForm, {
+      base: '/fixture', value: { ...finding, interpretation }, options: interpretationOptions,
+      publicView: false, onSaved() {},
+    })); });
+    const button = label => tree.root.findAllByType('button').find(node => node.props.children === label);
+    assert.equal(writes.length, 0);
+    assert.equal(tree.root.findByType('select').props.value, 'SOURCE_STATEMENT:CASE_HOLDING');
+    assert.equal(button('Save finding review').props.disabled, true);
+    await act(async () => button('Accept finding').props.onClick());
+    await act(async () => tree.root.findByType('textarea').props.onChange({ target: { value: 'Fictional evidence assessed.' } }));
+    const submit = () => act(async () => tree.root.findByType('form').props.onSubmit({ preventDefault() {} }));
+    await submit();
+    await submit();
+    assert.deepEqual(writes[0].body, writes[1].body);
+    assert.deepEqual(writes[0].body.interpretation, { schema_version: 1, domain_pack_version: '1.3.0', kind: 'SOURCE_STATEMENT', claim_type: 'CASE_HOLDING' });
+    await act(async () => tree.root.findByType('select').props.onChange({ target: { value: 'AI_INTERPRETATION:AI_ANALYSIS' } }));
+    await submit();
+    assert.equal(writes[2].body.interpretation.kind, 'AI_INTERPRETATION');
+    assert.notEqual(writes[0].body.request_key, writes[2].body.request_key);
+    assert.ok(writes.every(row => row.init.method === 'POST' && row.url.endsWith('/review')));
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
+test('current, historical and stale classifications stay distinct from truth and source authority', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const render = value => renderToStaticMarkup(React.createElement(ClaimReviewCard, { value, onOpen() {} }));
+  assert.match(render(finding), /Not classified/);
+  const value = { ...finding, interpretation: { ...interpretation, label: '<script>fictional</script>' }, stale: true };
+  const html = render(value);
+  assert.match(html, /Earlier claim classification/);
+  assert.match(html, /Source authority and applicability are not assessed/);
+  assert.match(html, /review this classification again/);
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>/);
 });

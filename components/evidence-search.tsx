@@ -1,4 +1,5 @@
 'use client';
+import { ClaimInterpretation } from './claim-interpretation';
 
 import {
   useCallback,
@@ -438,6 +439,7 @@ export function EvidenceSearchResult({
                   : 'Not reviewed'
               : 'Status unavailable'}
           </p>
+          <ClaimInterpretation value={review?.interpretation} stale={review?.stale} />
           {review?.has_conflicting_evidence && (
             <p>Conflicting evidence is recorded. Open the finding to compare citations.</p>
           )}
