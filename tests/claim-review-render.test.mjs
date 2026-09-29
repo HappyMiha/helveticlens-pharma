@@ -42,6 +42,10 @@ for (const extension of ['.ts', '.tsx'])
     });
     module._compile(outputText, filename);
   };
+const originalAnimationFrame = globalThis.requestAnimationFrame;
+const originalCancelAnimationFrame = globalThis.cancelAnimationFrame;
+globalThis.requestAnimationFrame = callback => setTimeout(() => callback(0), 0);
+globalThis.cancelAnimationFrame = handle => clearTimeout(handle);
 const originalWindow = globalThis.window;
 const originalHTMLElement = globalThis.HTMLElement;
 globalThis.HTMLElement = class {};
@@ -51,7 +55,9 @@ globalThis.window = {
   addEventListener() {},
   removeEventListener() {},
 };
-const { ClaimReviews, ClaimReviewForm, ClaimReviewCard } = require(resolve('components/claim-review.tsx'));
+const { ClaimReviews, ClaimReviewForm, ClaimReviewCard } = require(
+  resolve('components/claim-review.tsx'),
+);
 after(() => {
   Module._load = originalLoad;
   Module._resolveFilename = originalResolve;
@@ -65,6 +71,8 @@ after(() => {
   globalThis.fetch = originalFetch;
   globalThis.IS_REACT_ACT_ENVIRONMENT = originalAct;
   globalThis.document = originalDocument;
+  globalThis.requestAnimationFrame = originalAnimationFrame;
+  globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
   globalThis.window = originalWindow;
   globalThis.HTMLElement = originalHTMLElement;
 });
@@ -194,14 +202,37 @@ test('folded findings make no request; choice is explicit; failure retains retry
 });
 
 const interpretationOptions = {
-  schema_version: 1, domain_pack: 'LegalPack', domain_pack_version: '1.3.0',
+  schema_version: 1,
+  domain_pack: 'LegalPack',
+  domain_pack_version: '1.4.0',
   types: [
-    { kind: 'UNKNOWN', claim_type: 'UNCLASSIFIED', kind_label: 'Not classified', label: 'Not classified' },
-    { kind: 'SOURCE_STATEMENT', claim_type: 'CASE_HOLDING', kind_label: 'Source statement', label: 'Court holding' },
-    { kind: 'AI_INTERPRETATION', claim_type: 'AI_ANALYSIS', kind_label: 'AI interpretation', label: 'AI analysis' },
+    {
+      kind: 'UNKNOWN',
+      claim_type: 'UNCLASSIFIED',
+      kind_label: 'Not classified',
+      label: 'Not classified',
+    },
+    {
+      kind: 'SOURCE_STATEMENT',
+      claim_type: 'CASE_HOLDING',
+      kind_label: 'Source statement',
+      label: 'Court holding',
+    },
+    {
+      kind: 'AI_INTERPRETATION',
+      claim_type: 'AI_ANALYSIS',
+      kind_label: 'AI interpretation',
+      label: 'AI analysis',
+    },
   ],
 };
-const interpretation = { ...interpretationOptions.types[1], schema_version: 1, domain_pack: 'LegalPack', domain_pack_version: '1.3.0', authority: 'UNASSESSED' };
+const interpretation = {
+  ...interpretationOptions.types[1],
+  schema_version: 1,
+  domain_pack: 'LegalPack',
+  domain_pack_version: '1.4.0',
+  authority: 'UNASSESSED',
+};
 
 test('review type selection is explicit, preserved on retry, and changing it creates a new request identity', async () => {
   const writes = [];
@@ -211,38 +242,297 @@ test('review type selection is explicit, preserved on retry, and changing it cre
   };
   let tree;
   try {
-    await act(async () => { tree = create(React.createElement(ClaimReviewForm, {
-      base: '/fixture', value: { ...finding, interpretation }, options: interpretationOptions,
-      publicView: false, onSaved() {},
-    })); });
-    const button = label => tree.root.findAllByType('button').find(node => node.props.children === label);
+    await act(async () => {
+      tree = create(
+        React.createElement(ClaimReviewForm, {
+          base: '/fixture',
+          value: { ...finding, interpretation },
+          options: interpretationOptions,
+          publicView: false,
+          onSaved() {},
+        }),
+      );
+    });
+    const button = (label) =>
+      tree.root
+        .findAllByType('button')
+        .find((node) => node.props.children === label);
     assert.equal(writes.length, 0);
-    assert.equal(tree.root.findByType('select').props.value, 'SOURCE_STATEMENT:CASE_HOLDING');
+    assert.equal(
+      tree.root.findByType('select').props.value,
+      'SOURCE_STATEMENT:CASE_HOLDING',
+    );
     assert.equal(button('Save finding review').props.disabled, true);
     await act(async () => button('Accept finding').props.onClick());
-    await act(async () => tree.root.findByType('textarea').props.onChange({ target: { value: 'Fictional evidence assessed.' } }));
-    const submit = () => act(async () => tree.root.findByType('form').props.onSubmit({ preventDefault() {} }));
+    await act(async () =>
+      tree.root
+        .findByType('textarea')
+        .props.onChange({ target: { value: 'Fictional evidence assessed.' } }),
+    );
+    const submit = () =>
+      act(async () =>
+        tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),
+      );
     await submit();
     await submit();
     assert.deepEqual(writes[0].body, writes[1].body);
-    assert.deepEqual(writes[0].body.interpretation, { schema_version: 1, domain_pack_version: '1.3.0', kind: 'SOURCE_STATEMENT', claim_type: 'CASE_HOLDING' });
-    await act(async () => tree.root.findByType('select').props.onChange({ target: { value: 'AI_INTERPRETATION:AI_ANALYSIS' } }));
+    assert.deepEqual(writes[0].body.interpretation, {
+      schema_version: 1,
+      domain_pack_version: '1.4.0',
+      kind: 'SOURCE_STATEMENT',
+      claim_type: 'CASE_HOLDING',
+    });
+    await act(async () =>
+      tree.root
+        .findByType('select')
+        .props.onChange({ target: { value: 'AI_INTERPRETATION:AI_ANALYSIS' } }),
+    );
     await submit();
     assert.equal(writes[2].body.interpretation.kind, 'AI_INTERPRETATION');
     assert.notEqual(writes[0].body.request_key, writes[2].body.request_key);
-    assert.ok(writes.every(row => row.init.method === 'POST' && row.url.endsWith('/review')));
-  } finally { if (tree) await act(async () => tree.unmount()); }
+    assert.ok(
+      writes.every(
+        (row) => row.init.method === 'POST' && row.url.endsWith('/review'),
+      ),
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
 });
 
 test('current, historical and stale classifications stay distinct from truth and source authority', async () => {
   const { renderToStaticMarkup } = await import('react-dom/server');
-  const render = value => renderToStaticMarkup(React.createElement(ClaimReviewCard, { value, onOpen() {} }));
+  const render = (value) =>
+    renderToStaticMarkup(
+      React.createElement(ClaimReviewCard, { value, onOpen() {} }),
+    );
   assert.match(render(finding), /Not classified/);
-  const value = { ...finding, interpretation: { ...interpretation, label: '<script>fictional</script>' }, stale: true };
+  const value = {
+    ...finding,
+    interpretation: { ...interpretation, label: '<script>fictional</script>' },
+    stale: true,
+  };
   const html = render(value);
   assert.match(html, /Earlier claim classification/);
-  assert.match(html, /Source authority and applicability are not assessed/);
+  assert.match(
+    html,
+    /Claim classification alone does not establish source authority or applicability/,
+  );
   assert.match(html, /review this classification again/);
   assert.match(html, /&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);
+});
+
+const sourceOptions = {
+  schema_version: 1,
+  domain_pack: 'LegalPack',
+  domain_pack_version: '1.4.0',
+  limit: 12,
+  categories: [
+    { category: 'UNASSESSED', label: 'Not assessed' },
+    { category: 'PRIMARY_BINDING', label: 'Primary binding material' },
+    { category: 'SECONDARY_COMMENTARY', label: 'Secondary commentary' },
+  ],
+};
+const assessed = {
+  source_id: 'source',
+  evidence_id: 'citation',
+  category: 'PRIMARY_BINDING',
+  label: 'Primary binding material',
+  reason: 'Fictional editor reason <script>example</script>',
+  quote: citation.quote,
+  locator: citation.locator,
+  source: {
+    ...citation.source,
+    capture_fingerprint: 'f'.repeat(64),
+    saved_version: {
+      id: 'version',
+      recorded_revision: 2,
+      current_revision: 2,
+      content_hash: 'a'.repeat(64),
+    },
+  },
+};
+const sourceAssessments = {
+  schema_version: 1,
+  domain_pack: 'LegalPack',
+  domain_pack_version: '1.4.0',
+  method: 'editor_assessment',
+  items: [assessed],
+};
+
+test('source role form requires a source citation and reason, resets public consent and preserves exact retry identity', async () => {
+  const { Checkbox } = require(resolve('components/ui/checkbox.tsx'));
+  const writes = [];
+  globalThis.fetch = async (url, init) => {
+    writes.push(JSON.parse(init.body));
+    return new Response('', { status: 503 });
+  };
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(ClaimReviewForm, {
+          base: '/fixture',
+          value: finding,
+          sourceOptions,
+          publicView: true,
+          onSaved() {},
+        }),
+      );
+    });
+    const button = (label) =>
+      tree.root
+        .findAllByType('button')
+        .find((node) => node.props.children === label);
+    const select = (suffix) =>
+      tree.root
+        .findAllByType('select')
+        .find((node) => node.props.id.endsWith(suffix));
+    const area = (suffix) =>
+      tree.root
+        .findAllByType('textarea')
+        .find((node) => node.props.id.endsWith(suffix));
+    await act(async () => button('Accept finding').props.onClick());
+    await act(async () =>
+      area('-reason').props.onChange({
+        target: { value: 'Finding explanation.' },
+      }),
+    );
+    await act(async () =>
+      select('-source').props.onChange({ target: { value: 'source' } }),
+    );
+    await act(async () => button('Add source assessment').props.onClick());
+    assert.equal(button('Save finding review').props.disabled, true);
+    assert.equal(tree.root.findAllByType('textarea').length, 2);
+    await act(async () =>
+      select('-role').props.onChange({ target: { value: 'PRIMARY_BINDING' } }),
+    );
+    await act(async () =>
+      select('-citation').props.onChange({ target: { value: 'citation' } }),
+    );
+    await act(async () =>
+      area('-0-reason').props.onChange({
+        target: { value: 'Fictional source role basis.' },
+      }),
+    );
+    await act(async () =>
+      tree.root.findByType(Checkbox).props.onCheckedChange(true),
+    );
+    assert.equal(button('Save finding review').props.disabled, false);
+    const submit = () =>
+      act(async () =>
+        tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),
+      );
+    await submit();
+    await submit();
+    assert.deepEqual(writes[0], writes[1]);
+    assert.deepEqual(writes[0].source_assessments.items, [
+      {
+        source_id: 'source',
+        evidence_id: 'citation',
+        category: 'PRIMARY_BINDING',
+        reason: 'Fictional source role basis.',
+      },
+    ]);
+    assert.equal(writes[0].confirm_public, true);
+    await act(async () =>
+      select('-role').props.onChange({
+        target: { value: 'SECONDARY_COMMENTARY' },
+      }),
+    );
+    assert.equal(tree.root.findByType(Checkbox).props.checked, false);
+    assert.equal(button('Save finding review').props.disabled, true);
+    await act(async () =>
+      tree.root.findByType(Checkbox).props.onCheckedChange(true),
+    );
+    await submit();
+    assert.notEqual(writes[2].request_key, writes[0].request_key);
+    await act(async () => button('Remove source assessment').props.onClick());
+    await act(async () =>
+      tree.root.findByType(Checkbox).props.onCheckedChange(true),
+    );
+    await submit();
+    assert.deepEqual(writes[3].source_assessments.items, []);
+    assert.notEqual(writes[3].request_key, writes[2].request_key);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('mixed-source review shows only each captured role and preserves escaped historical basis and saved version', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const other = {
+    ...citation,
+    id: 'other-citation',
+    source: { ...citation.source, id: 'other-source' },
+  };
+  const value = {
+    ...finding,
+    evidence: [citation, other],
+    stale: true,
+    source_assessments: sourceAssessments,
+    history: [
+      {
+        revision: 1,
+        decision: 'accepted',
+        reason: 'Earlier review',
+        at: citation.source.captured_at,
+        reviewer: 'Former dossier editor',
+        evidence_fingerprint: 'a'.repeat(64),
+        basis: {
+          schema_version: 1,
+          sources: [],
+          claims: [],
+          source_assessments: sourceAssessments,
+        },
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(
+    React.createElement(ClaimReviewCard, { value, onOpen() {} }),
+  );
+  assert.match(html, /Earlier source role/);
+  assert.match(html, /Source role.*Not assessed/);
+  assert.match(html, /recorded revision.*2/);
+  assert.match(html, /Fictional editor reason &lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /only to this captured source in this finding/);
+});
+
+test('saved search never borrows authority from another source in a mixed-source claim', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { EvidenceSearchResult } = require(
+    resolve('components/evidence-search.tsx'),
+  );
+  const item = {
+    kind: 'claim',
+    source_id: 'other-source',
+    quote: 'Fictional evidence',
+    title: 'Other source',
+    claim_status: 'CONTESTED',
+    claim_revision: 1,
+    url: '',
+    created_at: citation.source.captured_at,
+    statement: 'Fictional claim',
+    relevance_probability: null,
+    confidence: null,
+    human_review: {
+      revision: 1,
+      decision: 'accepted',
+      stale: false,
+      complete: true,
+      reviewable: true,
+      source_assessments: sourceAssessments,
+    },
+  };
+  const render = (value) =>
+    renderToStaticMarkup(
+      React.createElement(EvidenceSearchResult, { item: value, onOpen() {} }),
+    );
+  assert.match(render(item), /Source role.*Not assessed/);
+  assert.doesNotMatch(render(item), /Primary binding material/);
+  const html = render({ ...item, source_id: 'source' });
+  assert.match(html, /Primary binding material.*editor assessment/);
+  assert.doesNotMatch(html, /Fictional editor reason/);
 });

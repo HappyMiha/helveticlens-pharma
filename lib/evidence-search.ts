@@ -1,7 +1,9 @@
+import type { SourceAssessments, SourceRole } from './source-authority';
 import type { ClaimInterpretation } from './claim-review';
 export type EvidenceSearchMode = 'corpus' | 'semantic' | 'literal';
 export type SearchReview = {
   interpretation?: ClaimInterpretation;
+  source_assessments?: SourceAssessments<SourceRole>;
   revision: number;
   decision: 'accepted' | 'dismissed' | 'needs_more_evidence' | null;
   stale: boolean;

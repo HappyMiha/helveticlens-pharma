@@ -1,3 +1,4 @@
+import type { SourceAssessments, SourceRoleOptions } from './source-authority';
 export type ClaimInterpretation = {
   schema_version: 1;
   domain_pack: string;
@@ -12,7 +13,10 @@ export type InterpretationOptions = {
   schema_version: 1;
   domain_pack: string;
   domain_pack_version: string;
-  types: Pick<ClaimInterpretation, 'kind' | 'claim_type' | 'kind_label' | 'label'>[];
+  types: Pick<
+    ClaimInterpretation,
+    'kind' | 'claim_type' | 'kind_label' | 'label'
+  >[];
 };
 export type ClaimDecision = 'accepted' | 'dismissed' | 'needs_more_evidence';
 export type ClaimCitation = {
@@ -30,6 +34,13 @@ export type ClaimCitation = {
     kind: string;
     sha256: string;
     captured_at: string;
+    capture_fingerprint?: string;
+    saved_version?: {
+      id: string;
+      recorded_revision: number | null;
+      current_revision: number | null;
+      content_hash: string | null;
+    } | null;
   };
 };
 export type ReviewedClaim = {
@@ -62,6 +73,7 @@ export type ReviewedClaim = {
   finding_status: string;
   history_unavailable: boolean;
   interpretation?: ClaimInterpretation;
+  source_assessments?: SourceAssessments;
   history: {
     revision: number;
     decision: ClaimDecision;
@@ -72,6 +84,7 @@ export type ReviewedClaim = {
     basis: {
       schema_version: number;
       interpretation?: ClaimInterpretation;
+      source_assessments?: SourceAssessments;
       sources: { id: string; sha256: string }[];
       claims: { id: string; revision: number }[];
     };
@@ -85,6 +98,7 @@ export type ClaimReviewsPage = {
   publication_revision: number | null;
   can_review?: boolean;
   interpretation_options?: InterpretationOptions;
+  source_assessment_options?: SourceRoleOptions;
   boundary: string;
 };
 export const claimDecisionLabels = {

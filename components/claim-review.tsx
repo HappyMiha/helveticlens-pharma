@@ -13,6 +13,20 @@ import { useResource } from '@/lib/use-resource';
 import { Button } from './ui/button';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
 import { ClaimInterpretation } from './claim-interpretation';
+import {
+  SourceAuthority,
+  SourceAssessmentBasis,
+  SourceRoleEditor,
+} from './source-authority';
+import {
+  reviewCitations,
+  sourceRoleDrafts,
+  validSourceRoles,
+} from '@/lib/source-authority';
+import type {
+  SourceAssessment,
+  SourceRoleOptions,
+} from '@/lib/source-authority';
 import type { InterpretationOptions } from '@/lib/claim-review';
 import { Checkbox } from './ui/checkbox';
 import { Textarea } from './ui/textarea';
@@ -106,10 +120,11 @@ function ReviewReader({
             <ClaimReviewCard key={value.id} value={value} onOpen={onOpen}>
               {canReview && value.reviewable && value.revision < 100 && (
                 <ClaimReviewForm
-                  key={`${value.id}:${value.revision}:${value.evidence_fingerprint}:${page.interpretation_options?.domain_pack_version || "legacy"}`}
+                  key={`${value.id}:${value.revision}:${value.evidence_fingerprint}:${page.interpretation_options?.domain_pack_version || 'legacy'}:${page.source_assessment_options?.domain_pack_version || 'legacy'}`}
                   base={base}
                   value={value}
                   options={page.interpretation_options}
+                  sourceOptions={page.source_assessment_options}
                   publicView={publicView}
                   onSaved={() => {
                     refresh();
@@ -183,7 +198,14 @@ export function ClaimReviewCard({
       <section aria-label="Evidence for this finding">
         <h4>Captured evidence</h4>
         {value.evidence.map((citation) => (
-          <Citation key={citation.id} value={citation} />
+          <Citation
+            key={citation.id}
+            value={citation}
+            assessment={value.source_assessments?.items.find(
+              (item) => item.source_id === citation.source.id,
+            )}
+            stale={value.stale}
+          />
         ))}
       </section>
       {!!value.comparisons.length && (
@@ -201,7 +223,14 @@ export function ClaimReviewCard({
               </h5>
               <p>{comparison.claim.statement}</p>
               {comparison.evidence.map((citation) => (
-                <Citation key={citation.id} value={citation} />
+                <Citation
+                  key={citation.id}
+                  value={citation}
+                  assessment={value.source_assessments?.items.find(
+                    (item) => item.source_id === citation.source.id,
+                  )}
+                  stale={value.stale}
+                />
               ))}
             </section>
           ))}
@@ -236,7 +265,30 @@ export function ClaimReviewCard({
                 {date(entry.at)}
                 <p>{entry.reason}</p>
                 <ClaimInterpretation value={entry.basis.interpretation} />
-                {entry.basis.interpretation && <p className="claim-method">Recorded with {entry.basis.interpretation.domain_pack} {entry.basis.interpretation.domain_pack_version}.</p>}
+                {entry.basis.interpretation && (
+                  <p className="claim-method">
+                    Recorded with {entry.basis.interpretation.domain_pack}{' '}
+                    {entry.basis.interpretation.domain_pack_version}.
+                  </p>
+                )}
+                {entry.basis.source_assessments && (
+                  <div>
+                    <p className="claim-method">
+                      Source roles recorded with{' '}
+                      {entry.basis.source_assessments.domain_pack}{' '}
+                      {entry.basis.source_assessments.domain_pack_version}.
+                    </p>
+                    {!entry.basis.source_assessments.items.length && (
+                      <p>No source roles recorded in this review.</p>
+                    )}
+                    {entry.basis.source_assessments.items.map((assessment) => (
+                      <div key={assessment.source_id}>
+                        <SourceAuthority value={assessment} />
+                        <SourceAssessmentBasis value={assessment} />
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <small>
                   {entry.reviewer} · review {entry.revision}
                 </small>
@@ -266,7 +318,15 @@ export function ClaimReviewCard({
     </details>
   );
 }
-function Citation({ value }: { value: ClaimCitation }) {
+function Citation({
+  value,
+  assessment,
+  stale,
+}: {
+  value: ClaimCitation;
+  assessment?: SourceAssessment;
+  stale: boolean;
+}) {
   const href = sourceHref(value.source.url);
   return (
     <figure className="claim-review-citation">
@@ -289,11 +349,14 @@ function Citation({ value }: { value: ClaimCitation }) {
         )}{' '}
         · {value.locator}
       </p>
+      <SourceAuthority value={assessment} stale={stale} />
+      {assessment && <SourceAssessmentBasis value={assessment} />}
       <details className="claim-method">
         <summary>Captured source record</summary>
         <p>
           Captured {date(value.source.captured_at)}. This is not a publication
-          or effective date. Source authority and applicability have not been assessed.
+          or effective date. A source role assessment does not establish
+          applicability.
         </p>
         <p className="evidence-hash">SHA-256: {value.source.sha256}</p>
       </details>
@@ -304,21 +367,34 @@ export function ClaimReviewForm({
   base,
   value,
   options,
+  sourceOptions,
   publicView,
   onSaved,
 }: {
   base: string;
   value: ReviewedClaim;
   options?: InterpretationOptions;
+  sourceOptions?: SourceRoleOptions;
   publicView: boolean;
   onSaved: () => void;
 }) {
   const id = useId();
   const [decision, setDecision] = useState<ClaimDecision | null>(null);
   const [reason, setReason] = useState('');
-  const [type, setType] = useState(value.interpretation ? `${value.interpretation.kind}:${value.interpretation.claim_type}` : 'UNKNOWN:UNCLASSIFIED');
-  const selectedType = options?.types.find(item => `${item.kind}:${item.claim_type}` === type);
+  const [type, setType] = useState(
+    value.interpretation
+      ? `${value.interpretation.kind}:${value.interpretation.claim_type}`
+      : 'UNKNOWN:UNCLASSIFIED',
+  );
+  const selectedType = options?.types.find(
+    (item) => `${item.kind}:${item.claim_type}` === type,
+  );
   const typeUnavailable = !!options && !selectedType;
+  const [sourceRoles, setSourceRoles] = useState(() => sourceRoleDrafts(value));
+  const citations = reviewCitations(value);
+  const sourceRolesInvalid = sourceOptions
+    ? !validSourceRoles(sourceRoles, citations, sourceOptions)
+    : !!value.source_assessments;
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -336,6 +412,7 @@ export function ClaimReviewForm({
       busy ||
       !decision ||
       typeUnavailable ||
+      sourceRolesInvalid ||
       reason.trim().length < 5 ||
       (publicView && !confirm)
     )
@@ -347,12 +424,28 @@ export function ClaimReviewForm({
       decision,
       reason: reason.trim(),
       confirm_public: publicView && confirm,
-      ...(options && selectedType ? { interpretation: {
-        schema_version: options.schema_version,
-        domain_pack_version: options.domain_pack_version,
-        kind: selectedType.kind,
-        claim_type: selectedType.claim_type,
-      } } : {}),
+      ...(sourceOptions
+        ? {
+            source_assessments: {
+              schema_version: sourceOptions.schema_version,
+              domain_pack_version: sourceOptions.domain_pack_version,
+              items: sourceRoles.map((item) => ({
+                ...item,
+                reason: item.reason.trim(),
+              })),
+            },
+          }
+        : {}),
+      ...(options && selectedType
+        ? {
+            interpretation: {
+              schema_version: options.schema_version,
+              domain_pack_version: options.domain_pack_version,
+              kind: selectedType.kind,
+              claim_type: selectedType.claim_type,
+            },
+          }
+        : {}),
     };
     const fingerprint = JSON.stringify(data);
     if (pending.current?.fingerprint !== fingerprint)
@@ -401,20 +494,62 @@ export function ClaimReviewForm({
               </Button>
             ))}
           </div>
-          {options && <div className="claim-type-choice">
-            <label htmlFor={`${id}-claim-type`}>What does this claim represent?</label>
-            <NativeSelect id={`${id}-claim-type`} value={type} onChange={event => {
-              setType(event.target.value);
-              setConfirm(false);
-            }}>
-              {options.types.map(item => <NativeSelectOption key={`${item.kind}:${item.claim_type}`} value={`${item.kind}:${item.claim_type}`}>
-                {item.kind === 'UNKNOWN' ? item.label : `${item.kind_label} · ${item.label}`}
-              </NativeSelectOption>)}
-            </NativeSelect>
-            {selectedType && <p>{selectedType.label}</p>}
-            <p className="investigation-muted">Choose “Not classified” when uncertain. A source statement records what a source says; it does not establish truth, binding authority or applicability. The original machine proposal and exact quotations stay unchanged.</p>
-            {typeUnavailable && <p role="alert">The earlier type is unavailable. Choose a current type before saving.</p>}
-          </div>}
+          {options && (
+            <div className="claim-type-choice">
+              <label htmlFor={`${id}-claim-type`}>
+                What does this claim represent?
+              </label>
+              <NativeSelect
+                id={`${id}-claim-type`}
+                value={type}
+                onChange={(event) => {
+                  setType(event.target.value);
+                  setConfirm(false);
+                }}
+              >
+                {options.types.map((item) => (
+                  <NativeSelectOption
+                    key={`${item.kind}:${item.claim_type}`}
+                    value={`${item.kind}:${item.claim_type}`}
+                  >
+                    {item.kind === 'UNKNOWN'
+                      ? item.label
+                      : `${item.kind_label} · ${item.label}`}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+              {selectedType && <p>{selectedType.label}</p>}
+              <p className="investigation-muted">
+                Choose “Not classified” when uncertain. A source statement
+                records what a source says; it does not establish truth, binding
+                authority or applicability. The original machine proposal and
+                exact quotations stay unchanged.
+              </p>
+              {typeUnavailable && (
+                <p role="alert">
+                  The earlier type is unavailable. Choose a current type before
+                  saving.
+                </p>
+              )}
+            </div>
+          )}
+          {sourceOptions && (
+            <SourceRoleEditor
+              items={sourceRoles}
+              citations={citations}
+              options={sourceOptions}
+              onChange={(items) => {
+                setSourceRoles(items);
+                setConfirm(false);
+              }}
+            />
+          )}
+          {sourceRolesInvalid && (
+            <p role="alert">
+              Complete each source role, citation and explanation, or remove
+              that assessment before saving.
+            </p>
+          )}
           <label htmlFor={`${id}-reason`}>
             Explain what the cited evidence establishes
           </label>
@@ -436,8 +571,9 @@ export function ClaimReviewForm({
                 checked={confirm}
                 onCheckedChange={(checked) => setConfirm(checked === true)}
               />
-              Publish this explanation and claim classification in the public dossier. It contains no
-              confidential information.
+              Publish this explanation, claim classification and source
+              assessments in the public dossier. It contains no confidential
+              information.
             </label>
           )}
           <p className="investigation-muted">
@@ -450,6 +586,7 @@ export function ClaimReviewForm({
               busy ||
               !decision ||
               typeUnavailable ||
+              sourceRolesInvalid ||
               reason.trim().length < 5 ||
               (publicView && !confirm)
             }

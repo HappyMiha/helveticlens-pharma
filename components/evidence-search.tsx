@@ -1,5 +1,6 @@
 'use client';
 import { ClaimInterpretation } from './claim-interpretation';
+import { SourceAuthority } from './source-authority';
 
 import {
   useCallback,
@@ -135,7 +136,9 @@ export function EvidenceSearch({
         setProgress(null);
         setBusy(false);
         setError('');
-        setNotice('Finding review changed. Search again to see current decisions and evidence.');
+        setNotice(
+          'Finding review changed. Search again to see current decisions and evidence.',
+        );
       },
       start(question) {
         setQuery(question);
@@ -403,8 +406,8 @@ export function EvidenceSearchResults({
         )}
         <p>
           Records captured by {date(page.as_of)}. Current access and finding
-          reviews are checked again while results are open. Human decisions
-          do not change relevance ranking or verify truth.
+          reviews are checked again while results are open. Human decisions do
+          not change relevance ranking or verify truth.
         </p>
       </details>
     </div>
@@ -431,7 +434,8 @@ export function EvidenceSearchResult({
       {item.kind === 'claim' && (
         <div className="evidence-search-review">
           <p>
-            Human review: {review
+            Human review:{' '}
+            {review
               ? review.stale
                 ? 'Evidence changed — review again'
                 : review.decision
@@ -439,20 +443,38 @@ export function EvidenceSearchResult({
                   : 'Not reviewed'
               : 'Status unavailable'}
           </p>
-          <ClaimInterpretation value={review?.interpretation} stale={review?.stale} />
+          <ClaimInterpretation
+            value={review?.interpretation}
+            stale={review?.stale}
+          />
+          <SourceAuthority
+            value={review?.source_assessments?.items.find(
+              (value) => value.source_id === item.source_id,
+            )}
+            stale={review?.stale}
+          />
           {review?.has_conflicting_evidence && (
-            <p>Conflicting evidence is recorded. Open the finding to compare citations.</p>
+            <p>
+              Conflicting evidence is recorded. Open the finding to compare
+              citations.
+            </p>
           )}
           {review && !review.complete && (
-            <p>Review context is incomplete; a full assessment is still needed.</p>
+            <p>
+              Review context is incomplete; a full assessment is still needed.
+            </p>
           )}
           {review && review.complete && !review.reviewable && (
-            <p>The captured citations need checking before a review can be saved.</p>
+            <p>
+              The captured citations need checking before a review can be saved.
+            </p>
           )}
         </div>
       )}
       {item.citation_relation && (
-        <p className="eyebrow">Citation relationship: {readable(item.citation_relation)}</p>
+        <p className="eyebrow">
+          Citation relationship: {readable(item.citation_relation)}
+        </p>
       )}
       <blockquote>{item.quote}</blockquote>
       {item.text_truncated && (

@@ -80,21 +80,51 @@ export default function Guide() {
             </Link>
           </nav>
           <div className="guide-chapters">
-            <section id="research-engine" aria-labelledby="research-engine-title">
+            <section
+              id="research-engine"
+              aria-labelledby="research-engine-title"
+            >
               <span className="guide-step">ITERATIVE RESEARCH</span>
-              <h2 id="research-engine-title">A discovery can lead to the next question.</h2>
-              <p>Choose New dossier, enter a title and a research question, then confirm public-source research.
-                Topics, source lists and monitoring rules are not required. Set up monitoring separately when you want ongoing updates.</p>
-              <p>Helvetic Lens plans research directions, checks candidate relevance before reading and records claims with exact source excerpts.
-                A gap in public evidence can create a follow-up question, another search and new support or a contradiction for an existing claim.</p>
-              <p>In AI research, Open questions shows what prompted each follow-up and which evidence came back.
-                New evidence found does not mean the question is settled. Names alone do not merge organisations;
-                complete cited identifiers can group mentions within one investigation. Identical document copies do not count as new support.</p>
-              <p>Open Research limits &amp; continuation to see the saved budget or continue pending directions with a larger total.
-                Pause retains progress. A failed or interrupted request is not silently repeated. Jev-first or Laya-first relevance routing is optional at creation;
-                uncertain candidates can use the configured workspace analysis model. Inspect candidate decisions and routing under Method.</p>
-              <p>The public question and queries derived from public evidence go to search providers. Private dossier material stays out of public query planning.
-                Accessible sources, retained excerpts and provider availability limit coverage; this is not an exhaustive search of every archive.</p>
+              <h2 id="research-engine-title">
+                A discovery can lead to the next question.
+              </h2>
+              <p>
+                Choose New dossier, enter a title and a research question, then
+                confirm public-source research. Topics, source lists and
+                monitoring rules are not required. Set up monitoring separately
+                when you want ongoing updates.
+              </p>
+              <p>
+                Helvetic Lens plans research directions, checks candidate
+                relevance before reading and records claims with exact source
+                excerpts. A gap in public evidence can create a follow-up
+                question, another search and new support or a contradiction for
+                an existing claim.
+              </p>
+              <p>
+                In AI research, Open questions shows what prompted each
+                follow-up and which evidence came back. New evidence found does
+                not mean the question is settled. Names alone do not merge
+                organisations; complete cited identifiers can group mentions
+                within one investigation. Identical document copies do not count
+                as new support.
+              </p>
+              <p>
+                Open Research limits &amp; continuation to see the saved budget
+                or continue pending directions with a larger total. Pause
+                retains progress. A failed or interrupted request is not
+                silently repeated. Jev-first or Laya-first relevance routing is
+                optional at creation; uncertain candidates can use the
+                configured workspace analysis model. Inspect candidate decisions
+                and routing under Method.
+              </p>
+              <p>
+                The public question and queries derived from public evidence go
+                to search providers. Private dossier material stays out of
+                public query planning. Accessible sources, retained excerpts and
+                provider availability limit coverage; this is not an exhaustive
+                search of every archive.
+              </p>
             </section>
 
             <section id="templates" aria-labelledby="templates-title">
@@ -103,11 +133,11 @@ export default function Guide() {
                 Start with a structure. Keep your own question.
               </h2>
               <p>
-                Choose a dossier template in monitoring setup, or open
-                Research approach in an existing dossier. Legal offers Legal
-                Question, Legislative Monitor and Case / Dispute. Pharma offers
-                Market Access, Regulatory Monitor and Safety. Each suggests
-                useful subject details and questions to investigate.
+                Choose a dossier template in monitoring setup, or open Research
+                approach in an existing dossier. Legal offers Legal Question,
+                Legislative Monitor and Case / Dispute. Pharma offers Market
+                Access, Regulatory Monitor and Safety. Each suggests useful
+                subject details and questions to investigate.
               </p>
               <p>
                 In a new draft, Fill empty fields from template inserts an
@@ -246,8 +276,15 @@ export default function Guide() {
                 Review findings also lets an editor classify a source statement,
                 user assertion or AI interpretation using this dossier’s domain
                 types. Leave uncertain claims unclassified. Earlier choices stay
-                in review history; evidence changes require review again.
-                Classification does not assess source authority or applicability.
+                in review history; evidence changes require review again. Claim
+                classification alone does not assess source authority or
+                applicability. In the same review, Assess source roles lets you
+                classify individual captured sources with an exact citation and
+                explanation. Search shows only the role assessed for that
+                result’s source. Earlier assessments stay in review history;
+                changed evidence requires review again. An editor’s source role
+                does not establish legal applicability, truth or regulatory
+                status.
               </p>
               <p>
                 Meaning supports up to 20,000 saved records. Local preparation
@@ -400,21 +437,23 @@ export default function Guide() {
               </p>
               <p>
                 Open Review findings to inspect exact supporting and conflicting
-                quotations. An editor can accept, dismiss, or request more evidence
-                with an explanation. This updates the human claim ledger while the
-                original machine assessment stays intact. Changed evidence requires
-                review again; public explanations need your explicit consent.
+                quotations. An editor can accept, dismiss, or request more
+                evidence with an explanation. This updates the human claim
+                ledger while the original machine assessment stays intact.
+                Changed evidence requires review again; public explanations need
+                your explicit consent.
               </p>
               <p>
                 Open Entity matches across research to compare two mentions with
                 the same cited identifier, issuer and jurisdiction. Suggestions
-                examine up to 120 recent eligible mentions; older saved decisions
-                remain available separately. An editor can record Same entity,
-                Different entities or Not enough evidence after reading both
-                quotations. The review keeps original records and its history.
-                Changed evidence requires a new review. Public explanations need
-                your explicit confirmation before publication. Identity review
-                does not accept the claims or merge other related entities.
+                examine up to 120 recent eligible mentions; older saved
+                decisions remain available separately. An editor can record Same
+                entity, Different entities or Not enough evidence after reading
+                both quotations. The review keeps original records and its
+                history. Changed evidence requires a new review. Public
+                explanations need your explicit confirmation before publication.
+                Identity review does not accept the claims or merge other
+                related entities.
               </p>
               <p>
                 Public comparisons can be read without registration. Public
@@ -857,11 +896,11 @@ export default function Guide() {
                 Claim inputs include the editor’s current decision, the original
                 machine assessment and exact supporting or contradicting quotes.
                 Accepted claims come first within a limited candidate selection;
-                acceptance does not verify truth. Groups that cannot fit with all
-                their quotations are omitted and counted in the preview. A changed
-                claim or review requires a new note before accepting the answer.
-                A note whose supporting evidence becomes unavailable is hidden,
-                including its linked follow-ups and exported copies.
+                acceptance does not verify truth. Groups that cannot fit with
+                all their quotations are omitted and counted in the preview. A
+                changed claim or review requires a new note before accepting the
+                answer. A note whose supporting evidence becomes unavailable is
+                hidden, including its linked follow-ups and exported copies.
               </p>
               <p>
                 Use <strong>Read saved document</strong> on page citations to

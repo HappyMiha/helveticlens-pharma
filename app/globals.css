@@ -2688,3 +2688,13 @@ code {
 .claim-type-choice label { display: block; margin-bottom: .5rem; }
 .claim-type-choice [data-slot="native-select-wrapper"] { width: 100%; max-width: 100%; }
 .claim-type-choice select { min-height: 2.75rem; font-size: 1rem; }
+
+.source-role-editor { margin-block: 1.5rem; }
+.source-role-editor p, .source-assessment-basis p { overflow-wrap: anywhere; }
+.source-role-card { min-width: 0; margin-block: 1.25rem; padding: 1rem; border: 1px solid var(--border); }
+.source-role-card legend { max-width: 100%; overflow-wrap: anywhere; }
+.source-role-editor label { display: block; margin-block: .8rem .35rem; }
+.source-role-editor [data-slot="native-select-wrapper"] { width: 100%; min-width: 0; }
+.source-role-editor select { min-height: 2.75rem; font-size: 1rem; }
+.source-role-card blockquote, .source-assessment-basis blockquote { overflow-wrap: anywhere; }
+.source-role-add > button { margin-top: .75rem; }
