@@ -446,3 +446,12 @@ selected-check reader shows repeated, changed and unmatched captured material.
 Comparisons describe saved content, not independent confirmation or new facts.
 Source changes withhold dependent context. Core scope and acceptance:
 `docs/PRODUCT_EPISODE_PROGRESS.md`.
+
+
+### Selected-question assessment (1.56)
+
+New typed saved-check continuations receive a concise cited AI assessment of the
+exact selected question. Supporting, contrary and contextual passages remain
+expandable, with limitations visible; earlier understanding and general findings
+remain in closed research context. Capture counts never establish an answer.
+Legacy briefs, history, source invalidation and explicit monitoring stay intact.

@@ -787,3 +787,129 @@ for (const mode of [
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+for (const [status, label] of [
+  ['possible_answer', 'A possible answer from the sources'],
+  ['partial', 'Some evidence; the question remains open'],
+  ['conflicting', 'The read evidence conflicts'],
+  ['not_found', 'No answer found in the material read'],
+]) {
+  test(`selected question assessment: ${status}, cited once with folded context`, async () => {
+    const value = episode();
+    value.question = 'What payment is documented for the selected period?';
+    value.exploration.briefing.assessment = {
+      contract: 'selected-question-assessment/v1',
+      question_id: 'selected-q',
+      question: value.question,
+      investigation_id: 'r',
+      selected_from_investigation_id: 'older',
+      status,
+      points: [
+        {
+          statement: 'This point follows the selected question.',
+          evidence: [
+            {
+              source_id: 's',
+              quote: 'The source passage is here.',
+              locator: 'p1',
+              role:
+                status === 'conflicting'
+                  ? 'counterevidence'
+                  : status === 'not_found'
+                    ? 'context'
+                    : 'support',
+            },
+          ],
+        },
+      ],
+      limitations: ['Other periods remain unchecked.'],
+    };
+    let writes = 0;
+    serve(value, () => {
+      writes++;
+      throw new Error('Reading must not write');
+    });
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    const sections = tree.root.findAll(
+      (node) =>
+        node.props['aria-label'] === 'Assessment of the selected question',
+    );
+    assert.equal(sections.length, 1);
+    assert.equal(
+      tree.root.findAllByProps({ className: 'exploration-question' }).length,
+      1,
+    );
+    assert.ok(text(tree).includes(label));
+    assert.ok(text(tree).includes('Other periods remain unchecked.'));
+    const details = tree.root.findAllByType('details');
+    const evidence = details.find((node) =>
+      node
+        .findAllByType('summary')
+        .some((s) => s.props.children === 'Read the evidence for this point'),
+    );
+    assert.ok(evidence && !evidence.props.open);
+    assert.equal(
+      evidence.findByType('blockquote').props.children,
+      'The source passage is here.',
+    );
+    assert.equal(
+      evidence.findByType('a').props.href,
+      'https://example.org/record',
+    );
+    const background = details.find((node) =>
+      node
+        .findAllByType('summary')
+        .some(
+          (s) =>
+            s.props.children === 'Research context & earlier understanding',
+        ),
+    );
+    assert.ok(background && !background.props.open);
+    assert.ok(
+      JSON.stringify(
+        background.findAllByType('p').map((p) => p.props.children),
+      ).includes('You may mean this entity'),
+    );
+    assert.equal(writes, 0);
+    await act(async () => tree.unmount());
+    const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    assert.ok(text(tree).includes(label));
+    assert.equal(tree.root.findAllByType('button').length, 0);
+    await act(async () => tree.unmount());
+  });
+}
+
+test('invalidated assessment is absent while retained public passages remain readable', async () => {
+  const value = episode();
+  value.exploration.status = 'evidence_changed';
+  value.exploration.briefing = null;
+  value.exploration.capture_progress = { status: 'evidence_changed' };
+  serve(value, () => {
+    throw new Error('No automatic research');
+  });
+  let tree;
+  await act(async () => {
+    tree = create(
+      React.createElement(Exploration, { ...props, canEdit: false }),
+    );
+  });
+  assert.equal(
+    tree.root.findAll(
+      (n) => n.props['aria-label'] === 'Assessment of the selected question',
+    ).length,
+    0,
+  );
+  assert.ok(text(tree).includes('Supporting evidence changed'));
+  assert.ok(text(tree).includes('The source passage is here.'));
+  await act(async () => tree.unmount());
+});

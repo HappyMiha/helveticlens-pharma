@@ -48,6 +48,21 @@ export type CaptureProgress =
         comparison: { basis: string; temporal_basis: string };
       }[];
     };
+export type QuestionAssessment = {
+  contract: 'selected-question-assessment/v1';
+  question_id: string;
+  question: string;
+  investigation_id: string;
+  selected_from_investigation_id: string;
+  status: 'possible_answer' | 'partial' | 'conflicting' | 'not_found';
+  points: {
+    statement: string;
+    evidence: (ExplorationCitation & {
+      role: 'support' | 'counterevidence' | 'context';
+    })[];
+  }[];
+  limitations: string[];
+};
 export type ExplorationState = {
   capture_progress?: CaptureProgress | null;
   next_check?: SavedCheck | null;
@@ -90,6 +105,7 @@ export type ExplorationState = {
     reads_completed: number;
   })[];
   briefing: null | {
+    assessment?: QuestionAssessment;
     understanding: string;
     findings: (ExplorationCitation & {
       statement: string;

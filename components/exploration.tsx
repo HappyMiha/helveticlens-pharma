@@ -229,7 +229,9 @@ function ExplorationEpisode({
       </p>
       <h2>
         {brief
-          ? 'What the first evidence suggests'
+          ? brief.assessment
+            ? 'What the evidence says about your question'
+            : 'What the first evidence suggests'
           : active
             ? 'Getting to know your question'
             : 'Your research checkpoint'}
@@ -254,10 +256,12 @@ function ExplorationEpisode({
       )}
       {page && state && (
         <>
-          <p className="exploration-question">
-            <span className="content-origin">Your question</span>
-            {page.question}
-          </p>
+          {!brief?.assessment && (
+            <p className="exploration-question">
+              <span className="content-origin">Your question</span>
+              {page.question}
+            </p>
+          )}
           {active && (
             <p>
               Checking possible meanings and reading sources. Findings appear
@@ -561,9 +565,8 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         <InterpretationChanges state={state} />
       </>
     );
-  return (
+  const background = (
     <>
-      <ContinuedCheck state={state} />
       <section className="exploration-understanding">
         <span className="content-origin">AI · tentative understanding</span>
         <p>{brief.understanding}</p>
@@ -602,6 +605,75 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           <EarlyOrientation state={state} historical />
         </details>
       )}
+    </>
+  );
+  const assessment = brief.assessment;
+  if (!assessment)
+    return (
+      <>
+        <ContinuedCheck state={state} />
+        {background}
+      </>
+    );
+  const label = {
+    possible_answer: 'A possible answer from the sources',
+    partial: 'Some evidence; the question remains open',
+    conflicting: 'The read evidence conflicts',
+    not_found: 'No answer found in the material read',
+  }[assessment.status];
+  return (
+    <>
+      <section aria-label="Assessment of the selected question">
+        <span className="content-origin">AI · source-backed assessment</span>
+        <h3>{label}</h3>
+        <p className="exploration-question">{assessment.question}</p>
+        {assessment.points.map((point, index) => (
+          <article key={index}>
+            <p>{point.statement}</p>
+            <details className="exploration-citation">
+              <summary>Read the evidence for this point</summary>
+              {point.evidence.map((ref, i) => {
+                const source = state.sources.find(
+                  (item) => item.id === ref.source_id,
+                );
+                if (!source) return null;
+                return (
+                  <div key={i}>
+                    <span className="content-origin">
+                      {ref.role === 'counterevidence'
+                        ? 'Counterevidence'
+                        : ref.role === 'support'
+                          ? 'Supporting passage'
+                          : 'Context passage'}
+                    </span>
+                    <blockquote>{ref.quote}</blockquote>
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}
+                    </a>
+                    <p className="muted">
+                      Captured {date(source.captured_at)} · {ref.locator}
+                    </p>
+                  </div>
+                );
+              })}
+            </details>
+          </article>
+        ))}
+        <h4>What remains uncertain</h4>
+        <ul>
+          {assessment.limitations.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="muted">
+          An interpretation of the cited material, still open to review.
+        </p>
+      </section>
+      <details className="dossier-secondary">
+        <summary>Research context & earlier understanding</summary>
+        <ContinuedCheck state={state} />
+        {background}
+      </details>
     </>
   );
 }
@@ -800,8 +872,8 @@ function EpisodeProgress({ progress }: { progress?: CaptureProgress | null }) {
   if (progress.status !== 'ready')
     return (
       <p className="muted">
-        The comparison&apos;s source material changed. Its results are hidden until
-        the evidence is reviewed.
+        The comparison&apos;s source material changed. Its results are hidden
+        until the evidence is reviewed.
       </p>
     );
   const { counts, scope, items } = progress;
@@ -822,11 +894,7 @@ function EpisodeProgress({ progress }: { progress?: CaptureProgress | null }) {
       ) : (
         <>
           <p>{`${counts.unmatched} new to this comparison · ${counts.changed_capture} changed · ${counts.repeated} repeated${counts.unestablished ? ` · ${counts.unestablished} unestablished` : ''}.`}</p>
-          {onlyRepeated && (
-            <p>
-              Only previously captured content was read.
-            </p>
-          )}
+          {onlyRepeated && <p>Only previously captured content was read.</p>}
         </>
       )}
       {scope.truncated && (
