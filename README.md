@@ -428,3 +428,12 @@ meaning, exact later passage, next question and observed search/read progress.
 Budget-limited work is labeled uncompleted; source changes withhold dependent
 research. No new setup fields or monitoring authority. Shared Core contract and
 acceptance: `docs/PRODUCT_ADAPTIVE_ORIENTATION.md` in HappyMiha/helvetic-lens.
+
+### Continue a saved check (1.54)
+
+An inactive checkpoint can offer one source-contained unfinished adaptive check.
+The explicit choice carries its saved question identifier and starts the same query
+in a bounded next episode. Earlier source context stays distinct from newly read
+evidence; source/dependency changes withhold derived context and stop further work.
+Alternatives remain secondary, with free-text correction and monitoring separate.
+Shared Core scope: `docs/PRODUCT_SAVED_CHECK_CONTINUATION.md`.

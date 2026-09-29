@@ -3,7 +3,23 @@ export type ExplorationCitation = {
   quote: string;
   locator: string;
 };
+export type SavedCheck = {
+  investigation_id: string;
+  question_id: string;
+  question: string;
+  original_question: string;
+  purpose: string;
+  why: string;
+  quote: string;
+  locator: string;
+  source: { id: string; title: string; url: string; captured_at: string };
+};
 export type ExplorationState = {
+  next_check?: SavedCheck | null;
+  continuation?:
+    | (SavedCheck & { status: 'ready' })
+    | { status: 'evidence_changed' }
+    | null;
   status:
     | 'exploring'
     | 'ready'

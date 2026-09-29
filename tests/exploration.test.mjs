@@ -529,3 +529,149 @@ for (const stage of ['queued', 'complete', 'budget', 'hidden'])
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+const savedCheck = () => ({
+  investigation_id: 'r',
+  question_id: 'saved-gap',
+  question: 'Do payment periods explain the reported difference?',
+  original_question: 'A rough question',
+  purpose: 'Read a reconciliation of awards and payments.',
+  why: 'Two public records report different amounts for the same period.',
+  quote: 'An earlier source reported a different amount.',
+  locator: 'p2',
+  source: {
+    id: 'earlier-source',
+    title: 'Earlier record',
+    url: 'https://example.org/earlier',
+    captured_at: '2026-09-29T10:00:00Z',
+  },
+});
+test('one saved check sends its typed identity and exact question, keeping alternatives secondary and retrying once', async () => {
+  let tree;
+  const writes = [];
+  const value = episode();
+  value.exploration.next_check = savedCheck();
+  serve(
+    value,
+    (url, init) =>
+      new Promise((resolve) =>
+        writes.push({ url, body: JSON.parse(init.body), resolve }),
+      ),
+  );
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    assert.match(text(tree), /A useful next check/);
+    assert.match(text(tree), /earlier source reported a different amount/);
+    assert.equal(
+      tree.root
+        .findAllByType('button')
+        .filter((b) => b.props.children === 'Continue this check').length,
+      1,
+    );
+    const alternatives = tree.root
+      .findAllByType('details')
+      .find((d) =>
+        d
+          .findAllByType('summary')
+          .some((s) => s.props.children === 'Other directions'),
+      );
+    assert.ok(alternatives && !alternatives.props.open);
+    assert.equal(findButton(tree, 'Continue the broad exploration'), undefined);
+    await act(async () => {
+      findButton(tree, 'Continue this check').props.onClick();
+      findButton(tree, 'Continue this check').props.onClick();
+    });
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].body.follow_up_id, 'saved-gap');
+    assert.equal(writes[0].body.question, savedCheck().question);
+    assert.equal(writes[0].body.direction, undefined);
+    assert.equal(writes[0].body.expected_revision, 18);
+    assert.equal(writes[0].body.public_query_confirmed, true);
+    await act(async () =>
+      writes[0].resolve(Response.json({}, { status: 503 })),
+    );
+    await act(async () =>
+      findButton(tree, 'Retry this direction safely').props.onClick(),
+    );
+    assert.deepEqual(writes[1].body, writes[0].body);
+    await act(async () => writes[1].resolve(Response.json({ id: 'next' })));
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+test('changed saved-check evidence refreshes the checkpoint and removes the stale action', async () => {
+  let tree;
+  const value = episode();
+  value.exploration.next_check = savedCheck();
+  serve(value, async () => {
+    value.exploration.next_check = null;
+    return Response.json(
+      { detail: 'This saved check changed.' },
+      { status: 409 },
+    );
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    await act(async () =>
+      findButton(tree, 'Continue this check').props.onClick(),
+    );
+    assert.equal(findButton(tree, 'Continue this check'), undefined);
+    assert.equal(findButton(tree, 'Retry this direction safely'), undefined);
+    assert.doesNotMatch(
+      text(tree),
+      /earlier source reported a different amount/,
+    );
+    assert.match(text(tree), /saved check changed/);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+for (const mode of ['ready', 'changed', 'readonly', 'running'])
+  test(`saved check origin and action boundaries: ${mode}`, async () => {
+    let tree;
+    const value = episode({
+      status: mode === 'running' ? 'running' : 'completed',
+    });
+    value.exploration.next_check = savedCheck();
+    if (mode === 'ready' || mode === 'changed')
+      value.exploration.continuation =
+        mode === 'ready'
+          ? { status: 'ready', ...savedCheck() }
+          : { status: 'evidence_changed' };
+    if (mode === 'ready' || mode === 'changed')
+      value.exploration.next_check = null;
+    serve(value, () => {
+      throw new Error('Reading cannot start research');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: mode !== 'readonly',
+          }),
+        );
+      });
+      assert.equal(findButton(tree, 'Continue this check'), undefined);
+      if (mode === 'ready') {
+        assert.match(
+          text(tree),
+          /Your selected check · earlier research context/,
+        );
+        assert.match(text(tree), /earlier source reported a different amount/);
+      }
+      if (mode === 'changed') {
+        assert.match(text(tree), /earlier evidence behind this check changed/);
+        assert.doesNotMatch(
+          text(tree),
+          /earlier source reported a different amount/,
+        );
+      }
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

@@ -11,6 +11,7 @@ import { currentWebResearch, type WebResearch } from '@/lib/web-research';
 
 import type {
   ExplorationState,
+  SavedCheck,
   ExplorationCitation as Citation,
 } from '@/lib/exploration';
 
@@ -20,6 +21,7 @@ type Reply = {
   expected_revision: number;
   question: string;
   direction?: number;
+  follow_up_id?: string;
   public_query_confirmed: true;
 };
 
@@ -71,6 +73,7 @@ function ExplorationEpisode({
       : null;
   const state = page?.exploration;
   const brief = state?.briefing;
+  const nextCheck = state?.next_check;
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -102,7 +105,7 @@ function ExplorationEpisode({
     };
   }, [refreshList, refresh, lifecycle]);
 
-  async function reply(text: string, direction?: number) {
+  async function reply(text: string, direction?: number, followUpId?: string) {
     if (
       !page ||
       !state ||
@@ -119,6 +122,7 @@ function ExplorationEpisode({
         question: text.trim(),
         public_query_confirmed: true as const,
         ...(direction === undefined ? {} : { direction }),
+        ...(followUpId === undefined ? {} : { follow_up_id: followUpId }),
       },
     };
     sending.current = true;
@@ -203,6 +207,19 @@ function ExplorationEpisode({
       </details>
     );
   }
+  const directionChoices = brief?.directions.map((direction, index) => (
+    <article key={direction.question}>
+      <Button
+        variant="outline"
+        disabled={busy || !!pending}
+        onClick={() => void reply(direction.question, index)}
+      >
+        {direction.question}
+      </Button>
+      <p>{direction.why}</p>
+      {quote(direction)}
+    </article>
+  ));
   const active = page && ['queued', 'running'].includes(page.status);
   return (
     <section className="exploration" aria-label="Developing your research">
@@ -317,26 +334,45 @@ function ExplorationEpisode({
             canEdit && (
               <section className="exploration-choice">
                 <h3>
-                  {brief?.clarification || 'Where would you like to go next?'}
+                  {nextCheck
+                    ? 'A useful next check'
+                    : brief?.clarification ||
+                      'Where would you like to go next?'}
                 </h3>
                 <p className="muted">
                   Your choice starts one more bounded episode using public
                   research providers. Earlier evidence is kept. No reply is
                   needed to keep this briefing.
                 </p>
-                {brief?.directions.map((direction, index) => (
-                  <article key={direction.question}>
+                {nextCheck && (
+                  <article>
+                    <p>
+                      <strong>{nextCheck.question}</strong>
+                    </p>
+                    <p>{nextCheck.why}</p>
+                    <SavedCheckPassage check={nextCheck} />
                     <Button
-                      variant="outline"
                       disabled={busy || !!pending}
-                      onClick={() => void reply(direction.question, index)}
+                      onClick={() =>
+                        void reply(
+                          nextCheck.question,
+                          undefined,
+                          nextCheck.question_id,
+                        )
+                      }
                     >
-                      {direction.question}
+                      Continue this check
                     </Button>
-                    <p>{direction.why}</p>
-                    {quote(direction)}
                   </article>
-                ))}
+                )}
+                {nextCheck && directionChoices?.length ? (
+                  <details>
+                    <summary>Other directions</summary>
+                    {directionChoices}
+                  </details>
+                ) : (
+                  directionChoices
+                )}
                 {pending && (
                   <Button
                     disabled={busy}
@@ -347,7 +383,7 @@ function ExplorationEpisode({
                       : 'Retry this direction safely'}
                   </Button>
                 )}
-                <details open={!brief || undefined}>
+                <details open={(!brief && !nextCheck) || undefined}>
                   <summary>Change direction in your own words</summary>
                   <form
                     onSubmit={(event) => {
@@ -375,7 +411,7 @@ function ExplorationEpisode({
                     </Button>
                   </form>
                 </details>
-                {brief && !pending && (
+                {brief && !pending && !nextCheck && (
                   <Button
                     variant="ghost"
                     disabled={busy}
@@ -519,12 +555,14 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
   if (!brief)
     return (
       <>
+        <ContinuedCheck state={state} />
         <EarlyOrientation state={state} />
         <InterpretationChanges state={state} />
       </>
     );
   return (
     <>
+      <ContinuedCheck state={state} />
       <section className="exploration-understanding">
         <span className="content-origin">AI · tentative understanding</span>
         <p>{brief.understanding}</p>
@@ -712,6 +750,45 @@ function InterpretationChanges({ state }: { state: ExplorationState }) {
           </article>
         );
       })}
+    </section>
+  );
+}
+
+function SavedCheckPassage({ check }: { check: SavedCheck }) {
+  return (
+    <details className="exploration-citation">
+      <summary>Why this check arose · earlier source passage</summary>
+      <blockquote>{check.quote}</blockquote>
+      <a href={check.source.url} target="_blank" rel="noreferrer">
+        {check.source.title}
+      </a>
+      <p className="muted">
+        Captured {date(check.source.captured_at)} · {check.locator}
+      </p>
+    </details>
+  );
+}
+
+function ContinuedCheck({ state }: { state: ExplorationState }) {
+  const check = state.continuation;
+  if (!check) return null;
+  if (check.status !== 'ready')
+    return (
+      <p className="muted">
+        The earlier evidence behind this check changed. Its context is hidden;
+        review the earlier episode or correct your question.
+      </p>
+    );
+  return (
+    <section
+      className="dossier-secondary"
+      aria-label="Continuing a saved check"
+    >
+      <span className="content-origin">
+        Your selected check · earlier research context
+      </span>
+      <p>{check.purpose}</p>
+      <SavedCheckPassage check={check} />
     </section>
   );
 }
