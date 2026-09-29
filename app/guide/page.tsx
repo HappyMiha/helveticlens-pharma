@@ -842,6 +842,15 @@ export default function Guide() {
               <span className="guide-step">05 / EVIDENCE</span>
               <h2 id="evidence-title">Review an AI research note.</h2>
               <p>
+                Before generating, choose{' '}
+                <strong>Quotations and AI analysis</strong> under Answer style
+                to separate exact saved text from AI interpretation. A quotation
+                identifies what was saved; it does not establish truth, current
+                applicability or source authority. Review the sources and
+                opposing evidence before accepting the note. Earlier notes keep
+                their original format.
+              </p>
+              <p>
                 To share your findings with everyone, open the dossier’s{' '}
                 <strong>Sharing</strong> chapter, then Public version. Write a
                 separate public title, summary, text and source links, preview
@@ -904,16 +913,13 @@ export default function Guide() {
               </p>
               <p>
                 In the AI preview, choose{' '}
-                <strong>
-                  Also include editor context
-                </strong>{' '}
-                to include each claim’s reviewed type and source assessments.
-                Inspect the separate context for related claims. Missing or
-                stale assessments stay unknown; reviewer explanations,
-                identities and history are not sent. Source roles do not prove
-                authority or applicability, and generated findings remain AI
-                drafts. Capture dates do not establish publication or effective
-                dates.
+                <strong>Also include editor context</strong> to include each
+                claim’s reviewed type and source assessments. Inspect the
+                separate context for related claims. Missing or stale
+                assessments stay unknown; reviewer explanations, identities and
+                history are not sent. Source roles do not prove authority or
+                applicability, and generated findings remain AI drafts. Capture
+                dates do not establish publication or effective dates.
               </p>
               <p>
                 Use <strong>Read saved document</strong> on page citations to

@@ -145,3 +145,43 @@ test('retained claim research scopes keep automatic access and freshness checks'
   assert.equal(hasClaimInputs(undefined), false);
   assert.equal(hasClaimInputs('future_scope'), false);
 });
+
+test('answer format has explicit contract and retry identity while omitted format stays compatible', () => {
+  const old = {
+    dossier_id: 'd',
+    question_id: 'q',
+    expected_revision: 1,
+    evidence_scope: 'claims_v1',
+    evidence_fingerprint: 'b'.repeat(64),
+  };
+  const keys = new Map();
+  let count = 0;
+  const key = () => String(++count);
+  const standard = researchRequest(old, keys, key);
+  assert.deepEqual(
+    researchRequest({ ...old, answer_format: 'standard' }, keys, key),
+    standard,
+  );
+  const modern = {
+    ...old,
+    answer_format: 'source_analysis_v1',
+    answer_contract: { id: 'source-analysis/v1', schema_version: 1 },
+  };
+  const request = researchRequest(modern, keys, key);
+  assert.equal(request.answer_format, 'source_analysis_v1');
+  assert.notEqual(request.request_key, standard.request_key);
+  assert.deepEqual(researchRequest(modern, keys, key), request);
+  assert.equal(Object.keys(request).length, 5);
+  for (const change of [
+    { answer_contract: undefined },
+    { answer_contract: { id: 'future', schema_version: 1 } },
+    { answer_contract: { id: 'source-analysis/v1', schema_version: 2 } },
+    { evidence_scope: 'saved' },
+    { answer_format: 'future' },
+  ]) {
+    assert.throws(
+      () => researchRequest({ ...modern, ...change }, keys, key),
+      /Refresh/,
+    );
+  }
+});

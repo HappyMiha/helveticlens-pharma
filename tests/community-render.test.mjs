@@ -2286,3 +2286,82 @@ test('reviewed synthesis keeps each claim classification and citation role disti
   );
   assert.ok(stale.includes('User document'));
 });
+
+const { ResearchPost } = require(resolve('components/discussion.tsx'));
+for (const separated of [false, true])
+  test(`research note ${separated ? 'separates quotations and interpretation' : 'keeps legacy presentation'}`, () => {
+    const quote = 'Fictional <script>quotation</script>';
+    const post = {
+      id: 'n',
+      kind: 'research',
+      thread_id: 'q',
+      body: 'Retained fallback',
+      url: '',
+      data: {
+        sources: [
+          {
+            id: 'S1',
+            key: 'source',
+            kind: 'team_contribution',
+            title: 'Team opinion',
+            text: 'Saved snapshot',
+            url: 'https://example.test/evidence',
+            date: '2026-09-29T00:00:00Z',
+          },
+        ],
+        findings: [
+          {
+            kind: 'SOURCE_QUOTE',
+            claim: quote,
+            citations: [{ source_id: 'S1', quote }],
+          },
+          {
+            kind: 'AI_INTERPRETATION',
+            claim: 'Fictional AI inference requiring review.',
+            citations: [
+              { source_id: 'S1', quote: 'Other supporting excerpt.' },
+            ],
+          },
+        ],
+        unknowns: ['Still unknown.'],
+        search_queries: [],
+        ...(separated
+          ? {
+              answer_format: 'source_analysis_v1',
+              answer_contract: {
+                id: 'source-analysis/v1',
+                schema_version: 1,
+                labels: {
+                  SOURCE_QUOTE: 'Quoted saved text',
+                  AI_INTERPRETATION: 'AI interpretation',
+                },
+                boundary: 'Quotation is not truth.',
+              },
+            }
+          : {}),
+      },
+    };
+    const html = renderToStaticMarkup(
+      React.createElement(ResearchPost, {
+        dossierId: 'd',
+        post,
+        onSearch() {},
+      }),
+    );
+    assert.equal(
+      (html.match(/Fictional &lt;script&gt;quotation&lt;\/script&gt;/g) || [])
+        .length,
+      separated ? 1 : 2,
+    );
+    assert.match(html, /Fictional AI inference requiring review/);
+    assert.match(html, /Team opinion.*team contribution/);
+    assert.match(html, /https:\/\/example.test\/evidence/);
+    assert.match(html, /verify before accepting/);
+    assert.doesNotMatch(html, /<script>/);
+    if (separated) {
+      assert.match(html, /<h4>Quoted saved text<\/h4>/);
+      assert.match(html, /<h4>AI interpretation<\/h4>/);
+      assert.match(html, /Quotation is not truth/);
+    } else
+      assert.doesNotMatch(html, /Quoted saved text|Quotation is not truth/);
+  });

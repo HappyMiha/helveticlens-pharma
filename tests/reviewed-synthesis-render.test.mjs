@@ -82,131 +82,191 @@ after(() => {
     else globalThis[key] = value;
 });
 
-test('scope choice prepares a fresh preview without inference; failed generation retries keep exact consent', async () => {
-  const requests = [];
-  globalThis.fetch = (url, init) =>
-    new Promise((resolve) => requests.push({ url, init, resolve }));
-  const warnings = [];
-  const originalError = console.error;
-  console.error = (...args) => {
-    if (!String(args[0]).includes('react-test-renderer is deprecated'))
-      warnings.push(args);
-  };
-  let tree;
-  let saved = 0;
-  const preview = (scope) => ({
-    evidence_scope: scope,
-    dossier_id: 'd',
-    question_id: 'q',
-    expected_revision: 1,
-    evidence_fingerprint: 'a'.repeat(64),
-    prepared_at: '2026-09-29T00:00:00Z',
-    provider: 'fixture',
-    model: 'fixture',
-    input: {
-      title: 'Fictional question',
-      context: '',
-      monitoring_goal: '',
-      sources: [],
-      claims: [],
-    },
-    selection: {
-      team_candidate_limit: 30,
-      linked_page_limit: 20,
-      topic_limit: 6,
-      matches_per_topic: 20,
-      snapshot_limit: 18,
-      excerpt_char_limit: 1800,
-      excluded_urls: 0,
-      claim_limit: 2,
-      claim_candidates: 0,
-      claim_candidate_limit: 12,
-      claim_quote_limit: 8,
-      omitted_claim_groups: 0,
-    },
-  });
-  const choose = () => tree.root.findByType('select');
-  const generate = () =>
-    tree.root.findAllByType('button').find((node) =>
-      /Draft research gaps/.test(
-        React.Children.toArray(node.props.children)
-          .filter((child) => typeof child === 'string')
-          .join(' '),
-      ),
-    );
-  try {
-    await act(async () => {
-      tree = create(
-        React.createElement(ResearchPreview, {
-          dossierId: 'd',
-          questionId: 'q',
-          canEdit: true,
-          onClose() {},
-          onSaved: async () => {
-            saved++;
-          },
-        }),
+for (const format of ['standard', 'source_analysis_v1'])
+  test(`scope and ${format} prepare previews without inference; retries keep exact consent`, async () => {
+    const requests = [];
+    globalThis.fetch = (url, init) =>
+      new Promise((resolve) => requests.push({ url, init, resolve }));
+    const warnings = [];
+    const originalError = console.error;
+    console.error = (...args) => {
+      if (!String(args[0]).includes('react-test-renderer is deprecated'))
+        warnings.push(args);
+    };
+    let tree;
+    let saved = 0;
+    const preview = (scope, selectedFormat = 'standard') => ({
+      ...(selectedFormat === 'source_analysis_v1'
+        ? {
+            answer_format: selectedFormat,
+            answer_contract: {
+              id: 'source-analysis/v1',
+              schema_version: 1,
+              labels: {
+                SOURCE_QUOTE: 'Quoted saved text',
+                AI_INTERPRETATION: 'AI interpretation',
+              },
+              boundary: 'Fictional contract boundary.',
+            },
+          }
+        : {}),
+      evidence_scope: scope,
+      dossier_id: 'd',
+      question_id: 'q',
+      expected_revision: 1,
+      evidence_fingerprint: 'a'.repeat(64),
+      prepared_at: '2026-09-29T00:00:00Z',
+      provider: 'fixture',
+      model: 'fixture',
+      input: {
+        title: 'Fictional question',
+        context: '',
+        monitoring_goal: '',
+        sources: [],
+        claims: [],
+      },
+      selection: {
+        team_candidate_limit: 30,
+        linked_page_limit: 20,
+        topic_limit: 6,
+        matches_per_topic: 20,
+        snapshot_limit: 18,
+        excerpt_char_limit: 1800,
+        excluded_urls: 0,
+        claim_limit: 2,
+        claim_candidates: 0,
+        claim_candidate_limit: 12,
+        claim_quote_limit: 8,
+        omitted_claim_groups: 0,
+      },
+    });
+    const choose = () => tree.root.findAllByType('select')[0];
+    const generate = () =>
+      tree.root.findAllByType('button').find((node) =>
+        /Draft research gaps/.test(
+          React.Children.toArray(node.props.children)
+            .filter((child) => typeof child === 'string')
+            .join(' '),
+        ),
       );
-    });
-    assert.equal(requests.length, 1);
-    assert.ok(requests[0].url.endsWith('evidence_scope=claims_v1'));
-    await act(async () =>
-      requests[0].resolve(Response.json(preview('claims_v1'))),
-    );
-    assert.equal(choose().props.value, 'claims_v1');
-    await act(async () =>
-      choose().props.onChange({ target: { value: 'claims_typed_v1' } }),
-    );
-    assert.equal(requests.length, 2);
-    assert.ok(requests[1].url.endsWith('evidence_scope=claims_typed_v1'));
-    assert.ok(generate().props.disabled);
-    assert.ok(requests.every((r) => r.init.method === 'GET'));
-    await act(async () =>
-      requests[1].resolve(Response.json(preview('claims_typed_v1'))),
-    );
-    assert.ok(
-      JSON.stringify(tree.toJSON()).includes(
-        'Reviewer explanations, identities and history are not sent',
-      ),
-    );
-    await act(async () => {
-      generate().props.onClick();
-    });
-    assert.equal(requests.length, 3);
-    const first = JSON.parse(requests[2].init.body);
-    assert.equal(first.evidence_scope, 'claims_typed_v1');
-    assert.equal(first.expected_evidence, 'a'.repeat(64));
-    assert.equal(Object.keys(first).length, 4);
-    await act(async () =>
-      requests[2].resolve(new Response('Temporary failure', { status: 503 })),
-    );
-    assert.equal(saved, 0);
-    await act(async () => {
-      generate().props.onClick();
-    });
-    assert.deepEqual(JSON.parse(requests[3].init.body), first);
-    await act(async () =>
-      requests[3].resolve(new Response('Temporary failure', { status: 503 })),
-    );
-    await act(async () =>
-      choose().props.onChange({ target: { value: 'claims_v1' } }),
-    );
-    await act(async () =>
-      requests[4].resolve(Response.json(preview('claims_v1'))),
-    );
-    await act(async () => {
-      generate().props.onClick();
-    });
-    const oldScope = JSON.parse(requests[5].init.body);
-    assert.equal(oldScope.evidence_scope, 'claims_v1');
-    assert.notEqual(oldScope.request_key, first.request_key);
-    await act(async () =>
-      requests[5].resolve(Response.json({ id: 'saved-note' })),
-    );
-    assert.equal(saved, 1);
-    assert.deepEqual(warnings, []);
-  } finally {
-    if (tree) await act(async () => tree.unmount());
-    console.error = originalError;
-  }
-});
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(ResearchPreview, {
+            dossierId: 'd',
+            questionId: 'q',
+            canEdit: true,
+            onClose() {},
+            onSaved: async () => {
+              saved++;
+            },
+          }),
+        );
+      });
+      assert.equal(requests.length, 1);
+      assert.ok(requests[0].url.endsWith('evidence_scope=claims_v1'));
+      await act(async () =>
+        requests[0].resolve(Response.json(preview('claims_v1'))),
+      );
+      assert.equal(choose().props.value, 'claims_v1');
+      if (format === 'source_analysis_v1') {
+        await act(async () =>
+          tree.root
+            .findAllByType('select')[1]
+            .props.onChange({ target: { value: format } }),
+        );
+        assert.equal(requests.length, 2);
+        assert.ok(requests[1].url.endsWith('answer_format=source_analysis_v1'));
+        assert.ok(generate().props.disabled);
+        // A response with the wrong format cannot become implicit consent.
+        await act(async () =>
+          requests[1].resolve(Response.json(preview('claims_v1'))),
+        );
+        assert.ok(generate().props.disabled);
+        const before = requests.length;
+        await act(async () => generate().props.onClick());
+        assert.equal(requests.length, before);
+        const refresh = tree.root
+          .findAllByType('button')
+          .find((node) =>
+            React.Children.toArray(node.props.children).includes(
+              'Refresh inputs',
+            ),
+          );
+        await act(async () => refresh.props.onClick());
+        await act(async () =>
+          requests[2].resolve(Response.json(preview('claims_v1', format))),
+        );
+        assert.ok(
+          JSON.stringify(tree.toJSON()).includes(
+            'Fictional contract boundary.',
+          ),
+        );
+        assert.ok(!generate().props.disabled);
+        requests.splice(1, 2);
+      }
+
+      await act(async () =>
+        choose().props.onChange({ target: { value: 'claims_typed_v1' } }),
+      );
+      assert.equal(requests.length, 2);
+      assert.ok(requests[1].url.includes('evidence_scope=claims_typed_v1'));
+      assert.equal(
+        requests[1].url.includes('answer_format=source_analysis_v1'),
+        format !== 'standard',
+      );
+      assert.ok(generate().props.disabled);
+      assert.ok(requests.every((r) => r.init.method === 'GET'));
+      await act(async () =>
+        requests[1].resolve(Response.json(preview('claims_typed_v1', format))),
+      );
+      assert.ok(
+        JSON.stringify(tree.toJSON()).includes(
+          'Reviewer explanations, identities and history are not sent',
+        ),
+      );
+      await act(async () => {
+        generate().props.onClick();
+      });
+      assert.equal(requests.length, 3);
+      const first = JSON.parse(requests[2].init.body);
+      assert.equal(first.evidence_scope, 'claims_typed_v1');
+      assert.equal(first.expected_evidence, 'a'.repeat(64));
+      assert.equal(
+        first.answer_format,
+        format === 'standard' ? undefined : format,
+      );
+      assert.equal(Object.keys(first).length, format === 'standard' ? 4 : 5);
+      await act(async () =>
+        requests[2].resolve(new Response('Temporary failure', { status: 503 })),
+      );
+      assert.equal(saved, 0);
+      await act(async () => {
+        generate().props.onClick();
+      });
+      assert.deepEqual(JSON.parse(requests[3].init.body), first);
+      await act(async () =>
+        requests[3].resolve(new Response('Temporary failure', { status: 503 })),
+      );
+      await act(async () =>
+        choose().props.onChange({ target: { value: 'claims_v1' } }),
+      );
+      await act(async () =>
+        requests[4].resolve(Response.json(preview('claims_v1', format))),
+      );
+      await act(async () => {
+        generate().props.onClick();
+      });
+      const oldScope = JSON.parse(requests[5].init.body);
+      assert.equal(oldScope.evidence_scope, 'claims_v1');
+      assert.notEqual(oldScope.request_key, first.request_key);
+      await act(async () =>
+        requests[5].resolve(Response.json({ id: 'saved-note' })),
+      );
+      assert.equal(saved, 1);
+      assert.deepEqual(warnings, []);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+      console.error = originalError;
+    }
+  });

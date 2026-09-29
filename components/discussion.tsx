@@ -83,6 +83,10 @@ export function ResearchPost({
   onFollowup?: (post: Entry, gapIndex: number) => void;
   busy?: boolean;
 }) {
+  const separated =
+    post.data.answer_format === 'source_analysis_v1' &&
+    post.data.answer_contract?.id === 'source-analysis/v1' &&
+    post.data.answer_contract.schema_version === 1;
   if (post.kind !== 'research')
     return (
       <>
@@ -123,10 +127,22 @@ export function ResearchPost({
           />
         </details>
       )}
+      {separated && (
+        <p className="muted">{post.data.answer_contract?.boundary}</p>
+      )}
       {post.data.findings?.length ? (
         post.data.findings.map((finding, i) => (
           <section key={i}>
-            <p className="discussion-body">{finding.claim}</p>
+            {separated && (
+              <h4>
+                {finding.kind
+                  ? post.data.answer_contract?.labels[finding.kind]
+                  : 'Unclassified AI output'}
+              </h4>
+            )}
+            {(!separated || finding.kind !== 'SOURCE_QUOTE') && (
+              <p className="discussion-body">{finding.claim}</p>
+            )}
             {finding.citations.map((citation, j) => {
               const source = post.data.sources?.find(
                 (s) => s.id === citation.source_id,

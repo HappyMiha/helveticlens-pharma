@@ -133,6 +133,13 @@ export interface ResearchDocumentTarget {
   expected_revision: number | null;
   revision_recorded: boolean;
 }
+export type AnswerFormat = 'standard' | 'source_analysis_v1';
+export interface AnswerContract {
+  id: 'source-analysis/v1';
+  schema_version: 1;
+  labels: Record<'SOURCE_QUOTE' | 'AI_INTERPRETATION', string>;
+  boundary: string;
+}
 export type ResearchScope = 'saved' | 'claims_v1' | 'claims_typed_v1';
 export interface ResearchEditorContext {
   schema_version: 1;
@@ -189,6 +196,8 @@ export interface ResearchSource {
   sha256: string;
 }
 export interface ResearchPreview {
+  answer_format?: AnswerFormat;
+  answer_contract?: AnswerContract;
   evidence_scope?: ResearchScope;
   dossier_id: string;
   question_id: string;
@@ -221,6 +230,8 @@ export interface ResearchPreview {
   };
 }
 export interface EntryData {
+  answer_format?: AnswerFormat;
+  answer_contract?: AnswerContract;
   evidence_scope?: ResearchScope;
   claims?: ResearchClaim[];
   claim_freshness?: {
@@ -249,6 +260,7 @@ export interface EntryData {
   suggestion?: number;
   input_revision?: number;
   findings?: {
+    kind?: 'SOURCE_QUOTE' | 'AI_INTERPRETATION';
     claim: string;
     citations: { source_id: string; quote: string }[];
   }[];

@@ -23,6 +23,7 @@ import { ResearchClaims } from './research-claims';
 import { ResearchSourceAccess } from './research-source-access';
 import type {
   Entry,
+  AnswerFormat,
   ResearchPreview as Preview,
   ResearchScope,
 } from '@/lib/contracts';
@@ -50,9 +51,11 @@ export function ResearchPreview({
 }) {
   const root = `/products/${product.id}/dossiers/${encodeURIComponent(dossierId)}/discussion/${encodeURIComponent(questionId)}`;
   const scopeId = useId();
+  const formatId = useId();
+  const [format, setFormat] = useState<AnswerFormat>('standard');
   const [scope, setScope] = useState<ResearchScope>('claims_v1');
   const { data, error, loading, refresh } = useResource<Preview>(
-    `${root}/research-preview?evidence_scope=${scope}`,
+    `${root}/research-preview?evidence_scope=${scope}${format === 'standard' ? '' : `&answer_format=${format}`}`,
   );
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,7 +85,11 @@ export function ResearchPreview({
       saving ||
       refreshing ||
       (!saved && !canEdit) ||
-      (!saved && (!data || error || data.evidence_scope !== scope))
+      (!saved &&
+        (!data ||
+          error ||
+          data.evidence_scope !== scope ||
+          (data.answer_format || 'standard') !== format))
     )
       return;
     setSaving(true);
@@ -144,6 +151,32 @@ export function ResearchPreview({
             </NativeSelectOption>
           </NativeSelect>
         </label>
+        <label htmlFor={formatId}>
+          Answer style
+          <NativeSelect
+            id={formatId}
+            className="w-full max-w-full"
+            value={format}
+            disabled={waiting || !!saved}
+            onChange={(event) => {
+              setFailure('');
+              setFormat(event.target.value as AnswerFormat);
+            }}
+          >
+            <NativeSelectOption value="standard">
+              Research note
+            </NativeSelectOption>
+            <NativeSelectOption value="source_analysis_v1">
+              Quotations and AI analysis
+            </NativeSelectOption>
+          </NativeSelect>
+        </label>
+        {format === 'source_analysis_v1' && (
+          <p className="muted">
+            Exact saved quotations appear separately from AI interpretations.
+            Quoted text may be a team opinion or an older snapshot.
+          </p>
+        )}
         {scope === 'claims_typed_v1' && (
           <p className="muted">
             The preview includes each claim’s current editor classification and
@@ -172,6 +205,10 @@ export function ResearchPreview({
         )}
         {!error && data && (
           <>
+            {data.answer_format === 'source_analysis_v1' &&
+              data.answer_contract && (
+                <p className="muted">{data.answer_contract.boundary}</p>
+              )}
             <div className="research-preview-overview">
               <h3>{data.input.title}</h3>
               <p>
@@ -312,7 +349,11 @@ export function ResearchPreview({
             disabled={
               waiting ||
               (!saved && !canEdit) ||
-              (!saved && (!data || !!error || data.evidence_scope !== scope))
+              (!saved &&
+                (!data ||
+                  !!error ||
+                  data.evidence_scope !== scope ||
+                  (data.answer_format || 'standard') !== format))
             }
             onClick={() => void generate()}
           >
