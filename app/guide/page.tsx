@@ -166,9 +166,18 @@ export default function Guide() {
               <span className="guide-step">YOUR WORKING DOCUMENT</span>
               <h2 id="dossier-title">Open the dossier. Find your place.</h2>
               <p>
-                The opening page holds the monitoring question, saved topics and
-                latest source updates. Use Contents beside the document, or
-                above it on a small screen, to move between its chapters.
+                Research so far opens with the latest investigation state,
+                retained AI findings, source excerpts and source checks needing
+                attention. A newer failed or unfinished investigation does not
+                erase the last completed evidence update. Open each finding to
+                inspect its citations and current review. Reading or refreshing
+                this summary starts no research and does not mark updates read.
+              </p>
+              <p>
+                The opening page also holds the monitoring question, saved
+                topics and latest source updates. Use Contents beside the
+                document, or above it on a small screen, to move between its
+                chapters.
               </p>
               <ul>
                 <li>

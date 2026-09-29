@@ -49,11 +49,8 @@ export function ResearchStart({
         dossier_id: string;
         investigation: { id: string } | null;
       }>(`/products/${product.id}/start`, pending.current);
-      const focus = result.investigation
-        ? `&research=${encodeURIComponent(result.investigation.id)}`
-        : '';
       window.location.assign(
-        `/?dossier=${encodeURIComponent(result.dossier_id)}${focus}`,
+        `/?dossier=${encodeURIComponent(result.dossier_id)}`,
       );
     } catch (failure) {
       setError(

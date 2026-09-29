@@ -146,7 +146,7 @@ test('one question survives sign-in, submits once, and retries a lost response w
         Response.json({ dossier_id: 'saved', investigation: { id: 'run' } }),
       );
     });
-    assert.deepEqual(navigations, ['/?dossier=saved&research=run']);
+    assert.deepEqual(navigations, ['/?dossier=saved']);
     assert.doesNotMatch(navigations[0], /What|question=/);
   } finally {
     if (tree) await act(async () => tree.unmount());

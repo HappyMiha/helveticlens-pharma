@@ -543,3 +543,86 @@
     width: 100%;
   }
 }
+
+.dossier-reading-summary {
+  margin: 1.5rem 0 2rem;
+  max-width: 52rem;
+}
+.dossier-reading-summary p {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.dossier-reading-progress {
+  padding: 0.75rem 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.dossier-reading-progress > p {
+  margin: 0.4rem 0;
+}
+.dossier-reading-evidence {
+  padding-top: 1.5rem;
+}
+.dossier-reading-evidence > h3 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.dossier-reading-findings {
+  padding-left: 1.5rem;
+}
+.dossier-reading-findings > li {
+  margin: 1rem 0;
+  padding-left: 0.25rem;
+}
+.dossier-reading-findings > li > p {
+  margin: 0 0 0.35rem;
+}
+.dossier-reading-findings button {
+  white-space: normal;
+  height: auto;
+  min-height: 2.5rem;
+  text-align: left;
+}
+.dossier-reading-source {
+  margin: 1.5rem 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border);
+}
+.dossier-reading-source blockquote {
+  margin: 0.5rem 0;
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.dossier-reading-source button {
+  white-space: normal;
+  height: auto;
+  text-align: left;
+  min-height: 2.5rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.dossier-reading-coverage {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.dossier-reading-attention {
+  font-size: 0.9rem;
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+}
+@media (max-width: 640px) {
+  .dossier-reading-summary > .section-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .dossier-reading-summary {
+    margin-top: 1rem;
+  }
+  .dossier-reading-summary button {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

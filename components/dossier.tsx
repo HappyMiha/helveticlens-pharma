@@ -8,6 +8,7 @@ import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
 import { QuestionMonitoring } from './question-monitoring';
+import { DossierReading } from './dossier-reading';
 import { DossierCoveragePanel } from './dossier-coverage';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -328,6 +329,12 @@ export function Dossier({
             data-content-kind="dossier"
           >
             <p className="chapter-kicker">01 / Dossier</p>
+            <DossierReading
+              key={`reading:${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              onOpen={openInvestigation}
+              onCoverage={() => setTab('evidence')}
+            />
             <details className="dossier-secondary">
               <summary>Optional dossier details</summary>
               <p className="muted">
