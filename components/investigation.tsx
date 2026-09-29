@@ -673,7 +673,10 @@ export function DossierInvestigation({
         base={`/products/${product.id}/dossiers/${dossierId}/claim-reviews`}
         refreshToken={value?.event_sequence || 0}
         onOpen={onOpen}
-        onChange={() => void refresh()}
+        onChange={() => {
+          evidenceSearch.current?.invalidate();
+          void refresh();
+        }}
       />
       <EntityIdentities
         key={`entity-identities:${dossierId}:${userId || ''}`}
@@ -687,7 +690,10 @@ export function DossierInvestigation({
         base={`/products/${product.id}/dossiers/${dossierId}/evidence-changes`}
         refreshToken={value?.event_sequence || 0}
         onOpen={onOpen}
-        onChange={() => void refresh()}
+        onChange={() => {
+          evidenceSearch.current?.invalidate();
+          void refresh();
+        }}
       />
     </section>
   );

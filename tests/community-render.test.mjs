@@ -2008,3 +2008,26 @@ test('claim review reader fences stale pages, publication revisions and errors',
   assert.equal(currentClaimReviews(page, '', 10, 5), null);
   assert.equal(currentClaimReviews(page, '', 10), null);
 });
+
+for (const [decision, stale, expected] of [
+  ['accepted', false, 'Accepted by an editor'],
+  ['dismissed', false, 'Dismissed by an editor'],
+  ['needs_more_evidence', false, 'More evidence requested'],
+  [null, false, 'Not reviewed'],
+  ['accepted', true, 'Evidence changed — review again'],
+]) test(`search keeps human ${decision}/${stale} separate from contested source evidence`, () => {
+  const html = renderToStaticMarkup(React.createElement(EvidenceSearchResult, {
+    item: { ...evidenceItem, citation_relation: 'CONTRADICTS', human_review: {
+      revision: 1, decision, stale, human_status: stale ? 'UNRESOLVED' : 'ACCEPTED',
+      complete: false, reviewable: false, has_conflicting_evidence: true,
+    } }, onOpen() {},
+  }));
+  assert.ok(html.includes(expected));
+  assert.match(html, /Finding · Contested|Finding · contested/);
+  assert.match(html, /Citation relationship:.*Contradicts|Citation relationship:.*contradicts/);
+  assert.match(html, /Conflicting evidence is recorded/);
+  assert.match(html, /Review context is incomplete/);
+  assert.match(html, /&lt;img/);
+  assert.match(html, /&lt;script&gt;/);
+  if (stale) assert.doesNotMatch(html, /Accepted by an editor/);
+});

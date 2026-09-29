@@ -13,6 +13,7 @@ import { Search } from 'lucide-react';
 import { api, date } from '@/lib/api';
 import { product } from '@/lib/product';
 import { readable, sourceHref } from '@/lib/investigation';
+import { claimDecisionLabels } from '@/lib/claim-review';
 import {
   currentEvidenceSearch,
   evidenceAnchor,
@@ -28,7 +29,10 @@ import { Input } from './ui/input';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
 import { LensProgress } from './lens';
 
-export type EvidenceSearchHandle = { start: (query: string) => void };
+export type EvidenceSearchHandle = {
+  start: (query: string) => void;
+  invalidate: () => void;
+};
 
 export function EvidenceSearch({
   dossierId,
@@ -123,6 +127,15 @@ export function EvidenceSearch({
   useImperativeHandle(
     ref,
     () => ({
+      invalidate() {
+        epoch.current.value++;
+        controller.current?.abort();
+        setStored(null);
+        setProgress(null);
+        setBusy(false);
+        setError('');
+        setNotice('Finding review changed. Search again to see current decisions and evidence.');
+      },
       start(question) {
         setQuery(question);
         setMode('corpus');
@@ -149,12 +162,14 @@ export function EvidenceSearch({
           as_of: page.as_of,
           check_only: true,
           fingerprint: page.fingerprint,
+          review_claim_ids: page.review_claim_ids,
+          review_fingerprint: page.review_fingerprint,
         });
       } catch {
         if (active) {
           setStored(null);
           setError(
-            'Saved evidence or access could not be confirmed. Search again to see current results.',
+            'Saved evidence, finding reviews or access could not be confirmed. Search again to see current results.',
           );
         }
       } finally {
@@ -386,8 +401,9 @@ export function EvidenceSearchResults({
           <p>Model: {page.measurement.models.join(', ')}</p>
         )}
         <p>
-          Records captured by {date(page.as_of)}. Current access is checked
-          again while results are open.
+          Records captured by {date(page.as_of)}. Current access and finding
+          reviews are checked again while results are open. Human decisions
+          do not change relevance ranking or verify truth.
         </p>
       </details>
     </div>
@@ -402,6 +418,7 @@ export function EvidenceSearchResult({
   onOpen: (id: string, anchor?: string) => void;
 }) {
   const href = sourceHref(item.url);
+  const review = item.human_review;
   return (
     <article className="evidence-search-result">
       <div className="eyebrow">
@@ -410,6 +427,31 @@ export function EvidenceSearchResult({
           : 'Captured passage'}
       </div>
       <h4>{item.statement || item.title}</h4>
+      {item.kind === 'claim' && (
+        <div className="evidence-search-review">
+          <p>
+            Human review: {review
+              ? review.stale
+                ? 'Evidence changed — review again'
+                : review.decision
+                  ? claimDecisionLabels[review.decision]
+                  : 'Not reviewed'
+              : 'Status unavailable'}
+          </p>
+          {review?.has_conflicting_evidence && (
+            <p>Conflicting evidence is recorded. Open the finding to compare citations.</p>
+          )}
+          {review && !review.complete && (
+            <p>Review context is incomplete; a full assessment is still needed.</p>
+          )}
+          {review && review.complete && !review.reviewable && (
+            <p>The captured citations need checking before a review can be saved.</p>
+          )}
+        </div>
+      )}
+      {item.citation_relation && (
+        <p className="eyebrow">Citation relationship: {readable(item.citation_relation)}</p>
+      )}
       <blockquote>{item.quote}</blockquote>
       {item.text_truncated && (
         <p>

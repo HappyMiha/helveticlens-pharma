@@ -237,6 +237,14 @@ export default function Guide() {
                 elapsed time, completed local requests and unknown compute cost.
               </p>
               <p>
+                Findings show the editor’s decision separately from the machine
+                assessment. Accepted, dismissed and unreviewed findings all
+                remain searchable, including contradictory citations. A change
+                to the evidence requires review again. If a decision or access
+                changes while results are open, search again for current status.
+                Human acceptance does not verify truth or change relevance rank.
+              </p>
+              <p>
                 Meaning supports up to 20,000 saved records. Local preparation
                 reads up to 512 tokens from each title, finding and the first
                 2,400 quotation characters. Long text can be truncated; open the

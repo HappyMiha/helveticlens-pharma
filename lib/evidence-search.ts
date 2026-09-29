@@ -1,4 +1,13 @@
 export type EvidenceSearchMode = 'corpus' | 'semantic' | 'literal';
+export type SearchReview = {
+  revision: number;
+  decision: 'accepted' | 'dismissed' | 'needs_more_evidence' | null;
+  stale: boolean;
+  human_status: string;
+  complete: boolean;
+  reviewable: boolean;
+  has_conflicting_evidence: boolean;
+};
 export interface EvidenceSearchItem {
   id: string;
   kind: 'passage' | 'claim';
@@ -14,6 +23,8 @@ export interface EvidenceSearchItem {
   claim_status: string;
   claim_id: string;
   claim_revision: number;
+  citation_relation?: string;
+  human_review?: SearchReview | null;
   text_truncated: boolean;
   text_characters: number;
   semantic_similarity?: number;
@@ -44,6 +55,8 @@ export interface EvidenceSearchPage {
   next_offset: number | null;
   as_of: string;
   fingerprint: string;
+  review_claim_ids?: string[];
+  review_fingerprint?: string;
   coverage: string;
   measurement: {
     latency_ms: number;
