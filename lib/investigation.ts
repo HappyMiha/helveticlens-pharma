@@ -1,3 +1,4 @@
+import type { ExplorationState } from './exploration';
 import type { ResearchState } from './research-engine';
 import type { MonitoringTrigger } from './monitoring-research';
 export type ContributionOriginal = {
@@ -12,6 +13,7 @@ export type ContributionOriginal = {
   created_at: string;
 };
 export type InvestigationSummary = {
+  exploratory?: boolean;
   engine?: string;
   created_by_user_id?: string | null;
   id: string;
@@ -49,6 +51,7 @@ export type EvidenceLink = {
   mentions?: (EvidenceLink & { name: string })[];
 };
 export type Investigation = InvestigationSummary & {
+  exploration?: ExplorationState | null;
   research?: ResearchState | null;
   monitoring_trigger?: MonitoringTrigger | null;
   web_research_trigger?: {

@@ -2698,3 +2698,18 @@ code {
 .source-role-editor select { min-height: 2.75rem; font-size: 1rem; }
 .source-role-card blockquote, .source-assessment-basis blockquote { overflow-wrap: anywhere; }
 .source-role-add > button { margin-top: .75rem; }
+
+/* Progressive research stays a reading surface, with evidence below each finding. */
+.exploration { display: grid; gap: 1.3rem; }
+.exploration h2 { margin: 0; }
+.exploration p { line-height: 1.7; overflow-wrap: anywhere; }
+.exploration-question { display: grid; gap: .55rem; }
+.exploration-understanding { border-inline-start: 3px solid var(--primary); padding-inline-start: 1rem; }
+.exploration-findings, .exploration-choice { display: grid; gap: 1.4rem; }
+.exploration-findings article, .exploration-choice article { padding-block: 1rem; border-bottom: 1px solid var(--border); }
+.exploration-citation { font-size: .92rem; }
+.exploration-citation blockquote, .exploration blockquote { padding-inline-start: 1rem; border-inline-start: 2px solid var(--border); line-height: 1.7; overflow-wrap: anywhere; }
+.exploration a { text-decoration: underline; overflow-wrap: anywhere; }
+.exploration-choice button { white-space: normal; height: auto; min-height: 2.75rem; text-align: start; max-width: 100%; }
+.exploration-choice form { display: grid; gap: .8rem; margin-block: 1rem; }
+.exploration li { margin-block: .65rem; }

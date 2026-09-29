@@ -153,13 +153,15 @@ export function WebPolicyForm({
   base,
   policy,
   onSaved,
+  initialQuestion = '',
 }: {
+  initialQuestion?: string;
   base: string;
   policy: WebResearch['policy'];
   onSaved: () => void;
 }) {
   const id = useId();
-  const [question, setQuestion] = useState(policy.question);
+  const [question, setQuestion] = useState(policy.question || initialQuestion);
   const [cadence, setCadence] = useState(policy.cadence_hours);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);

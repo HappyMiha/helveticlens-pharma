@@ -26,7 +26,7 @@ export function ResearchStart({
   const pending = useRef<{
     request_key: string;
     question: string;
-    public_monitoring_confirmed: true;
+    public_query_confirmed: true;
   } | null>(null);
   async function start() {
     if (sending.current || question.trim().length < 5) return;
@@ -38,7 +38,7 @@ export function ResearchStart({
     pending.current ||= {
       request_key: uid(),
       question: question.trim(),
-      public_monitoring_confirmed: true,
+      public_query_confirmed: true,
     };
     sending.current = true;
     setFrozen(true);
@@ -48,7 +48,7 @@ export function ResearchStart({
       const result = await api<{
         dossier_id: string;
         investigation: { id: string } | null;
-      }>(`/products/${product.id}/start`, pending.current);
+      }>(`/products/${product.id}/explore`, pending.current);
       window.location.assign(
         `/?dossier=${encodeURIComponent(result.dossier_id)}`,
       );
@@ -67,13 +67,11 @@ export function ResearchStart({
       className="research-start"
       aria-labelledby="research-start-heading"
     >
-      <p className="chapter-kicker">{product.eyebrow} / Your next dossier</p>
-      <h2 id="research-start-heading">
-        What would you like to understand and follow?
-      </h2>
+      <p className="chapter-kicker">{product.eyebrow} / Start exploring</p>
+      <h2 id="research-start-heading">What are you trying to understand?</h2>
       <p>
-        Ask once. We look for sources, build an evidence-backed dossier and
-        check for changes.
+        A rough question is enough. We explore its possible meaning, read
+        sources and help you choose where to look next.
       </p>
       <form
         onSubmit={(event) => {
@@ -98,9 +96,9 @@ export function ResearchStart({
           }
         />
         <p className="investigation-muted" id="question-start-disclosure">
-          Starting sends your question to public research providers and enables
-          daily checks. Your dossier stays private. Updates appear here; you can
-          pause monitoring at any time.
+          Starting sends this question to public research providers for one
+          bounded exploration. Your research stays private. Recurring monitoring
+          is off until you choose to enable it.
         </p>
         {error && (
           <p role="alert" className="investigation-error">
@@ -122,12 +120,12 @@ export function ResearchStart({
             }
           >
             {busy
-              ? 'Starting your dossier…'
+              ? 'Starting exploration…'
               : !signedIn
                 ? 'Sign in to start'
                 : frozen
                   ? 'Retry safely'
-                  : 'Start research & monitoring'}
+                  : 'Start exploring'}
           </Button>
           {onCancel && (
             <Button
@@ -154,9 +152,10 @@ export function ResearchStart({
           visible.
         </p>
         <p>
-          The first investigation can use up to 24 searches and 12 source reads.
-          Daily checks begin tomorrow, using one question and up to 3 source
-          reads per check. Capacity and source access can delay a check.
+          Each episode can use up to 12 search requests and 6 source reads, with
+          bounded processing time. We save a short briefing, explain
+          uncertainties and offer a useful next direction. You can leave and
+          return to it.
         </p>
         <p>
           Follow-up search questions come from public evidence. Selected

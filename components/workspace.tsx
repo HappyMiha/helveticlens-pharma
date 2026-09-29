@@ -119,13 +119,15 @@ export function Status({ status }: { status: string }) {
   return (
     <span className={`status status-${status}`}>
       <span />
-      {status === 'active'
-        ? 'Active'
-        : status === 'draft'
-          ? 'Draft'
-          : status === 'paused'
-            ? 'Paused'
-            : status}
+      {status === 'research'
+        ? 'Research'
+        : status === 'active'
+          ? 'Active'
+          : status === 'draft'
+            ? 'Draft'
+            : status === 'paused'
+              ? 'Paused'
+              : status}
     </span>
   );
 }
@@ -704,7 +706,7 @@ export default function Workspace() {
                     <div>
                       <span className="stat">
                         {
-                          items.filter((d) => d.profile.status === 'draft')
+                          items.filter((d) => dossierStatus(d) === 'draft')
                             .length
                         }
                       </span>
@@ -732,15 +734,17 @@ export default function Workspace() {
                           />
                         </div>
                         <div className="filters">
-                          {['all', 'active', 'draft', 'paused'].map((f) => (
-                            <Button
-                              key={f}
-                              variant={filter === f ? 'secondary' : 'ghost'}
-                              onClick={() => setFilter(f)}
-                            >
-                              {f.charAt(0).toUpperCase() + f.slice(1)}
-                            </Button>
-                          ))}
+                          {['all', 'research', 'active', 'draft', 'paused'].map(
+                            (f) => (
+                              <Button
+                                key={f}
+                                variant={filter === f ? 'secondary' : 'ghost'}
+                                onClick={() => setFilter(f)}
+                              >
+                                {f.charAt(0).toUpperCase() + f.slice(1)}
+                              </Button>
+                            ),
+                          )}
                         </div>
                       </div>
                       <div className="dossier-grid">

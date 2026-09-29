@@ -19,7 +19,10 @@ export async function proxy(
   if (
     !(
       allowed.test(route) ||
-      (request.method === 'POST' && route === `products/${product.id}/start`) ||
+      (request.method === 'POST' &&
+        ['start', 'explore'].some(
+          (action) => route === `products/${product.id}/${action}`,
+        )) ||
       (request.method === 'GET' &&
         route === `products/${product.id}/templates`) ||
       (request.method === 'GET' &&

@@ -9,6 +9,7 @@ import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
 import { QuestionMonitoring } from './question-monitoring';
 import { DossierReading } from './dossier-reading';
+import { Exploration } from './exploration';
 import {
   DossierTopicOverview,
   DossierRecentActivity,
@@ -290,7 +291,9 @@ export function Dossier({
               </div>
               <h1>{c.name}</h1>
               <div className="dossier-purpose">
-                <span className="content-origin">Monitoring question</span>
+                <span className="content-origin">
+                  {d.exploration ? 'Original question' : 'Monitoring question'}
+                </span>
                 <p>{c.goal}</p>
               </div>
             </div>
@@ -300,10 +303,10 @@ export function Dossier({
               <Users size={14} />
               {p.status === 'draft'
                 ? d.access?.audience === 'invited_team'
-                  ? d.research_monitoring
+                  ? d.research_monitoring || d.exploration
                     ? 'Private dossier · invited dossier team'
                     : 'Private draft · invited dossier team'
-                  : d.research_monitoring
+                  : d.research_monitoring || d.exploration
                     ? 'Private dossier · creator only'
                     : 'Private draft · creator only'
                 : d.access?.audience === 'team'
@@ -332,12 +335,24 @@ export function Dossier({
             data-content-kind="dossier"
           >
             <p className="chapter-kicker">01 / Dossier</p>
-            <DossierReading
-              key={`reading:${d.id}:${userId || ''}`}
-              dossierId={d.id}
-              onOpen={openInvestigation}
-              onCoverage={() => setTab('evidence')}
-            />
+            {d.exploration ? (
+              <Exploration
+                key={`exploration:${d.id}:${userId || ''}`}
+                dossierId={d.id}
+                initialId={d.exploration.investigation_id}
+                canEdit={canEdit}
+                monitoringEnabled={!!d.research_monitoring?.enabled}
+                onChanged={reload}
+                onOpen={openInvestigation}
+              />
+            ) : (
+              <DossierReading
+                key={`reading:${d.id}:${userId || ''}`}
+                dossierId={d.id}
+                onOpen={openInvestigation}
+                onCoverage={() => setTab('evidence')}
+              />
+            )}
             <details className="dossier-secondary">
               <summary>Optional dossier details</summary>
               <p className="muted">
@@ -369,7 +384,7 @@ export function Dossier({
 
             <DossierTopicOverview
               profile={p}
-              questionMonitoring={!!d.research_monitoring}
+              questionMonitoring={!!d.research_monitoring || !!d.exploration}
               matches={matches}
               loading={matchesLoading}
               error={matchError}

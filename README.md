@@ -394,3 +394,18 @@ through its current profile/runtime-aware reader, with scoped callbacks and
 accessible retry in all five native locales. No provider or publication setting
 changes; automated and exact deployment evidence is tracked in the shared core
 docs/PRODUCT_READ_RECOVERY.md. Full product and human acceptance remain open.
+
+
+### Research before monitoring (1.51)
+
+The default one-question entry now starts a bounded exploration: actual public
+search/reading, a saved source-backed briefing, tentative understanding,
+uncertainties and one evidence-informed clarification. Choosing a direction or
+correcting the question starts the next bounded episode and preserves earlier
+findings. No recurring policy is created by this entry. Monitoring requires an
+explicit saved public question after a usable briefing. Existing policies and
+the legacy consented start remain compatible.
+
+The overview separates AI interpretation, source quotations and the actual
+research journal. Pause, stop, safe reply retry and current-access/source fences
+remain active. No live-provider accuracy or professional acceptance is claimed.

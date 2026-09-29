@@ -1,4 +1,5 @@
 'use client';
+import { ExplorationBrief } from './exploration';
 import { EntityIdentities } from './entity-identity';
 import { ClaimReviews } from './claim-review';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -555,12 +556,14 @@ export function DossierInvestigation({
               appear in Changes over time.
             </p>
           )}
+          {value.exploration && <ExplorationBrief state={value.exploration} />}
           {value.research && (
             <ResearchBudget
               key={`${value.id}:${value.research.limits.branches}:${value.revision}`}
               value={value.research}
               canContinue={
                 canControl &&
+                !value.exploratory &&
                 !running &&
                 !activeElsewhere &&
                 value.status !== 'cancelled' &&

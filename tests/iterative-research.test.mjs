@@ -64,12 +64,9 @@ const render = (component, props) =>
 test('question-first creation asks no mandatory sources, topics or monitoring rules', () => {
   const html = render(ResearchStart, { onMonitoring() {}, onCancel() {} });
   assert.match(html, /Your question/);
-  assert.match(html, /daily checks/);
+  assert.match(html, /Recurring monitoring is off/);
   assert.match(html, /Set up topics and sources manually/);
-  assert.match(
-    html,
-    /<button[^>]*disabled[^>]*>Start research &amp; monitoring/,
-  );
+  assert.match(html, /<button[^>]*disabled[^>]*>Start exploring/);
   assert.equal((html.match(/<textarea/g) || []).length, 1);
   assert.doesNotMatch(
     html,

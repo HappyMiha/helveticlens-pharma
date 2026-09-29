@@ -122,15 +122,15 @@ test('one question survives sign-in, submits once, and retries a lost response w
       submit(tree);
     });
     assert.equal(requests.length, 1);
-    assert.equal(requests[0].url, `/api/products/${product.id}/start`);
+    assert.equal(requests[0].url, `/api/products/${product.id}/explore`);
     const command = JSON.parse(requests[0].init.body);
     assert.deepEqual(Object.keys(command).sort(), [
-      'public_monitoring_confirmed',
+      'public_query_confirmed',
       'question',
       'request_key',
     ]);
     assert.equal(command.question, 'What changed in public evidence?');
-    assert.equal(command.public_monitoring_confirmed, true);
+    assert.equal(command.public_query_confirmed, true);
     assert.equal(requests[0].init.headers['X-CSRF-Token'], 'fixture');
     await act(async () => {
       requests[0].resolve(Response.json({}, { status: 503 }));
@@ -301,4 +301,5 @@ test('daily research counts as monitoring while creator privacy stays a draft; n
   doc.profile.status = 'active';
   assert.equal(dossierStatus(doc), 'active');
   assert.equal(dossierStatus({ profile: { status: 'draft' } }), 'draft');
+  assert.equal(dossierStatus({ profile: { status: 'draft' }, exploration: { investigation_id: 'r' } }), 'research');
 });

@@ -90,12 +90,15 @@ export default function Guide() {
               </h2>
               <p>
                 Enter one question on your research desk and choose Start
-                research &amp; monitoring. We create a private dossier, start
-                the investigation and enable daily public-source checks from
-                tomorrow, with in-app updates. Pause monitoring directly in the
-                dossier. Topics, source lists and model choices are not
-                required. Optional manual setup remains available for specific
-                topics and source subscriptions.
+                exploring. A rough or ambiguous thought is enough. We research
+                possible meanings, read sources and save a short briefing with
+                cited findings and open questions. One useful clarification can
+                guide the next bounded episode; you can also correct the
+                question in your own words. Your earlier evidence stays in the
+                dossier. No reply is needed to keep the briefing. Recurring
+                monitoring is off until you explicitly enable daily or weekly
+                checks for an understood public question. Existing schedules
+                stay active.
               </p>
               <p>
                 Helvetic Lens plans research directions, checks candidate
@@ -113,13 +116,15 @@ export default function Guide() {
                 as new support.
               </p>
               <p>
-                Open Research limits &amp; continuation to see the saved budget
-                or continue pending directions with a larger total. Pause
-                retains progress. A failed or interrupted request is not
-                silently repeated. Jev-first or Laya-first relevance routing is
-                optional at creation; uncertain candidates can use the
-                configured workspace analysis model. Inspect candidate decisions
-                and routing under Method.
+                In an exploratory dossier, choose a direction from the briefing
+                to start the next episode. In older investigations, open
+                Research limits &amp; continuation to see the saved budget or
+                continue pending directions with a larger total. Pause retains
+                progress. A failed or interrupted request is not silently
+                repeated. Jev-first or Laya-first relevance routing is optional
+                at creation; uncertain candidates can use the configured
+                workspace analysis model. Inspect candidate decisions and
+                routing under Method.
               </p>
               <p>
                 The public question and queries derived from public evidence go

@@ -7,5 +7,6 @@ export function dossierStatus(dossier: DossierRecord) {
     dossier.research_monitoring?.enabled
   )
     return 'active';
+  if (dossier.exploration && !dossier.research_monitoring) return 'research';
   return dossier.research_monitoring ? 'paused' : dossier.profile.status;
 }
