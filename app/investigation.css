@@ -626,3 +626,20 @@
     white-space: normal;
   }
 }
+
+.dossier-topic-updates {
+  margin-block: 2rem;
+  max-width: 52rem;
+  overflow-wrap: anywhere;
+}
+.dossier-topic-updates .section-header {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.dossier-topic-updates button {
+  white-space: normal;
+}
+.dossier-recent-activity {
+  max-width: 52rem;
+  overflow-wrap: anywhere;
+}

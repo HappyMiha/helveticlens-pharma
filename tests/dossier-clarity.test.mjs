@@ -158,9 +158,10 @@ test('a dossier opens on its readable document and preserves research outside th
   assert.match(text, /Medicine safety review/);
   assert.match(text, /Follow the safety evidence/);
   assert.match(text, /01 \/ Dossier/);
-  assert.match(text, /What this dossier follows/);
-  assert.match(text, /Latest source updates/);
-  assert.match(text, /Loading saved source updates/);
+  assert.match(text, /Research so far/);
+  assert.doesNotMatch(text, /What this dossier follows/);
+  assert.match(text, /Topic monitoring updates/);
+  assert.match(text, /Loading saved topic matches/);
   assert.doesNotMatch(text, /Waiting for matching evidence/);
   assert.doesNotMatch(
     text,
@@ -252,7 +253,8 @@ test('a one-question dossier does not send readers back to the old setup questio
   p.dossier.research_monitoring = { enabled: true, cadence_hours: 24 };
   const text = visibleText(render(p));
   assert.match(text, /Private dossier/);
-  assert.match(text, /Open AI research/);
+  assert.match(text, /Research so far/);
+  assert.doesNotMatch(text, /Open AI research|Findings and sources/);
   assert.match(text, /Optional dossier details/);
   assert.doesNotMatch(
     text,

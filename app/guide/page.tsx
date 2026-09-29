@@ -174,10 +174,12 @@ export default function Guide() {
                 this summary starts no research and does not mark updates read.
               </p>
               <p>
-                The opening page also holds the monitoring question, saved
-                topics and latest source updates. Use Contents beside the
-                document, or above it on a small screen, to move between its
-                chapters.
+                Topic monitoring updates show saved topic matches separately
+                from research findings. Monitoring topics and Recent activity
+                are folded until needed. A question-only dossier has no
+                duplicate empty topic card; loading failures still offer a
+                retry. Use Contents beside the document, or above it on a small
+                screen, to move between its chapters.
               </p>
               <ul>
                 <li>

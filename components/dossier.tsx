@@ -9,6 +9,10 @@ import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
 import { QuestionMonitoring } from './question-monitoring';
 import { DossierReading } from './dossier-reading';
+import {
+  DossierTopicOverview,
+  DossierRecentActivity,
+} from './dossier-overview-details';
 import { DossierCoveragePanel } from './dossier-coverage';
 import { ReferenceLibrary } from '@/components/reference-library';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -16,7 +20,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import {
   ArrowDownToLine,
   ArrowLeft,
-  ArrowRight,
   ArrowUpRight,
   Bell,
   ClipboardList,
@@ -364,156 +367,30 @@ export function Dossier({
               />
             </details>
 
-            <div className="detail-columns">
-              <section>
-                <div className="section-header">
-                  <h2>What this dossier follows</h2>
-                  {!!p.topics?.length && (
-                    <span className="tag">{p.topics.length} topics</span>
-                  )}
-                </div>
-                {!p.topics?.length && (
-                  <p className="muted">
-                    {d.research_monitoring
-                      ? 'Your question is the starting point. Open AI research to see progress, findings and their sources.'
-                      : 'Collect sources, discuss your question or start AI research. Optional monitoring settings are available in Monitoring.'}
-                  </p>
-                )}
-                {p.topics?.map((t) => (
-                  <article key={t.id} className="scope-topic">
-                    <div>
-                      <h3>{t.plan.name}</h3>
-                      <span className="tag">Revision {t.current_revision}</span>
-                    </div>
-                    <p>{t.plan.goal}</p>
-                    <div className="chips">
-                      {t.plan.concepts.map((k: string) => (
-                        <span key={k}>{k}</span>
-                      ))}
-                    </div>
-                    <details>
-                      <summary>Revision history</summary>
-                      {t.revisions?.map((r) => (
-                        <p key={r.revision}>
-                          <b>Revision {r.revision}</b> · {date(r.created_at)} ·{' '}
-                          {r.concepts.join(', ')}
-                        </p>
-                      ))}
-                    </details>
-                  </article>
-                ))}
-                <div className="section-header spaced">
-                  <h2>Latest source updates</h2>
-                  <Button variant="ghost" onClick={() => setTab('evidence')}>
-                    View all <ArrowRight size={15} />
-                  </Button>
-                </div>
-                {matchesLoading ? (
-                  <output>Loading saved source updates…</output>
-                ) : matchError ? (
-                  <div className="banner error">
-                    {matchError}
-                    <Button
-                      variant="outline"
-                      onClick={() => setRefreshTick((n) => n + 1)}
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                ) : matches.length ? (
-                  <div className="evidence-list">
-                    {matches.slice(0, 5).map((m) => (
-                      <Evidence
-                        key={m.id}
-                        item={m}
-                        onAction={
-                          canEdit && m.is_current
-                            ? () => setActionEvidence(m)
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Empty
-                    title={
-                      d.research_monitoring
-                        ? 'Findings and sources'
-                        : p.status === 'draft'
-                          ? 'Monitoring has not started'
-                          : 'Waiting for matching evidence'
-                    }
-                    icon={Globe}
-                  >
-                    {d.research_monitoring
-                      ? 'Open AI research to follow the investigation and read findings with their source evidence.'
-                      : p.status === 'draft'
-                        ? 'Review the topics, sources and audience to start monitoring this dossier.'
-                        : 'No saved match has been reported yet. This does not establish that no change occurred.'}
-                    {d.research_monitoring && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setTab('research')}
-                      >
-                        Open research
-                      </Button>
-                    )}
-                    {!d.research_monitoring &&
-                      p.status === 'draft' &&
-                      canConfigure && (
-                        <Button
-                          variant="outline"
-                          disabled={!!busy}
-                          onClick={onSetup}
-                        >
-                          Complete monitoring setup
-                        </Button>
-                      )}
-                  </Empty>
-                )}
-              </section>
-              <aside>
-                <section className="surface activity-card">
-                  <h3>Activity</h3>
-                  {entries.slice(0, 8).map((e) => (
-                    <div key={e.id} className="activity-entry">
-                      <span className="timeline-dot" />
-                      <div>
-                        <b>
-                          {e.title ||
-                            (
-                              {
-                                note: 'Comment added',
-                                reference: 'Source added',
-                                file: 'File attached',
-                                feedback: 'Relevance reviewed',
-                                source_review: 'Source decision recorded',
-                                proposal: 'AI refinement proposed',
-                                improvement: 'Monitoring refined',
-                                monitor: 'Page watch connected',
-                                correction: 'Correction added',
-                                research_request: 'Research question added',
-                                domain_context: 'Dossier subject updated',
-                                dossier_template: 'Dossier template changed',
-                              } as Record<string, string>
-                            )[e.kind] ||
-                            'Dossier updated'}
-                        </b>
-                        <small>
-                          {e.author} · {date(e.created_at)}
-                        </small>
-                      </div>
-                    </div>
-                  ))}
-                  {!entries.length && (
-                    <p className="muted">
-                      Notes, source connections and improvements will appear
-                      here.
-                    </p>
-                  )}
-                </section>
-              </aside>
-            </div>
+            <DossierTopicOverview
+              profile={p}
+              questionMonitoring={!!d.research_monitoring}
+              matches={matches}
+              loading={matchesLoading}
+              error={matchError}
+              canConfigure={canConfigure}
+              busy={!!busy}
+              onRetry={() => setRefreshTick((n) => n + 1)}
+              onSources={() => setTab('evidence')}
+              onSetup={onSetup}
+              renderMatch={(match) => (
+                <Evidence
+                  key={match.id}
+                  item={match}
+                  onAction={
+                    canEdit && match.is_current
+                      ? () => setActionEvidence(match)
+                      : undefined
+                  }
+                />
+              )}
+            />
+            <DossierRecentActivity entries={entries} />
           </TabsContent>
           <TabsContent
             value="research"
