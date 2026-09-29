@@ -456,3 +456,76 @@ test('withheld early interpretation has an honest explanation and no stale gener
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+const change = () => ({
+  question_id: 'next-question',
+  source_id: 's',
+  quote: 'The source passage is here.',
+  locator: 'p1',
+  earlier_meaning: 'One reported grant might answer the question.',
+  meaning: 'The research may need to distinguish award and payment.',
+  why: 'The new record reports another amount for the same year.',
+  signal: 'questioned',
+  question: 'Do payment periods explain the difference?',
+  status: 'investigating',
+  searches_completed: 0,
+  reads_completed: 0,
+});
+for (const stage of ['queued', 'complete', 'budget', 'hidden'])
+  test(`changed interpretation explains the actual follow-up: ${stage}`, async () => {
+    let tree;
+    const value = episode({
+      status: stage === 'queued' ? 'running' : 'completed',
+    });
+    value.exploration.orientation = orientation();
+    value.exploration.changes = [change()];
+    if (stage === 'queued') {
+      value.exploration.briefing = null;
+      value.exploration.status = 'exploring';
+    }
+    if (stage === 'complete')
+      Object.assign(value.exploration.changes[0], {
+        status: 'evidence_found',
+        searches_completed: 1,
+        reads_completed: 1,
+      });
+    if (stage === 'budget')
+      value.exploration.changes[0].waiting_reason = 'branch_budget';
+    if (stage === 'hidden') {
+      value.exploration.changes_unavailable = true;
+      value.exploration.changes = [];
+    }
+    serve(value, () => {
+      throw new Error('Viewing a change cannot start another episode');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      if (stage === 'hidden') {
+        assert.match(text(tree), /revised research direction is hidden/);
+        assert.doesNotMatch(text(tree), /Do payment periods explain/);
+      } else {
+        assert.match(text(tree), /A rough question/);
+        assert.match(text(tree), /earlier interpretation questioned/);
+        assert.match(text(tree), /One reported grant might answer/);
+        assert.match(text(tree), /Do payment periods explain/);
+        assert.match(text(tree), /The source passage is here/);
+        assert.match(
+          text(tree),
+          stage === 'queued'
+            ? /search has not completed yet/
+            : stage === 'budget'
+              ? /Not completed within/
+              : /Supporting material saved/,
+        );
+        if (stage === 'queued' || stage === 'budget')
+          assert.doesNotMatch(text(tree), /completed reads\./);
+      }
+      assert.equal(tree.root.findAllByType('form').length, 0);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

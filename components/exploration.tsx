@@ -516,7 +516,13 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
       </details>
     );
   }
-  if (!brief) return <EarlyOrientation state={state} />;
+  if (!brief)
+    return (
+      <>
+        <EarlyOrientation state={state} />
+        <InterpretationChanges state={state} />
+      </>
+    );
   return (
     <>
       <section className="exploration-understanding">
@@ -538,6 +544,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           </article>
         ))}
       </div>
+      <InterpretationChanges state={state} />
       <section>
         <h3>Still uncertain</h3>
         <ul>
@@ -636,6 +643,75 @@ function EarlyOrientation({
           <li key={item}>{item}</li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function InterpretationChanges({ state }: { state: ExplorationState }) {
+  if (state.changes_unavailable)
+    return (
+      <p className="muted">
+        The revised research direction is hidden because its supporting evidence
+        changed.
+      </p>
+    );
+  if (!state.changes?.length) return null;
+  return (
+    <section
+      aria-label="How new evidence changed the research"
+      className="exploration-findings"
+    >
+      <h3>Why we are looking further</h3>
+      {state.changes.map((change) => {
+        const source = state.sources.find(
+          (item) => item.id === change.source_id,
+        );
+        if (!source) return null;
+        const progress = change.waiting_reason
+          ? 'Not completed within this episode’s limits.'
+          : change.status === 'evidence_found'
+            ? 'Supporting material saved; the interpretation remains tentative.'
+            : change.status === 'unresolved'
+              ? 'This check finished without resolving the question.'
+              : change.searches_completed
+                ? 'Search completed; this check is still in progress.'
+                : 'Queued for this episode; search has not completed yet.';
+        return (
+          <article key={change.question_id}>
+            <span className="content-origin">
+              AI ·{' '}
+              {change.signal === 'questioned'
+                ? 'earlier interpretation questioned'
+                : 'interpretation refined'}
+            </span>
+            <p>
+              <strong>{change.meaning}</strong>
+            </p>
+            <p>{change.why}</p>
+            <p>
+              <strong>Following up:</strong> {change.question}
+            </p>
+            <p className="muted">
+              {progress}{' '}
+              {change.reads_completed > 0 &&
+                `${change.reads_completed} completed reads.`}
+            </p>
+            <details className="exploration-citation">
+              <summary>Earlier interpretation & new supporting passage</summary>
+              <p>
+                <strong>Earlier:</strong> {change.earlier_meaning}
+              </p>
+              <blockquote>{change.quote}</blockquote>
+              <a href={source.url} target="_blank" rel="noreferrer">
+                {source.title}
+              </a>
+              <p className="muted">
+                Captured {date(source.captured_at)} · {change.locator}
+              </p>
+            </details>
+          </article>
+        );
+      })}
     </section>
   );
 }

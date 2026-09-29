@@ -25,6 +25,19 @@ export type ExplorationState = {
       uncertainties: string[];
     };
   };
+  changes_unavailable?: boolean;
+  changes?: (ExplorationCitation & {
+    question_id: string;
+    earlier_meaning: string;
+    meaning: string;
+    why: string;
+    signal: 'questioned' | 'refined';
+    question: string;
+    status: string;
+    waiting_reason?: string | null;
+    searches_completed: number;
+    reads_completed: number;
+  })[];
   briefing: null | {
     understanding: string;
     findings: (ExplorationCitation & {

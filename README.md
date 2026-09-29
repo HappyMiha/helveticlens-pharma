@@ -419,3 +419,12 @@ The original question is unchanged. Pause to correct direction; the previous epi
 and its evidence remain available. The final briefing keeps the earlier checkpoint
 in an expandable history. This never enables recurring monitoring. Missing evidence
 or a failed optional orientation leaves source reading and the final briefing intact.
+
+### Evidence-directed reinterpretation (1.53)
+
+New public evidence can question/refine the saved early interpretation and queue
+a real follow-up inside the same bounded episode. The reader separates the earlier
+meaning, exact later passage, next question and observed search/read progress.
+Budget-limited work is labeled uncompleted; source changes withhold dependent
+research. No new setup fields or monitoring authority. Shared Core contract and
+acceptance: `docs/PRODUCT_ADAPTIVE_ORIENTATION.md` in HappyMiha/helvetic-lens.
