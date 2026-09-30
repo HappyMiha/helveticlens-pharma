@@ -809,6 +809,19 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
             ),
         )
       : undefined;
+  const earlierFindings =
+    promotedAssessment && state.question_assessments?.status === 'ready'
+      ? state.question_assessments.assessments.filter(
+          (item) =>
+            item.question_id !== promotedAssessment.question_id &&
+            item.stage !== 'final_briefing' &&
+            item.points.every((point) =>
+              point.evidence.every((ref) =>
+                state.sources.some((source) => source.id === ref.source_id),
+              ),
+            ),
+        )
+      : [];
   function quote(item: Citation) {
     const source = state?.sources.find(
       (source) => source.id === item.source_id,
@@ -864,9 +877,22 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
             <InterpretationChanges state={state} />
           </>
         )}
+        {!!earlierFindings.length && (
+          <section className="exploration-findings" aria-label="Findings so far">
+            <h3>What else we have learned</h3>
+            {earlierFindings.map((assessment) => (
+              <article key={assessment.question_id}>
+                <span className="content-origin">AI · source-backed assessment</span>
+                <h4>{assessment.question}</h4>
+                <QuestionCheckpointContent assessment={assessment} state={state} />
+              </article>
+            ))}
+          </section>
+        )}
         <BranchQuestionProgress
           state={state}
           excludeQuestionId={promotedAssessment?.question_id}
+          excludeQuestionIds={earlierFindings.map((item) => item.question_id)}
         />
         <ObservedResearchScope state={state} />
       </>
@@ -1007,17 +1033,19 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
 function BranchQuestionProgress({
   state,
   excludeQuestionId,
+  excludeQuestionIds = [],
 }: {
   state: ExplorationState;
   excludeQuestionId?: string;
+  excludeQuestionIds?: string[];
 }) {
   const value = state.question_assessments;
+  const visible = (item: { question_id: string }) =>
+    item.question_id !== excludeQuestionId && !excludeQuestionIds.includes(item.question_id);
   if (
     state.status === 'evidence_changed' ||
     value?.status !== 'ready' ||
-    (!value.assessments.some(
-      (item) => item.question_id !== excludeQuestionId,
-    ) &&
+    (!value.assessments.some(visible) &&
       !value.unassessed &&
       !value.outdated)
   )
@@ -1031,7 +1059,7 @@ function BranchQuestionProgress({
         material does not mean the question is answered.
       </p>
       {value.assessments
-        .filter((item) => item.question_id !== excludeQuestionId)
+        .filter(visible)
         .map((assessment) => (
           <article key={assessment.question_id}>
             <h4>{assessment.question}</h4>

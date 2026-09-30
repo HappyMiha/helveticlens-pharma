@@ -3325,3 +3325,39 @@ test('late saved-check reads cannot revive a removed or denied answer link', asy
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+test('living dossier retains multiple current research answers while the next direction runs', async () => {
+  const value = savedUpdateEpisode();
+  const earlier = structuredClone(value.exploration.question_assessments.assessments[0]);
+  earlier.question_id = 'q-earlier';
+  earlier.question = 'What does the first public record establish?';
+  earlier.status = 'partial';
+  earlier.points = [{
+    statement: 'The first record establishes a limited part of the original question.',
+    evidence: [{ source_id: 's', quote: 'The source passage is here.', locator: 'p1', role: 'support' }],
+  }];
+  value.exploration.question_assessments.assessments.unshift(earlier);
+  serve(value, () => { throw new Error('Reading must not start research'); });
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, { ...props, canEdit: false })); });
+    const reading = tree.root.findByProps({ 'aria-label': 'Findings so far' });
+    assert.equal(reading.findAllByType('h3')[0].props.children, 'What else we have learned');
+    assert.equal(reading.findAllByType('h4').filter(x => x.props.children === earlier.question).length, 1);
+    assert.equal(tree.root.findAllByType('h3').filter(x => x.props.children === 'Which part of this question is supported?').length, 1);
+    assert.ok(!reading.findAllByType('article')[0].parent.props.open);
+    assert.match(text(tree), /The first record establishes a limited part/);
+    assert.match(text(tree), /Counterevidence/);
+    assert.equal(tree.root.findAllByType('form').length, 0);
+    assert.equal(tree.root.findAllByType('summary').filter(x => x.props.children === 'Research checkpoints by question').length, 0);
+    const invalid = structuredClone(value);
+    invalid.exploration.question_assessments = { contract: 'branch-question-assessment/v1', status: 'evidence_changed' };
+    serve(invalid, () => { throw new Error('No writes'); });
+    await act(async () => { tree.unmount(); });
+    await act(async () => { tree = create(React.createElement(Exploration, { ...props, canEdit: false })); });
+    assert.equal(tree.root.findAllByProps({ 'aria-label': 'Findings so far' }).length, 0);
+    assert.doesNotMatch(text(tree), /The first record establishes a limited part/);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});

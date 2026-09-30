@@ -1,5 +1,13 @@
 # Changes
 
+## 1.81.0 — Research that builds a useful dossier
+
+New explorations share time across initial directions, analyse sources as they
+arrive and retain time for a cited briefing within the existing budget. The
+opening dossier keeps multiple current question findings visible while research
+continues, including contrary evidence and exact supporting passages. Existing
+monitoring consent and access boundaries remain unchanged.
+
 ## 1.80.0 — Shared source collection history
 
 Open a selected topic source to read retained collection runs, partial results,
