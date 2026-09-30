@@ -251,6 +251,7 @@ export type ExplorationState = {
   })[];
   briefing: null | {
     assessment?: QuestionAssessment;
+    question_updates?: { status: 'unavailable' };
     understanding: string;
     findings: (ExplorationCitation & {
       statement: string;

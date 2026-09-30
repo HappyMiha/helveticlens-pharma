@@ -704,6 +704,14 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         <ObservedResearchScope state={state} />
       </>
     );
+  const questionUpdateNotice =
+    state.status === 'ready' &&
+    brief.question_updates?.status === 'unavailable' ? (
+      <p className="muted">
+        Question assessments could not be updated. The research summary is
+        available; earlier assessments remain unchanged.
+      </p>
+    ) : null;
   const background = (
     <>
       <section className="exploration-understanding">
@@ -752,6 +760,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
       <>
         <ContinuedCheck state={state} />
         {background}
+        {questionUpdateNotice}
         <BranchQuestionProgress state={state} />
         <ObservedResearchScope state={state} />
       </>
@@ -810,6 +819,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           An interpretation of the cited material, still open to review.
         </p>
       </section>
+      {questionUpdateNotice}
       <BranchQuestionProgress state={state} />
       <ObservedResearchScope state={state} />
       <details className="dossier-secondary">

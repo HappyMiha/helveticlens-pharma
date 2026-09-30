@@ -1907,3 +1907,88 @@ for (const mode of ['current', 'history', 'changed', 'old'])
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+for (const mode of [
+  'current',
+  'history',
+  'selected',
+  'missing',
+  'changed',
+  'unavailable',
+])
+  test(`optional question update failure keeps a quiet summary reader: ${mode}`, async () => {
+    let tree;
+    const value = episode();
+    if (mode !== 'missing')
+      value.exploration.briefing.question_updates = { status: 'unavailable' };
+    if (mode === 'selected')
+      value.exploration.briefing.assessment = {
+        question_id: 'selected-q',
+        question: 'Which amount is documented?',
+        status: 'partial',
+        points: [
+          {
+            statement: 'The selected answer remains available.',
+            evidence: [
+              {
+                source_id: 's',
+                quote: 'The source passage is here.',
+                locator: 'p1',
+                role: 'support',
+              },
+            ],
+          },
+        ],
+        limitations: ['Other material is unchecked.'],
+      };
+    if (mode === 'changed' || mode === 'unavailable') {
+      value.exploration.status =
+        mode === 'changed' ? 'evidence_changed' : 'unavailable';
+      value.exploration.briefing = null;
+    }
+    let writes = 0;
+    serve(value, () => {
+      writes++;
+      throw new Error('Reading must not start work');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: false,
+            historical: mode === 'history',
+          }),
+        );
+      });
+      const visible = ['current', 'history', 'selected'].includes(mode);
+      const notices = tree.root
+        .findAllByType('p')
+        .filter((p) =>
+          p.children
+            .join('')
+            .includes('Question assessments could not be updated.'),
+        );
+      assert.equal(notices.length, visible ? 1 : 0);
+      if (visible) {
+        assert.match(text(tree), /earlier assessments remain unchanged/);
+        assert.match(text(tree), /The source passage is here/);
+        assert.ok(
+          tree.root
+            .findAllByType('a')
+            .some((a) => a.props.href === 'https://example.org/record'),
+        );
+      }
+      if (mode === 'selected')
+        assert.match(text(tree), /The selected answer remains available/);
+      assert.equal(writes, 0);
+      assert.equal(tree.root.findAllByType('form').length, 0);
+      assert.equal(findButton(tree, 'Continue this check'), undefined);
+      assert.doesNotMatch(
+        text(tree),
+        /PRIVATE INVALID|_renewal_unavailable|question_renewals/,
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

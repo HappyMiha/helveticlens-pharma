@@ -529,3 +529,5 @@ assessments and later work. See Core PRODUCT_BRANCH_ASSESSMENT.md for scope and
 verification; live semantic quality and professional/human acceptance remain open.
 
 Question renewal 1.65 can update a cited question assessment in the existing research summary after later evidence. Earlier eligible checkpoints remain in closed details; no new form or automatic continuation is introduced. Full semantic and human acceptance remain open.
+
+New explorations can keep an independently valid cited research summary when an optional question update fails. The reader explains the unchanged earlier assessments; shared evidence changes and invalid required answers still withhold dependent results. No extra research request is started.
