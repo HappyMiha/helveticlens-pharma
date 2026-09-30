@@ -151,6 +151,20 @@ type ResearchAttempts = {
   interrupted: number;
   running: number;
 };
+export type ResearchPurpose = {
+  contract: 'research-purpose/v1';
+  text: string;
+} & (
+  | { kind: 'planned' }
+  | {
+      kind: 'source_follow_up';
+      trigger: {
+        quote: string;
+        locator: string;
+        source: { id: string; title: string; url: string };
+      };
+    }
+);
 export type ResearchActivity =
   | {
       contract: 'research-activity/v1';
@@ -171,6 +185,7 @@ export type ResearchActivity =
       valid_for_ms: number;
       checking_alternative?: boolean;
       testing_query?: boolean;
+      purpose?: ResearchPurpose | null;
       latest_source: {
         id: string;
         title: string;

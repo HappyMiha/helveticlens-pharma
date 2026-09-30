@@ -14,6 +14,7 @@ import type {
   QuestionAssessment,
   SavedCheck,
   CaptureProgress,
+  ResearchPurpose,
   ExplorationCitation as Citation,
 } from '@/lib/exploration';
 
@@ -660,6 +661,7 @@ function CurrentResearchReceipt({
           </>
         )}
       </output>
+      <CurrentResearchPurpose value={activity.purpose} />
       {activity.latest_source && (
         <p className="muted">
           Latest captured source:{' '}
@@ -669,6 +671,43 @@ function CurrentResearchReceipt({
           · {date(activity.latest_source.captured_at)}. Selected passages, not
           the whole document.
         </p>
+      )}
+    </div>
+  );
+}
+
+function CurrentResearchPurpose({ value }: { value?: ResearchPurpose | null }) {
+  if (
+    value?.contract !== 'research-purpose/v1' ||
+    typeof value.text !== 'string' ||
+    value.text.trim().length < 5 ||
+    value.text.length > 500 ||
+    !['planned', 'source_follow_up'].includes(value.kind) ||
+    (value.kind === 'source_follow_up' &&
+      (!value.trigger?.quote ||
+        !value.trigger?.locator ||
+        !value.trigger?.source?.url ||
+        !value.trigger?.source?.title))
+  )
+    return null;
+  return (
+    <div>
+      <p className="muted">
+        <span className="content-origin">AI · why this check</span> {value.text}
+      </p>
+      {value.kind === 'source_follow_up' && (
+        <details className="exploration-citation">
+          <summary>Passage behind this question</summary>
+          <blockquote>{value.trigger.quote}</blockquote>
+          <a href={value.trigger.source.url} target="_blank" rel="noreferrer">
+            {value.trigger.source.title}
+          </a>{' '}
+          · {value.trigger.locator}
+          <p className="muted">
+            This passage prompted further research; it does not settle the
+            question.
+          </p>
+        </details>
       )}
     </div>
   );

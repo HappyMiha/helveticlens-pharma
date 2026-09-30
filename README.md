@@ -544,3 +544,12 @@ secondary, with no duplicate promoted question. The final briefing takes over.
 Legacy, unavailable or changed evidence never manufactures a fresh update.
 Existing request/session/access fences handle delayed polling; reading starts no
 new work. Source containment is not independent semantic or human acceptance.
+
+
+### Purpose of the current check (1.68)
+
+Current research may show its saved AI rationale beside the existing activity.
+A source-driven follow-up includes the retained passage that prompted it; an
+initial planned purpose has no invented source. The explanation expires with the
+actual activity and remains subject to current evidence/access checks. Reading
+starts no additional work. Saved results retain their separate history.

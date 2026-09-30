@@ -1045,6 +1045,20 @@ for (const status of ['unknown', 'evidence_changed']) {
   });
 }
 
+const livePurpose = () => ({
+  contract: 'research-purpose/v1',
+  kind: 'source_follow_up',
+  text: 'Check whether the recipient explains the earlier discrepancy.',
+  trigger: {
+    quote: 'The earlier record reports a different amount.',
+    locator: 'p2',
+    source: {
+      id: 'trigger',
+      title: 'Earlier evidence trigger',
+      url: 'https://example.org/trigger',
+    },
+  },
+});
 const liveActivity = () => ({
   contract: 'research-activity/v1',
   status: 'working',
@@ -1052,6 +1066,7 @@ const liveActivity = () => ({
   question: 'Which recipient record explains the difference?',
   observed_at: '2026-09-29T22:00:00Z',
   valid_for_ms: 50,
+  purpose: livePurpose(),
   latest_source: {
     id: 's',
     title: 'Previously captured registry',
@@ -1088,6 +1103,7 @@ test('active research shows its actual question and an earlier captured source, 
     text(tree).includes('Which recipient record explains the difference?'),
   );
   assert.ok(text(tree).includes('Latest captured source:'));
+  assert.ok(text(tree).includes('AI · why this check'));
   const link = tree.root
     .findAllByType('a')
     .find((n) => n.props.children === 'Previously captured registry');
@@ -1102,6 +1118,10 @@ test('active research shows its actual question and an earlier captured source, 
   });
   assert.ok(!text(tree).includes('Searching for sources'));
   assert.ok(!text(tree).includes('Previously captured registry'));
+  assert.doesNotMatch(
+    text(tree),
+    /why this check|earlier discrepancy|earlier record reports/,
+  );
   assert.ok(text(tree).includes('Current activity is not confirmed'));
   assert.equal(requests, initialRequests);
   await act(async () => tree.unmount());
@@ -1124,6 +1144,10 @@ test('a delayed response cannot revive work after its conservative validity wind
   });
   assert.ok(text(tree).includes('Current activity is not confirmed'));
   assert.ok(!text(tree).includes('Previously captured registry'));
+  assert.doesNotMatch(
+    text(tree),
+    /why this check|earlier discrepancy|earlier record reports/,
+  );
   await act(async () => tree.unmount());
 });
 
@@ -1160,6 +1184,10 @@ test('queue, pause, legacy and access changes replace prior working details; fin
     assert.ok(text(tree).includes(message));
     assert.ok(!text(tree).includes('Previously captured registry'));
     assert.ok(!text(tree).includes('Which recipient record explains'));
+    assert.doesNotMatch(
+      text(tree),
+      /why this check|earlier discrepancy|earlier record reports/,
+    );
     assert.equal(tree.root.findAllByType('button').length, 0);
   }
   value.exploration.current_activity = {
@@ -2259,6 +2287,146 @@ test('saved research update polling retains identity and rejects late reads afte
     assert.doesNotMatch(
       text(tree),
       /AI · saved research update|A later supported checkpoint/,
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+for (const kind of ['planned', 'source_follow_up'])
+  test(`current purpose distinguishes AI rationale and its optional trigger: ${kind}`, async (t) => {
+    t.mock.method(performance, 'now', () => 100);
+    const { ResearchActivity } = require(resolve('components/exploration.tsx'));
+    const value = episode().exploration;
+    value.current_activity = liveActivity();
+    value.current_activity.purpose.kind = kind;
+    if (kind === 'planned') delete value.current_activity.purpose.trigger;
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(ResearchActivity, {
+            state: value,
+            readStartedAt: 100,
+          }),
+        );
+      });
+      assert.match(text(tree), /AI · why this check/);
+      assert.match(text(tree), /Check whether the recipient/);
+      assert.match(text(tree), /Latest captured source/);
+      const details = tree.root.findAllByType('details');
+      assert.equal(details.length, kind === 'planned' ? 0 : 1);
+      if (kind !== 'planned') {
+        assert.ok(!details[0].props.open);
+        assert.equal(
+          details[0].findByType('blockquote').props.children,
+          livePurpose().trigger.quote,
+        );
+        assert.equal(
+          details[0].findByType('a').props.href,
+          'https://example.org/trigger',
+        );
+        assert.match(text(tree), /does not settle the question/);
+      }
+      assert.equal(tree.root.findAllByType('button').length, 0);
+      assert.ok(
+        tree.root
+          .findAllByType('output')
+          .every((node) => !node.findAllByType('p').length),
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+for (const invalid of [
+  'missing',
+  'unknown_contract',
+  'unknown_kind',
+  'empty',
+  'oversized',
+  'missing_quote',
+  'missing_source',
+])
+  test(`current purpose omits unverifiable metadata without hiding actual activity: ${invalid}`, async (t) => {
+    t.mock.method(performance, 'now', () => 100);
+    const { ResearchActivity } = require(resolve('components/exploration.tsx'));
+    const value = episode().exploration;
+    value.current_activity = liveActivity();
+    const purpose = value.current_activity.purpose;
+    if (invalid === 'missing') delete value.current_activity.purpose;
+    if (invalid === 'unknown_contract') purpose.contract = 'unknown';
+    if (invalid === 'unknown_kind') purpose.kind = 'unconfirmed';
+    if (invalid === 'empty') purpose.text = ' ';
+    if (invalid === 'oversized') purpose.text = 'x'.repeat(501);
+    if (invalid === 'missing_quote') delete purpose.trigger.quote;
+    if (invalid === 'missing_source') delete purpose.trigger.source;
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(ResearchActivity, {
+            state: value,
+            readStartedAt: 100,
+          }),
+        );
+      });
+      assert.match(text(tree), /Searching for sources/);
+      assert.doesNotMatch(
+        text(tree),
+        /AI · why this check|earlier discrepancy|earlier record reports|Passage behind/,
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('current purpose polling drops an older explanation and cannot revive it after denied access', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  t.mock.method(performance, 'now', () => 100);
+  const value = episode({ status: 'running' });
+  value.exploration.status = 'exploring';
+  value.exploration.briefing = null;
+  value.exploration.current_activity = {
+    ...liveActivity(),
+    valid_for_ms: 90000,
+  };
+  serve(value, () => {
+    throw new Error('Reading purpose must not start work');
+  });
+  const initialFetch = globalThis.fetch;
+  let defer = false;
+  const pending = [];
+  globalThis.fetch = (url, init) =>
+    defer && url === `${base}/r`
+      ? new Promise((resolve) => pending.push(resolve))
+      : initialFetch(url, init);
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.match(text(tree), /earlier discrepancy/);
+    defer = true;
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    const newer = structuredClone(value);
+    newer.revision++;
+    newer.exploration.current_activity.purpose.text =
+      'Check the later retained recipient account.';
+    await act(async () => pending[1](Response.json(newer)));
+    await act(async () => pending[0](Response.json(value)));
+    assert.match(text(tree), /later retained recipient account/);
+    assert.doesNotMatch(text(tree), /earlier discrepancy/);
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => pending[3](Response.json({}, { status: 403 })));
+    await act(async () => pending[2](Response.json(newer)));
+    assert.doesNotMatch(
+      text(tree),
+      /why this check|later retained recipient account|earlier record reports/,
     );
   } finally {
     if (tree) await act(async () => tree.unmount());
