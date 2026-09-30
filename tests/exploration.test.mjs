@@ -1444,3 +1444,111 @@ test('alternate searching is tied to a current receipt and disappears at expiry'
   assert.ok(!text(tree).includes('Testing an alternative wording'));
   await act(async () => tree.unmount());
 });
+
+for (const category of [
+  'direct',
+  'context',
+  'counterevidence',
+  'unrelated',
+  'uncertain',
+]) {
+  test(`read relevance shows ${category} as AI assessment with retained passage`, async () => {
+    const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+    const value = episode();
+    const source = value.exploration.sources[0];
+    value.exploration.research_scope = {
+      ...recoveryScope(),
+      read_relevance: {
+        contract: 'read-relevance/v1',
+        status: 'ready',
+        assessments: [
+          {
+            source_id: source.id,
+            question_id: 'q1',
+            question: 'Which entity is described?',
+            category,
+            reason: 'The passage names a different legal entity.',
+            quote: 'Exact retained passage.',
+            locator: 'p1',
+            limitations: ['entity', 'jurisdiction', 'date', 'incomplete'],
+          },
+        ],
+        unassessed: 1,
+        alternative_reads: Number(category === 'unrelated'),
+        unfinished: Number(category === 'unrelated'),
+      },
+    };
+    let requests = 0;
+    globalThis.fetch = async () => {
+      requests++;
+      throw new Error('History must be read-only');
+    };
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    const copy = text(tree);
+    assert.ok(copy.includes('AI assessed relevance for 1 captured source'));
+    assert.ok(
+      copy.includes('AI assessments of captured passages, not human review'),
+    );
+    assert.ok(copy.includes('No assessment does not mean irrelevant'));
+    assert.ok(copy.includes('The source remains saved'));
+    assert.ok(
+      copy.includes(
+        '1 captured source has no validated relevance assessment yet',
+      ),
+    );
+    assert.ok(copy.includes('The captured passages are incomplete'));
+    assert.equal(
+      copy.includes('additional reading attempts followed'),
+      category === 'unrelated',
+    );
+    assert.ok(
+      tree.root
+        .findAllByType('blockquote')
+        .some((n) => n.children.includes('Exact retained passage.')),
+    );
+    const details = tree.root
+      .findAllByType('details')
+      .find(
+        (n) =>
+          n.findAllByProps({ 'aria-label': 'Relevance of read sources' })
+            .length > 0,
+      );
+    assert.ok(details && !details.props.open);
+    assert.equal(requests, 0);
+    assert.equal(tree.root.findAllByType('button').length, 0);
+    await act(async () => tree.unmount());
+  });
+}
+
+test('legacy, revoked and absent source assessment details remain hidden', async () => {
+  const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+  for (const status of ['unknown', 'evidence_changed']) {
+    const value = episode();
+    value.exploration.research_scope = {
+      contract: 'observed-research-scope/v1',
+      status,
+    };
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Read relevance summary' })
+        .length,
+      0,
+    );
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Relevance of read sources' })
+        .length,
+      0,
+    );
+    await act(async () => tree.unmount());
+  }
+});

@@ -89,6 +89,27 @@ export type QueryRecovery =
       unfinished: boolean;
       proposal_unavailable: boolean;
     };
+export type ReadRelevance =
+  | { contract: 'read-relevance/v1'; status: 'unknown' }
+  | {
+      contract: 'read-relevance/v1';
+      status: 'ready';
+      assessments: (ExplorationCitation & {
+        question_id: string;
+        question: string;
+        category:
+          | 'direct'
+          | 'context'
+          | 'counterevidence'
+          | 'unrelated'
+          | 'uncertain';
+        reason: string;
+        limitations: ('entity' | 'jurisdiction' | 'date' | 'incomplete')[];
+      })[];
+      unassessed: number;
+      alternative_reads: number;
+      unfinished: number;
+    };
 export type ResearchScope =
   | {
       contract: 'observed-research-scope/v1';
@@ -100,6 +121,7 @@ export type ResearchScope =
       activity: string;
       source_recovery?: SourceRecovery;
       query_recovery?: QueryRecovery;
+      read_relevance?: ReadRelevance;
       searches: ResearchAttempts;
       indexes: {
         completed: number;

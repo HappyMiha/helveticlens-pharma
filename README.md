@@ -487,3 +487,12 @@ question remains unchanged. Current activity and saved scope distinguish a
 proposal, completed retrieval, failed work and captured sources. Inspectable
 wording is labelled as a hypothesis. History creates no work; source rights and
 explicit later monitoring are preserved. Live semantic acceptance stays open.
+
+## Usefulness of read passages (1.61)
+
+New exploratory episodes assess actual source passages through existing extraction.
+Source-linked AI assessments distinguish direct help, context, counterevidence,
+unrelated material and uncertainty. Details retain the exact passage and limitations.
+An unrelated assessment can lead to bounded reading of another already retrieved
+candidate; captured evidence stays saved. Missing assessments or no claims do not
+mean irrelevant. Existing privacy, controls and episode budgets remain in force.

@@ -813,6 +813,66 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
   );
 }
 
+function ReadRelevanceDetails({ state }: { state: ExplorationState }) {
+  const scope = state.research_scope;
+  if (scope?.status !== 'ready' || scope.read_relevance?.status !== 'ready')
+    return null;
+  const relevance = scope.read_relevance;
+  const labels = {
+    direct: 'Helps answer this question',
+    context: 'Provides context',
+    counterevidence: 'Questions an assumption',
+    unrelated: 'Appears unrelated to this question',
+    uncertain: 'Relevance is uncertain',
+  };
+  const limits = {
+    entity: 'Entity match needs attention',
+    jurisdiction: 'Jurisdiction needs attention',
+    date: 'Date or period needs attention',
+    incomplete: 'The captured passages are incomplete',
+  };
+  return (
+    <div aria-label="Relevance of read sources">
+      <p className="muted">
+        AI assessments of captured passages, not human review or a judgment of
+        source truth. Context and counterevidence can still help. No assessment
+        does not mean irrelevant.
+      </p>
+      {relevance.assessments.map((item) => {
+        const source = state.sources.find((s) => s.id === item.source_id);
+        if (!source) return null;
+        return (
+          <article key={item.source_id + item.question_id}>
+            <p>
+              <strong>AI · {labels[item.category]}</strong>
+            </p>
+            <p>
+              For: <q>{item.question}</q>
+            </p>
+            <p>{item.reason}</p>
+            {item.limitations.length > 0 && (
+              <p className="muted">
+                {item.limitations.map((v) => limits[v]).join('. ')}.
+              </p>
+            )}
+            <blockquote>{item.quote}</blockquote>
+            <a href={source.url} target="_blank" rel="noreferrer">
+              {source.title}
+            </a>
+            <p className="muted">
+              Captured {date(source.captured_at)} · {item.locator}. The source
+              remains saved.
+            </p>
+          </article>
+        );
+      })}
+      {relevance.unassessed > 0 && (
+        <p>{`${relevance.unassessed} captured ${relevance.unassessed === 1 ? 'source has' : 'sources have'} no validated relevance assessment yet.`}</p>
+      )}
+    </div>
+  );
+}
+
 function ObservedResearchScope({ state }: { state: ExplorationState }) {
   const scope = state.research_scope;
   if (
@@ -898,8 +958,20 @@ function ObservedResearchScope({ state }: { state: ExplorationState }) {
           not a confirmed interpretation.
         </p>
       )}
+      {scope.read_relevance?.status === 'ready' &&
+        scope.read_relevance.assessments.length > 0 && (
+          <p className="muted" aria-label="Read relevance summary">
+            {`AI assessed relevance for ${count(scope.read_relevance.assessments.length, 'captured source')} against the research questions. `}
+            {scope.read_relevance.alternative_reads > 0 &&
+              `${scope.read_relevance.alternative_reads} additional reading attempts followed passages assessed as unrelated. `}
+            {scope.read_relevance.unfinished > 0 &&
+              'Further checks remain unfinished. '}
+            These assessments do not establish an answer.
+          </p>
+        )}
       <details className="dossier-secondary">
         <summary>What was checked and what remains</summary>
+        <ReadRelevanceDetails state={state} />
         {scope.query_recovery?.status === 'ready' &&
           scope.query_recovery.query && (
             <p>
