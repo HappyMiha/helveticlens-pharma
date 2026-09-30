@@ -345,9 +345,11 @@ function ExplorationEpisode({
               <section className="exploration-choice">
                 <h3>
                   {nextCheck
-                    ? nextCheck.basis === 'open_question'
-                      ? 'An open question to investigate'
-                      : 'A useful next check'
+                    ? nextCheck.basis === 'further_question'
+                      ? 'Another way to investigate this question'
+                      : nextCheck.basis === 'open_question'
+                        ? 'An open question to investigate'
+                        : 'A useful next check'
                     : brief?.clarification ||
                       'Where would you like to go next?'}
                 </h3>
@@ -697,6 +699,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         <ContinuedCheck state={state} />
         <EarlyOrientation state={state} />
         <InterpretationChanges state={state} />
+        <BranchQuestionProgress state={state} />
         <ObservedResearchScope state={state} />
       </>
     );
@@ -748,6 +751,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
       <>
         <ContinuedCheck state={state} />
         {background}
+        <BranchQuestionProgress state={state} />
         <ObservedResearchScope state={state} />
       </>
     );
@@ -805,6 +809,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           An interpretation of the cited material, still open to review.
         </p>
       </section>
+      <BranchQuestionProgress state={state} />
       <ObservedResearchScope state={state} />
       <details className="dossier-secondary">
         <summary>Research context & earlier understanding</summary>
@@ -812,6 +817,87 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         {background}
       </details>
     </>
+  );
+}
+
+function BranchQuestionProgress({ state }: { state: ExplorationState }) {
+  const value = state.question_assessments;
+  if (
+    state.status === 'evidence_changed' ||
+    value?.status !== 'ready' ||
+    (!value.assessments.length && !value.unassessed && !value.outdated)
+  )
+    return null;
+  const labels = {
+    possible_answer: 'A possible answer from the read sources',
+    partial: 'Some evidence; the question remains open',
+    conflicting: 'Conflicting evidence; the question remains open',
+    not_found: 'No answer found in the material read',
+  };
+  return (
+    <details className="dossier-secondary">
+      <summary>Research checkpoints by question</summary>
+      <p className="muted">
+        AI assessments of the passages read at each checkpoint. Capturing
+        material does not mean the question is answered.
+      </p>
+      {value.assessments.map((assessment) => (
+        <article key={assessment.question_id}>
+          <h4>{assessment.question}</h4>
+          <p>
+            <strong>{labels[assessment.status]}</strong>
+          </p>
+          {assessment.points.map((point, i) => (
+            <div key={i}>
+              <p>{point.statement}</p>
+              <details className="exploration-citation">
+                <summary>Read the evidence for this assessment</summary>
+                {point.evidence.map((ref, j) => {
+                  const source = state.sources.find(
+                    (s) => s.id === ref.source_id,
+                  );
+                  return source ? (
+                    <div key={j}>
+                      <span className="content-origin">
+                        {ref.role === 'support'
+                          ? 'Supporting passage'
+                          : ref.role === 'counterevidence'
+                            ? 'Counterevidence'
+                            : 'Context passage'}
+                      </span>
+                      <blockquote>{ref.quote}</blockquote>
+                      <a href={source.url} target="_blank" rel="noreferrer">
+                        {source.title}
+                      </a>
+                      <p className="muted">
+                        Captured {date(source.captured_at)} · {ref.locator}
+                      </p>
+                    </div>
+                  ) : null;
+                })}
+              </details>
+            </div>
+          ))}
+          <ul>
+            {assessment.limitations.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </article>
+      ))}
+      {!!value.outdated && (
+        <p className="muted">
+          Earlier assessments changed with new public evidence and need a fresh
+          review. Their earlier continuation proposals are unavailable.
+        </p>
+      )}
+      {value.unassessed > 0 && (
+        <p className="muted">{`${value.unassessed} completed ${value.unassessed === 1 ? 'question has' : 'questions have'} no validated answer assessment. Their outcome remains unknown.`}</p>
+      )}
+      <p className="muted">
+        These interpretations remain open to human review.
+      </p>
+    </details>
   );
 }
 
@@ -1239,9 +1325,11 @@ function ContinuedCheck({ state }: { state: ExplorationState }) {
       aria-label="Continuing a saved check"
     >
       <span className="content-origin">
-        {check.basis === 'open_question'
-          ? 'Your selected open question · earlier research context'
-          : 'Your selected check · earlier research context'}
+        {check.basis === 'further_question'
+          ? 'Your continued question · earlier research context'
+          : check.basis === 'open_question'
+            ? 'Your selected open question · earlier research context'
+            : 'Your selected check · earlier research context'}
       </span>
       <p>{check.purpose}</p>
       <SavedCheckPassage check={check} />

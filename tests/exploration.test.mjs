@@ -1682,3 +1682,129 @@ for (const mode of ['current', 'history', 'changed'])
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+for (const mode of ['current', 'history', 'unknown', 'changed', 'missing'])
+  test(`question checkpoints separate captured material from an answer: ${mode}`, async () => {
+    let tree;
+    const writes = [];
+    const value = episode();
+    value.exploration.briefing.clarification = '';
+    value.exploration.briefing.directions = [];
+    const check = { ...savedCheck(), basis: 'further_question' };
+    if (mode !== 'missing')
+      value.exploration.question_assessments =
+        mode === 'unknown' || mode === 'changed'
+          ? {
+              contract: 'branch-question-assessment/v1',
+              status: mode === 'changed' ? 'evidence_changed' : 'unknown',
+            }
+          : {
+              contract: 'branch-question-assessment/v1',
+              status: 'ready',
+              unassessed: 1,
+              assessments: [
+                {
+                  question_id: check.question_id,
+                  question: check.question,
+                  status: 'partial',
+                  points: [
+                    {
+                      statement: 'Only part of the question is covered.',
+                      evidence: [
+                        {
+                          source_id: 's',
+                          quote: 'The source passage is here.',
+                          locator: 'p1',
+                          role: 'context',
+                        },
+                      ],
+                    },
+                  ],
+                  limitations: ['The later period has not been checked.'],
+                },
+              ],
+            };
+    if (mode === 'current') value.exploration.next_check = check;
+    serve(value, (url, init) => {
+      writes.push({ url, body: JSON.parse(init.body) });
+      return Response.json(value);
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            historical: mode === 'history',
+            canEdit: mode === 'current',
+          }),
+        );
+      });
+      assert.equal(writes.length, 0);
+      const summary = tree.root
+        .findAllByType('summary')
+        .find(
+          (s) => s.children.join('') === 'Research checkpoints by question',
+        );
+      if (mode === 'current' || mode === 'history') {
+        assert.ok(summary);
+        assert.notEqual(summary.parent.props.open, true);
+        assert.match(text(tree), /Some evidence; the question remains open/);
+        assert.match(
+          text(tree),
+          /1 completed question has no validated answer assessment/,
+        );
+        assert.match(text(tree), /The later period has not been checked/);
+        assert.equal(
+          tree.root.findAllByType('form').length,
+          mode === 'current' ? 1 : 0,
+        );
+      } else assert.equal(summary, undefined);
+      if (mode === 'current') {
+        assert.match(text(tree), /Another way to investigate this question/);
+        assert.equal(
+          tree.root
+            .findAllByType('button')
+            .filter((b) => b.props.children === 'Continue this check').length,
+          1,
+        );
+        await act(async () =>
+          findButton(tree, 'Continue this check').props.onClick(),
+        );
+        assert.equal(writes.length, 1);
+        assert.equal(writes[0].body.follow_up_id, check.question_id);
+        assert.equal(writes[0].body.question, check.question);
+      } else assert.equal(findButton(tree, 'Continue this check'), undefined);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('later public evidence retires an old checkpoint without inventing a new answer', async () => {
+  let tree;
+  const value = episode();
+  value.exploration.question_assessments = {
+    contract: 'branch-question-assessment/v1',
+    status: 'ready',
+    assessments: [],
+    unassessed: 0,
+    outdated: 1,
+  };
+  serve(value, () => {
+    throw new Error('Reading must not start work');
+  });
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.match(
+      text(tree),
+      /Earlier assessments changed with new public evidence and need a fresh review/,
+    );
+    assert.doesNotMatch(text(tree), /Some evidence; the question remains open/);
+    assert.equal(findButton(tree, 'Continue this check'), undefined);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});

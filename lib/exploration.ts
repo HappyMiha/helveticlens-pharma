@@ -4,7 +4,7 @@ export type ExplorationCitation = {
   locator: string;
 };
 export type SavedCheck = {
-  basis?: 'open_question';
+  basis?: 'open_question' | 'further_question';
   investigation_id: string;
   question_id: string;
   question: string;
@@ -178,7 +178,23 @@ export type ResearchActivity =
         captured_at: string;
       } | null;
     };
+export type BranchQuestionAssessments =
+  | {
+      contract: 'branch-question-assessment/v1';
+      status: 'unknown' | 'evidence_changed';
+    }
+  | {
+      contract: 'branch-question-assessment/v1';
+      status: 'ready';
+      unassessed: number;
+      outdated?: number;
+      assessments: Pick<
+        QuestionAssessment,
+        'question_id' | 'question' | 'status' | 'points' | 'limitations'
+      >[];
+    };
 export type ExplorationState = {
+  question_assessments?: BranchQuestionAssessments;
   current_activity?: ResearchActivity;
   research_scope?: ResearchScope;
   capture_progress?: CaptureProgress | null;

@@ -516,3 +516,14 @@ and claim-context checks can withhold a stale suggestion. Older incomplete recor
 are not upgraded by inference. Reading/history starts no work; monitoring remains
 a separate explicit choice. Core and exact deployment evidence are tracked in
 PRODUCT_OPEN_CHECK_CONTINUATION.md in the shared platform repository.
+
+## Question checkpoints (1.64)
+
+New research can assess each exact branch question in the existing reflection
+request. Read captures remain separate from tentative possible/partial/conflicting
+or not-found assessments. Closed question details preserve citations and limits;
+unknown older/missing assessments stay unknown. An incomplete question may offer
+one justified different query through the existing explicit continuation action.
+No automatic episode or monitoring. Current source and claim context fence saved
+assessments and later work. See Core PRODUCT_BRANCH_ASSESSMENT.md for scope and
+verification; live semantic quality and professional/human acceptance remain open.
