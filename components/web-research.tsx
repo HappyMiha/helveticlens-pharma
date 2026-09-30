@@ -7,6 +7,7 @@ import { useResource } from '@/lib/use-resource';
 import { currentWebResearch } from '@/lib/web-research';
 import type { WebResearch, WebTrigger } from '@/lib/web-research';
 import { DossierSection } from './research-blocks';
+import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Textarea } from './ui/textarea';
@@ -304,19 +305,28 @@ export function WebTriggerRow({
         Settings revision {item.policy_revision}
       </p>
       <h4>{item.question}</h4>
-      <p>
-        {item.analysed_sources} sources analysed · {item.unchanged_sources}{' '}
-        unchanged captures skipped
-      </p>
-      {item.investigation.stop_reason && (
-        <p>{item.investigation.stop_reason}</p>
+      {item.outcome?.contract === 'monitoring-outcome/v1' ? (
+        <MonitoringOutcomeReader outcome={item.outcome} onOpen={onOpen} />
+      ) : (
+        <p>
+          {item.analysed_sources} sources analysed · {item.unchanged_sources}{' '}
+          unchanged captures skipped
+        </p>
       )}
+      {item.outcome?.contract !== 'monitoring-outcome/v1' &&
+        item.investigation.stop_reason && (
+          <p>{item.investigation.stop_reason}</p>
+        )}
       <Button variant="outline" onClick={() => onOpen(item.investigation.id)}>
         Open search investigation
       </Button>
       {!!item.coverage.length && (
         <details>
           <summary>Indexes, timing and decision measurements</summary>
+          <p>
+            {item.analysed_sources} sources analysed · {item.unchanged_sources}{' '}
+            unchanged captures skipped
+          </p>
           {item.coverage.map((coverage, i) => (
             <div key={i}>
               <p>

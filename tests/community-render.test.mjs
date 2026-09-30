@@ -1311,6 +1311,149 @@ const { WebPolicyForm, WebPolicyStatus, WebTriggerRow } = require(
   resolve('components/web-research.tsx'),
 );
 const { currentWebResearch } = require(resolve('lib/web-research.ts'));
+const { MonitoringOutcomeReader } = require(
+  resolve('components/monitoring-outcome.tsx'),
+);
+
+const monitoringFinding = (id, text) => ({
+  id,
+  investigation_id: `run-${id}`,
+  statement: text,
+  status: 'SUPPORTED',
+  revision: 1,
+  evidence: {
+    quote: `<script>${text}</script>`,
+    locator: 'p1',
+    relation: 'SUPPORTS',
+    source: {
+      id: `source-${id}`,
+      title: 'Captured registry',
+      url: 'https://example.org',
+      sha256: 'f'.repeat(64),
+    },
+  },
+});
+const monitoringResult = {
+  contract: 'monitoring-outcome/v1',
+  state: 'completed',
+  finding_state: 'changes',
+  limitations: [],
+  scope: 'Only the saved question and captured sources.',
+  findings: [monitoringFinding('new', 'Later source finding')],
+  comparisons: [
+    {
+      id: 'change',
+      kind: 'UPDATES',
+      explanation: 'A proposed later state.',
+      previous: monitoringFinding('old', 'Earlier source finding'),
+      current: monitoringFinding('new', 'Later source finding'),
+    },
+  ],
+};
+
+test('monitoring result connects earlier and later quotations without repeating the finding', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MonitoringOutcomeReader, {
+      outcome: monitoringResult,
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /Evidence to compare/);
+  assert.match(html, /AI comparison/);
+  assert.match(html, /Earlier evidence/);
+  assert.match(html, /Later evidence/);
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>|AI finding/);
+  assert.equal((html.match(/<details/g) || []).length, 1);
+  assert.equal((html.match(/Open research record/g) || []).length, 2);
+});
+
+for (const [state, expected] of Object.entries({
+  queued: 'Waiting to check',
+  running: 'Checking the saved question',
+  paused: 'Check paused',
+  cancelled: 'Check stopped',
+  unavailable: 'Evidence unavailable',
+}))
+  test(`monitoring ${state} cannot render a retained completed finding`, () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MonitoringOutcomeReader, {
+        outcome: { ...monitoringResult, state },
+        onOpen() {},
+      }),
+    );
+    assert.ok(html.includes(expected));
+    assert.doesNotMatch(
+      html,
+      /Later source finding|Earlier source finding|<blockquote/,
+    );
+  });
+
+for (const [finding_state, expected] of Object.entries({
+  unchanged: 'Captured sources unchanged',
+  no_matches: 'No sources returned',
+  no_findings: 'No supported finding to show',
+  findings: 'New findings to read',
+}))
+  test(`monitoring ${finding_state} explains what the check establishes`, () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MonitoringOutcomeReader, {
+        outcome: {
+          ...monitoringResult,
+          finding_state,
+          findings: [],
+          comparisons: [],
+        },
+        onOpen() {},
+      }),
+    );
+    assert.ok(html.includes(expected));
+    assert.doesNotMatch(html, /Nothing changed|Everything is current/);
+  });
+
+test('partial monitoring keeps its useful evidence beside a visible limitation', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MonitoringOutcomeReader, {
+      outcome: {
+        ...monitoringResult,
+        state: 'partial',
+        limitations: ['Source reading was not completed.'],
+      },
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /Check partly completed/);
+  assert.match(html, /Source reading was not completed/);
+  assert.match(html, /Later source finding/);
+});
+
+test('scheduled history uses the outcome and keeps measurements in details', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(WebTriggerRow, {
+      item: {
+        id: 'trigger',
+        question: 'Saved public question',
+        policy_revision: 2,
+        created_at: '2026-09-30T00:00:00Z',
+        investigation: {
+          id: 'run',
+          status: 'completed',
+          stop_reason: 'Technical stop text',
+        },
+        outcome: monitoringResult,
+        analysed_sources: 1,
+        unchanged_sources: 0,
+        coverage: [{ engines: [], retrieval: null, latency_ms: null }],
+      },
+      onOpen() {},
+    }),
+  );
+  assert.match(html, /Evidence to compare/);
+  assert.doesNotMatch(html, /Technical stop text/);
+  assert.ok(
+    html.indexOf('Indexes, timing') < html.indexOf('1 sources analysed'),
+  );
+});
 const webPolicy = {
   enabled: false,
   revision: 0,

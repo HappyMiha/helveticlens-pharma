@@ -1,4 +1,30 @@
 import type { InvestigationSummary } from './investigation';
+import type { ComparedFinding, EvidenceChange } from './claim-evolution';
+
+export type MonitoringOutcome = {
+  contract: 'monitoring-outcome/v1';
+  state:
+    | 'queued'
+    | 'running'
+    | 'paused'
+    | 'cancelled'
+    | 'failed'
+    | 'partial'
+    | 'completed'
+    | 'unavailable';
+  finding_state:
+    | 'pending'
+    | 'unavailable'
+    | 'changes'
+    | 'findings'
+    | 'unchanged'
+    | 'no_matches'
+    | 'no_findings';
+  limitations: string[];
+  findings: ComparedFinding[];
+  comparisons: EvidenceChange[];
+  scope: string;
+};
 
 export type WebCoverage = {
   selected_engine: string | null;
@@ -33,6 +59,7 @@ export type WebTrigger = {
   analysed_sources: number;
   unchanged_sources: number;
   coverage: WebCoverage[];
+  outcome?: MonitoringOutcome;
 };
 export type WebResearch = {
   dossier_id: string;
