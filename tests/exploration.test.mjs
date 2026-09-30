@@ -1610,3 +1610,75 @@ for (const mode of ['mixed', 'unassessed', 'history', 'legacy', 'revoked']) {
     }
   });
 }
+
+for (const mode of ['current', 'history', 'changed'])
+  test(`ordinary open question preserves source context without inventing reinterpretation: ${mode}`, async () => {
+    let tree;
+    const writes = [];
+    const value = episode();
+    const check = { ...savedCheck(), basis: 'open_question' };
+    check.why = check.purpose;
+    value.exploration.changes = [];
+    if (mode === 'current') value.exploration.next_check = check;
+    else {
+      value.exploration.next_check = null;
+      value.exploration.continuation =
+        mode === 'history'
+          ? { status: 'ready', ...check }
+          : { status: 'evidence_changed' };
+    }
+    serve(value, (url, init) => {
+      writes.push({ url, body: JSON.parse(init.body) });
+      return Response.json(value);
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: mode === 'current',
+          }),
+        );
+      });
+      assert.equal(writes.length, 0);
+      if (mode === 'current') {
+        assert.match(text(tree), /An open question to investigate/);
+        assert.match(
+          text(tree),
+          /Read a reconciliation of awards and payments/,
+        );
+        assert.equal(
+          tree.root
+            .findAllByType('button')
+            .filter((b) => b.props.children === 'Continue this check').length,
+          1,
+        );
+        await act(async () =>
+          findButton(tree, 'Continue this check').props.onClick(),
+        );
+        assert.equal(writes.length, 1);
+        assert.equal(writes[0].body.follow_up_id, check.question_id);
+        assert.equal(writes[0].body.question, check.question);
+        assert.equal(writes[0].body.basis, undefined);
+      } else {
+        assert.equal(findButton(tree, 'Continue this check'), undefined);
+        if (mode === 'history') {
+          assert.match(
+            text(tree),
+            /Your selected open question · earlier research context/,
+          );
+          assert.match(
+            text(tree),
+            /earlier source reported a different amount/,
+          );
+        } else
+          assert.doesNotMatch(
+            text(tree),
+            /earlier source reported a different amount/,
+          );
+      }
+      assert.doesNotMatch(text(tree), /earlier meaning.*changed/i);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

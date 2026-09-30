@@ -505,3 +505,14 @@ keeps its original assessment availability in closed details, including history.
 Unassessed passages stay unknown; interpretations remain correctable and monitoring
 requires explicit consent. Current source/version/privacy guards apply. This is
 not a claim of live semantic quality or professional acceptance.
+
+## Continue an open question (1.63)
+
+New source-backed unfinished questions can use the existing single continuation
+action without claiming that the early interpretation changed. The exact public
+question, research purpose and earlier quote stay visible; the next episode uses
+the saved query and reports a cited selected-question assessment. Current source
+and claim-context checks can withhold a stale suggestion. Older incomplete records
+are not upgraded by inference. Reading/history starts no work; monitoring remains
+a separate explicit choice. Core and exact deployment evidence are tracked in
+PRODUCT_OPEN_CHECK_CONTINUATION.md in the shared platform repository.

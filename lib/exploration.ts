@@ -4,6 +4,7 @@ export type ExplorationCitation = {
   locator: string;
 };
 export type SavedCheck = {
+  basis?: 'open_question';
   investigation_id: string;
   question_id: string;
   question: string;

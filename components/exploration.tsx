@@ -345,7 +345,9 @@ function ExplorationEpisode({
               <section className="exploration-choice">
                 <h3>
                   {nextCheck
-                    ? 'A useful next check'
+                    ? nextCheck.basis === 'open_question'
+                      ? 'An open question to investigate'
+                      : 'A useful next check'
                     : brief?.clarification ||
                       'Where would you like to go next?'}
                 </h3>
@@ -1237,7 +1239,9 @@ function ContinuedCheck({ state }: { state: ExplorationState }) {
       aria-label="Continuing a saved check"
     >
       <span className="content-origin">
-        Your selected check · earlier research context
+        {check.basis === 'open_question'
+          ? 'Your selected open question · earlier research context'
+          : 'Your selected check · earlier research context'}
       </span>
       <p>{check.purpose}</p>
       <SavedCheckPassage check={check} />
