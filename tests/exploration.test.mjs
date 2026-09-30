@@ -1334,3 +1334,113 @@ test('only a current alternative receipt explains checking another source and ex
   assert.ok(text(tree).includes('Current activity is not confirmed'));
   await act(async () => tree.unmount());
 });
+
+for (const mode of [
+  'captured',
+  'proposed',
+  'unavailable',
+  'no_alternative',
+  'model_failure',
+]) {
+  test(`query recovery distinguishes ${mode} and history starts no work`, async () => {
+    const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+    const value = episode();
+    value.exploration.research_scope = {
+      ...recoveryScope(),
+      query_recovery: {
+        contract: 'query-recovery/v1',
+        status: 'ready',
+        outcome: mode === 'no_alternative' ? mode : 'proposed',
+        original_query: 'Original wording',
+        query:
+          mode === 'no_alternative' || mode === 'model_failure'
+            ? null
+            : 'Tentative alternative',
+        searches_completed: Number(mode === 'captured'),
+        searches_unavailable: Number(mode === 'unavailable'),
+        captures: Number(mode === 'captured'),
+        unfinished: mode === 'proposed',
+        proposal_unavailable: mode === 'model_failure',
+      },
+    };
+    let requests = 0;
+    globalThis.fetch = async () => {
+      requests++;
+      throw new Error('History cannot start work');
+    };
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Query recovery' }).length,
+      1,
+    );
+    const expected = {
+      captured: 'different search wording was checked',
+      proposed: 'has not been searched yet',
+      unavailable: 'alternative search did not complete',
+      no_alternative: 'No distinct alternative',
+      model_failure: 'could not be prepared',
+    };
+    assert.ok(text(tree).includes(expected[mode]));
+    assert.ok(text(tree).includes('Your original question is unchanged'));
+    assert.equal(
+      text(tree).includes('Alternative wording (unconfirmed)'),
+      !['no_alternative', 'model_failure'].includes(mode),
+    );
+    assert.equal(tree.root.findAllByType('button').length, 0);
+    assert.equal(requests, 0);
+    await act(async () => tree.unmount());
+  });
+}
+
+test('revoked and legacy research never display alternate wording', async () => {
+  const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+  for (const status of ['unknown', 'evidence_changed']) {
+    const value = episode();
+    value.exploration.research_scope = {
+      contract: 'observed-research-scope/v1',
+      status,
+    };
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Query recovery' }).length,
+      0,
+    );
+    await act(async () => tree.unmount());
+  }
+});
+
+test('alternate searching is tied to a current receipt and disappears at expiry', async (t) => {
+  let clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { ResearchActivity } = require(resolve('components/exploration.tsx'));
+  const value = episode();
+  value.exploration.current_activity = {
+    ...liveActivity(),
+    testing_query: true,
+  };
+  let tree;
+  await act(async () => {
+    tree = create(
+      React.createElement(ResearchActivity, {
+        state: value.exploration,
+        readStartedAt: clock,
+      }),
+    );
+  });
+  assert.ok(text(tree).includes('Testing an alternative wording'));
+  clock = 151;
+  await act(async () => t.mock.timers.tick(51));
+  assert.ok(!text(tree).includes('Testing an alternative wording'));
+  await act(async () => tree.unmount());
+});

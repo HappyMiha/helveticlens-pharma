@@ -478,3 +478,12 @@ New exploratory episodes can gate already retrieved alternatives after a failed
 public read, within unchanged episode limits. Failed URLs are not automatically
 retried. The reader distinguishes current alternative work, captured material and
 exhausted candidates. No new setup field, search or monitoring authority.
+
+## Bounded query reformulation (1.60)
+
+A new public exploration can try one distinct alternative after a successful
+but unproductive search, within the same episode and budgets. The original
+question remains unchanged. Current activity and saved scope distinguish a
+proposal, completed retrieval, failed work and captured sources. Inspectable
+wording is labelled as a hypothesis. History creates no work; source rights and
+explicit later monitoring are preserved. Live semantic acceptance stays open.

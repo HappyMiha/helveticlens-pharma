@@ -613,6 +613,7 @@ function CurrentResearchReceipt({
     );
   const labels: Record<string, string> = {
     plan: 'Planning the first checks',
+    reformulate: 'Considering another search wording',
     search: 'Searching for sources',
     gate: 'Checking which sources may help',
     gate_review: 'Reviewing an uncertain source match',
@@ -641,6 +642,13 @@ function CurrentResearchReceipt({
       <output>
         <strong>{labels[activity.phase]}</strong>
         {activity.question !== originalQuestion && <> · {activity.question}</>}
+        {activity.testing_query && (
+          <>
+            {' '}
+            · Testing an alternative wording; your original question is
+            unchanged.
+          </>
+        )}
         {activity.checking_alternative && (
           <>
             . Checking another source after an earlier page could not be read.
@@ -874,8 +882,33 @@ function ObservedResearchScope({ state }: { state: ExplorationState }) {
             These sources do not establish equal authority or a settled answer.
           </p>
         )}
+      {scope.query_recovery?.status === 'ready' && (
+        <p className="muted" aria-label="Query recovery">
+          {scope.query_recovery.proposal_unavailable
+            ? 'Another search wording could not be prepared.'
+            : scope.query_recovery.searches_completed > 0
+              ? `A different search wording was checked; ${count(scope.query_recovery.captures, 'source')} captured.`
+              : scope.query_recovery.searches_unavailable > 0
+                ? 'The alternative search did not complete.'
+                : scope.query_recovery.outcome === 'no_alternative'
+                  ? 'No distinct alternative search wording was selected.'
+                  : 'An alternative wording has not been searched yet.'}{' '}
+          {scope.query_recovery.unfinished && 'This check remains unfinished. '}
+          Your original question is unchanged. Search wording is a hypothesis,
+          not a confirmed interpretation.
+        </p>
+      )}
       <details className="dossier-secondary">
         <summary>What was checked and what remains</summary>
+        {scope.query_recovery?.status === 'ready' &&
+          scope.query_recovery.query && (
+            <p>
+              Original search wording:{' '}
+              <q>{scope.query_recovery.original_query}</q>.<br />
+              Alternative wording (unconfirmed):{' '}
+              <q>{scope.query_recovery.query}</q>.
+            </p>
+          )}
         <ul>
           <li>
             Search: {searches.completed} completed, {searches.unavailable}{' '}

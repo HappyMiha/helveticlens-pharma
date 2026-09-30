@@ -75,6 +75,20 @@ export type SourceRecovery =
       candidate_sets_exhausted: number;
       unfinished: number;
     };
+export type QueryRecovery =
+  | { contract: 'query-recovery/v1'; status: 'unknown' | 'not_needed' }
+  | {
+      contract: 'query-recovery/v1';
+      status: 'ready';
+      outcome: string;
+      original_query: string;
+      query: string | null;
+      searches_completed: number;
+      searches_unavailable: number;
+      captures: number;
+      unfinished: boolean;
+      proposal_unavailable: boolean;
+    };
 export type ResearchScope =
   | {
       contract: 'observed-research-scope/v1';
@@ -85,6 +99,7 @@ export type ResearchScope =
       status: 'ready';
       activity: string;
       source_recovery?: SourceRecovery;
+      query_recovery?: QueryRecovery;
       searches: ResearchAttempts;
       indexes: {
         completed: number;
@@ -132,6 +147,7 @@ export type ResearchActivity =
       observed_at: string;
       valid_for_ms: number;
       checking_alternative?: boolean;
+      testing_query?: boolean;
       latest_source: {
         id: string;
         title: string;
