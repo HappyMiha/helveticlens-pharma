@@ -11,6 +11,7 @@ import {
 } from '@/lib/dossier-coverage';
 import type { DossierCoverage, CoverageStatus } from '@/lib/dossier-coverage';
 import { Button } from '@/components/ui/button';
+import { FeedCheckHistory } from './feed-check-history';
 import { PageCheckHistory } from './page-check-history';
 
 function Status({ value }: { value: CoverageStatus }) {
@@ -182,6 +183,7 @@ export function CoverageReading({
                           </dd>
                         </div>
                       </dl>
+                      <FeedCheckHistory key={`${value.dossier_id}:${pack.id}:${stream.connector}:${stream.stream}`} dossierId={value.dossier_id} packId={pack.id} connector={stream.connector} stream={stream.stream} />
                       {!!stream.known_gaps.length && (
                         <details>
                           <summary>Known source limits</summary>

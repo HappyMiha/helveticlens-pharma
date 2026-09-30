@@ -1,5 +1,15 @@
 # Changes
 
+## 1.80.0 — Shared source collection history
+
+Open a selected topic source to read retained collection runs, partial results,
+failed attempts and reported feed-event counts. Source collection stays distinct
+from dossier relevance and exact document coverage; successful retries can retain
+earlier recorded item errors. History loads on demand, preserves current access
+and selection, and starts no fetching or research.
+447 tests, lint/types/build passed; Core acceptance and deployment evidence:
+`docs/PRODUCT_FEED_CHECK_HISTORY.md`.
+
 ## 1.79.0 — History of connected-page checks
 
 Expand a source to read its retained checks, changed or unchanged saved text,
