@@ -188,10 +188,17 @@ export type BranchQuestionAssessments =
       status: 'ready';
       unassessed: number;
       outdated?: number;
-      assessments: Pick<
+      assessments: (Pick<
         QuestionAssessment,
         'question_id' | 'question' | 'status' | 'points' | 'limitations'
-      >[];
+      > & {
+        stage?: 'final_briefing';
+        saved_at?: string;
+        earlier?: Pick<
+          QuestionAssessment,
+          'status' | 'points' | 'limitations'
+        >[];
+      })[];
     };
 export type ExplorationState = {
   question_assessments?: BranchQuestionAssessments;

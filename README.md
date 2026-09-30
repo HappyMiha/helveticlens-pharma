@@ -527,3 +527,5 @@ one justified different query through the existing explicit continuation action.
 No automatic episode or monitoring. Current source and claim context fence saved
 assessments and later work. See Core PRODUCT_BRANCH_ASSESSMENT.md for scope and
 verification; live semantic quality and professional/human acceptance remain open.
+
+Question renewal 1.65 can update a cited question assessment in the existing research summary after later evidence. Earlier eligible checkpoints remain in closed details; no new form or automatic continuation is introduced. Full semantic and human acceptance remain open.

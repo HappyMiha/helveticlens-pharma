@@ -1808,3 +1808,102 @@ test('later public evidence retires an old checkpoint without inventing a new an
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+for (const mode of ['current', 'history', 'changed', 'old'])
+  test(`renewed question keeps a readable earlier checkpoint: ${mode}`, async () => {
+    let tree;
+    const value = episode();
+    const a = {
+      question_id: 'q-renewed',
+      question: 'Which amount was reported?',
+      status: 'conflicting',
+      points: [
+        {
+          statement: 'Later evidence reports another amount.',
+          evidence: [
+            {
+              source_id: 's',
+              quote: 'The source passage is here.',
+              locator: 'p1',
+              role: 'counterevidence',
+            },
+          ],
+        },
+      ],
+      limitations: ['The discrepancy remains unresolved.'],
+      stage: 'final_briefing',
+      earlier: [
+        {
+          status: 'partial',
+          points: [
+            {
+              statement: 'Earlier only one report was available.',
+              evidence: [
+                {
+                  source_id: 's',
+                  quote: 'The source passage is here.',
+                  locator: 'p1',
+                  role: 'support',
+                },
+              ],
+            },
+          ],
+          limitations: ['The recipient was not yet checked.'],
+        },
+      ],
+    };
+    if (mode === 'old') {
+      delete a.stage;
+      delete a.earlier;
+    }
+    value.exploration.question_assessments =
+      mode === 'changed'
+        ? {
+            contract: 'branch-question-assessment/v1',
+            status: 'evidence_changed',
+          }
+        : {
+            contract: 'branch-question-assessment/v1',
+            status: 'ready',
+            unassessed: 0,
+            assessments: [a],
+          };
+    serve(value, () => {
+      throw new Error('Opening assessment history must not start work');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: false,
+            historical: mode === 'history',
+          }),
+        );
+      });
+      if (mode === 'current' || mode === 'history') {
+        assert.match(text(tree), /Updated in the research summary/);
+        assert.match(text(tree), /Later evidence reports another amount/);
+        assert.match(text(tree), /Earlier only one report was available/);
+        const summary = tree.root
+          .findAllByType('summary')
+          .find((s) => s.children.join('') === 'Earlier assessment');
+        assert.ok(summary);
+        assert.notEqual(summary.parent.props.open, true);
+        assert.equal(
+          tree.root
+            .findAllByType('h4')
+            .filter((h) => h.children.join('') === a.question).length,
+          1,
+        );
+      } else
+        assert.doesNotMatch(
+          text(tree),
+          /Updated in the research summary|Earlier only one report/,
+        );
+      assert.equal(tree.root.findAllByType('form').length, 0);
+      assert.equal(findButton(tree, 'Continue this check'), undefined);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

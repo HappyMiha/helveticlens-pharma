@@ -11,6 +11,7 @@ import { currentWebResearch, type WebResearch } from '@/lib/web-research';
 
 import type {
   ExplorationState,
+  QuestionAssessment,
   SavedCheck,
   CaptureProgress,
   ExplorationCitation as Citation,
@@ -828,12 +829,7 @@ function BranchQuestionProgress({ state }: { state: ExplorationState }) {
     (!value.assessments.length && !value.unassessed && !value.outdated)
   )
     return null;
-  const labels = {
-    possible_answer: 'A possible answer from the read sources',
-    partial: 'Some evidence; the question remains open',
-    conflicting: 'Conflicting evidence; the question remains open',
-    not_found: 'No answer found in the material read',
-  };
+
   return (
     <details className="dossier-secondary">
       <summary>Research checkpoints by question</summary>
@@ -844,45 +840,25 @@ function BranchQuestionProgress({ state }: { state: ExplorationState }) {
       {value.assessments.map((assessment) => (
         <article key={assessment.question_id}>
           <h4>{assessment.question}</h4>
-          <p>
-            <strong>{labels[assessment.status]}</strong>
-          </p>
-          {assessment.points.map((point, i) => (
-            <div key={i}>
-              <p>{point.statement}</p>
-              <details className="exploration-citation">
-                <summary>Read the evidence for this assessment</summary>
-                {point.evidence.map((ref, j) => {
-                  const source = state.sources.find(
-                    (s) => s.id === ref.source_id,
-                  );
-                  return source ? (
-                    <div key={j}>
-                      <span className="content-origin">
-                        {ref.role === 'support'
-                          ? 'Supporting passage'
-                          : ref.role === 'counterevidence'
-                            ? 'Counterevidence'
-                            : 'Context passage'}
-                      </span>
-                      <blockquote>{ref.quote}</blockquote>
-                      <a href={source.url} target="_blank" rel="noreferrer">
-                        {source.title}
-                      </a>
-                      <p className="muted">
-                        Captured {date(source.captured_at)} · {ref.locator}
-                      </p>
-                    </div>
-                  ) : null;
-                })}
-              </details>
-            </div>
-          ))}
-          <ul>
-            {assessment.limitations.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          {assessment.stage === 'final_briefing' && (
+            <p className="content-origin">Updated in the research summary</p>
+          )}
+          <QuestionCheckpointContent assessment={assessment} state={state} />
+          {!!assessment.earlier?.length && (
+            <details className="exploration-citation">
+              <summary>Earlier assessment</summary>
+              <p className="muted">
+                Saved before the later evidence was considered.
+              </p>
+              {assessment.earlier.map((earlier, index) => (
+                <QuestionCheckpointContent
+                  key={index}
+                  assessment={earlier}
+                  state={state}
+                />
+              ))}
+            </details>
+          )}
         </article>
       ))}
       {!!value.outdated && (
@@ -898,6 +874,62 @@ function BranchQuestionProgress({ state }: { state: ExplorationState }) {
         These interpretations remain open to human review.
       </p>
     </details>
+  );
+}
+
+function QuestionCheckpointContent({
+  assessment,
+  state,
+}: {
+  assessment: Pick<QuestionAssessment, 'status' | 'points' | 'limitations'>;
+  state: ExplorationState;
+}) {
+  const labels = {
+    possible_answer: 'A possible answer from the read sources',
+    partial: 'Some evidence; the question remains open',
+    conflicting: 'Conflicting evidence; the question remains open',
+    not_found: 'No answer found in the material read',
+  };
+  return (
+    <>
+      <p>
+        <strong>{labels[assessment.status]}</strong>
+      </p>
+      {assessment.points.map((point, i) => (
+        <div key={i}>
+          <p>{point.statement}</p>
+          <details className="exploration-citation">
+            <summary>Read the evidence for this assessment</summary>
+            {point.evidence.map((ref, j) => {
+              const source = state.sources.find((s) => s.id === ref.source_id);
+              return source ? (
+                <div key={j}>
+                  <span className="content-origin">
+                    {ref.role === 'support'
+                      ? 'Supporting passage'
+                      : ref.role === 'counterevidence'
+                        ? 'Counterevidence'
+                        : 'Context passage'}
+                  </span>
+                  <blockquote>{ref.quote}</blockquote>
+                  <a href={source.url} target="_blank" rel="noreferrer">
+                    {source.title}
+                  </a>
+                  <p className="muted">
+                    Captured {date(source.captured_at)} · {ref.locator}
+                  </p>
+                </div>
+              ) : null;
+            })}
+          </details>
+        </div>
+      ))}
+      <ul>
+        {assessment.limitations.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </>
   );
 }
 
