@@ -1552,3 +1552,61 @@ test('legacy, revoked and absent source assessment details remain hidden', async
     await act(async () => tree.unmount());
   }
 });
+
+for (const mode of ['mixed', 'unassessed', 'history', 'legacy', 'revoked']) {
+  test(`early preparation describes the saved checkpoint without new work: ${mode}`, async () => {
+    const value = episode();
+    value.exploration.orientation = orientation();
+    if (mode !== 'legacy') {
+      value.exploration.orientation.briefing.read_preparation = {
+        contract: 'read-informed-research/v1',
+        assessed_sources: mode === 'unassessed' ? 0 : 1,
+        unassessed_sources: mode === 'unassessed' ? 2 : 1,
+      };
+    }
+    if (mode === 'revoked') {
+      value.exploration.orientation.status = 'evidence_changed';
+      value.exploration.orientation.briefing = null;
+    }
+    // Today's later assessment counts must not rewrite the saved early snapshot.
+    value.exploration.research_scope = { status: 'unknown' };
+    serve(value, () => {
+      throw new Error('Reading starts no new work');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            historical: mode === 'history',
+            canEdit: false,
+          }),
+        );
+      });
+      const note = tree.root
+        .findAllByType('summary')
+        .find(
+          (item) =>
+            item.children.join('') === 'How this first reading was prepared',
+        );
+      if (mode === 'legacy' || mode === 'revoked') {
+        assert.equal(note, undefined);
+        assert.doesNotMatch(text(tree), /with an AI relevance assessment/);
+      } else {
+        assert.ok(note);
+        assert.notEqual(note.parent.props.open, true);
+        assert.match(
+          text(tree),
+          mode === 'unassessed'
+            ? /0 sources with an AI relevance assessment. 2 sources were still unassessed/
+            : /1 source with an AI relevance assessment. 1 source was still unassessed/,
+        );
+        assert.match(text(tree), /available at this checkpoint/);
+        assert.equal(tree.root.findAllByType('form').length, 0);
+      }
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+}

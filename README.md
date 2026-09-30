@@ -496,3 +496,12 @@ unrelated material and uncertainty. Details retain the exact passage and limitat
 An unrelated assessment can lead to bounded reading of another already retrieved
 candidate; captured evidence stays saved. Missing assessments or no claims do not
 mean irrelevant. Existing privacy, controls and episode budgets remain in force.
+
+## Read-informed research (1.62)
+
+New exploratory episodes pass question-specific assessments of captured passages
+into the existing next-question and early-understanding requests. The early view
+keeps its original assessment availability in closed details, including history.
+Unassessed passages stay unknown; interpretations remain correctable and monitoring
+requires explicit consent. Current source/version/privacy guards apply. This is
+not a claim of live semantic quality or professional acceptance.

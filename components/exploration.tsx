@@ -1079,6 +1079,20 @@ function EarlyOrientation({
       {orientation.saved_at && (
         <p className="muted">Saved {date(orientation.saved_at)}</p>
       )}
+      {brief.read_preparation?.contract === 'read-informed-research/v1' && (
+        <details className="exploration-citation">
+          <summary>How this first reading was prepared</summary>
+          <p>
+            {`This first reading included ${brief.read_preparation.assessed_sources} ${brief.read_preparation.assessed_sources === 1 ? 'source' : 'sources'} with an AI relevance assessment. ${brief.read_preparation.unassessed_sources} ${brief.read_preparation.unassessed_sources === 1 ? 'source was' : 'sources were'} still unassessed. `}
+            Each assessment concerns a specific research question. A source may
+            help one question and leave another unanswered.
+          </p>
+          <p className="muted">
+            Later research may change the picture. This note records what was
+            available at this checkpoint.
+          </p>
+        </details>
+      )}
       <div className="exploration-findings">
         {brief.interpretations.map((item, index) => {
           const source = state.sources.find(

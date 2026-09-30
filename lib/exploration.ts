@@ -199,6 +199,11 @@ export type ExplorationState = {
     saved_at?: string;
     revision?: number;
     briefing: null | {
+      read_preparation?: {
+        contract: 'read-informed-research/v1';
+        assessed_sources: number;
+        unassessed_sources: number;
+      } | null;
       interpretations: (ExplorationCitation & {
         meaning: string;
         why: string;
