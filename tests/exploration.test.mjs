@@ -332,8 +332,9 @@ test('early understanding is tentative, cited and does not request a direction o
       text(tree),
       /Internal orientation identifier|Keep watching this topic|Where would you like to go next/,
     );
-    assert.ok(findButton(tree, 'Pause to change direction'));
-    assert.equal(tree.root.findAllByType('form').length, 0);
+    assert.ok(findButton(tree, 'Pause research'));
+    assert.equal(tree.root.findAllByType('form').length, 1);
+    assert.match(text(tree), /Change direction in your own words/);
   } finally {
     if (tree) await act(async () => tree.unmount());
   }
@@ -2599,17 +2600,12 @@ function earlyChoiceEpisode(status = 'running') {
   return value;
 }
 
-test('optional early choice pauses then sends the exact direction and fresh revision without another form', async () => {
+test('an early choice continues atomically with its exact question and evidence pin', async () => {
   const value = earlyChoiceEpisode();
   const writes = [];
   let tree;
   serve(value, async (url, init) => {
     writes.push({ url, body: JSON.parse(init.body) });
-    if (url.endsWith('/control')) {
-      value.status = 'paused';
-      value.exploration.revision = 27;
-      return Response.json(value);
-    }
     return Response.json({ id: 'next' });
   });
   try {
@@ -2618,39 +2614,33 @@ test('optional early choice pauses then sends the exact direction and fresh revi
     });
     assert.equal(writes.length, 0);
     assert.match(text(tree), /Without a reply, the current research continues/);
-    assert.match(text(tree), /Verify identity or investigate/);
     assert.equal(tree.root.findAllByType('form').length, 1);
     await act(async () =>
       findButton(tree, 'Check the entity in the register.').props.onClick(),
     );
-    assert.equal(writes.length, 2);
-    assert.deepEqual(writes[0], {
-      url: `${base}/r/control`,
-      body: { expected_revision: 20, action: 'pause' },
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url, `${base}/r/exploration/reply`);
+    assert.deepEqual(writes[0].body, {
+      request_key: writes[0].body.request_key,
+      expected_revision: 18,
+      question: 'Check the entity in the register.',
+      direction: 0,
+      orientation_revision: 12,
+      public_query_confirmed: true,
+      continue_research: true,
     });
-    assert.equal(writes[1].body.expected_revision, 27);
-    assert.equal(writes[1].body.orientation_revision, 12);
-    assert.equal(writes[1].body.direction, 0);
-    assert.equal(writes[1].body.question, 'Check the entity in the register.');
-    assert.equal(writes[1].body.public_query_confirmed, true);
-    assert.equal(value.question, 'A rough question');
   } finally {
     if (tree) await act(async () => tree.unmount());
   }
 });
 
-test('uncertain early reply retries identical receipt without pausing twice', async () => {
+test('an uncertain handoff retries the same request without a separate pause', async () => {
   const value = earlyChoiceEpisode();
   const writes = [];
   let tree;
   serve(value, async (url, init) => {
     writes.push({ url, body: JSON.parse(init.body) });
-    if (url.endsWith('/control')) {
-      value.status = 'paused';
-      value.exploration.revision = 28;
-      return Response.json(value);
-    }
-    if (writes.length === 2) throw new Error('Lost reply');
+    if (writes.length === 1) throw new Error('Lost reply');
     return Response.json({ id: 'next' });
   });
   try {
@@ -2663,22 +2653,22 @@ test('uncertain early reply retries identical receipt without pausing twice', as
     await act(async () =>
       findButton(tree, 'Retry this direction safely').props.onClick(),
     );
-    assert.equal(writes.length, 3);
-    assert.deepEqual(writes[1], writes[2]);
-    assert.equal(writes.filter((w) => w.url.endsWith('/control')).length, 1);
+    assert.equal(writes.length, 2);
+    assert.deepEqual(writes[0], writes[1]);
+    assert.ok(writes.every((w) => w.url.endsWith('/exploration/reply')));
   } finally {
     if (tree) await act(async () => tree.unmount());
   }
 });
 
 for (const failure of ['conflict', 'lost'])
-  test(`failed early pause sends no research reply: ${failure}`, async () => {
+  test(`failed handoff does not issue a separate pause: ${failure}`, async () => {
     const value = earlyChoiceEpisode();
     const writes = [];
     let tree;
     serve(value, async (url, init) => {
       writes.push({ url, body: JSON.parse(init.body) });
-      if (failure === 'lost') throw new Error('Lost pause response');
+      if (failure === 'lost') throw new Error('Lost response');
       return Response.json({ message: 'Checkpoint changed' }, { status: 409 });
     });
     try {
@@ -2689,17 +2679,21 @@ for (const failure of ['conflict', 'lost'])
         findButton(tree, 'Check the entity in the register.').props.onClick(),
       );
       assert.equal(writes.length, 1);
-      assert.equal(writes[0].url, `${base}/r/control`);
-      assert.ok(!findButton(tree, 'Retry this direction safely'));
+      assert.equal(writes[0].url, `${base}/r/exploration/reply`);
+      assert.equal(
+        !!findButton(tree, 'Retry this direction safely'),
+        failure === 'lost',
+      );
     } finally {
       if (tree) await act(async () => tree.unmount());
     }
   });
 
-test('session change during early pause cannot send a reply in the replacement session', async () => {
-  const value = earlyChoiceEpisode();
+test('a session change discards handoff completion from the old session', async () => {
   const writes = [];
-  let tree, release;
+  let tree,
+    release,
+    changed = 0;
   const originalWindow = globalThis.window;
   const handlers = new Map();
   globalThis.window = {
@@ -2707,7 +2701,7 @@ test('session change during early pause cannot send a reply in the replacement s
       handlers.set(k, [...(handlers.get(k) || []), fn]),
     removeEventListener() {},
   };
-  serve(value, async (url, init) => {
+  serve(earlyChoiceEpisode(), async (url, init) => {
     writes.push({ url, body: JSON.parse(init.body) });
     return new Promise((resolve) => {
       release = resolve;
@@ -2715,26 +2709,23 @@ test('session change during early pause cannot send a reply in the replacement s
   });
   try {
     await act(async () => {
-      tree = create(React.createElement(Exploration, props));
+      tree = create(
+        React.createElement(Exploration, {
+          ...props,
+          onChanged: async () => changed++,
+        }),
+      );
     });
-    let operation;
     await act(async () => {
-      operation = findButton(
-        tree,
-        'Check the entity in the register.',
-      ).props.onClick();
+      findButton(tree, 'Check the entity in the register.').props.onClick();
     });
     await act(async () => {
       for (const fn of handlers.get('helvetic-session-changed') || []) fn();
     });
-    await act(async () => {
-      value.status = 'paused';
-      value.exploration.revision = 28;
-      release(Response.json(value));
-      await operation;
-    });
+    await act(async () => release(Response.json({ id: 'next' })));
     assert.equal(writes.length, 1);
-    assert.equal(writes[0].url, `${base}/r/control`);
+    assert.equal(changed, 0);
+    assert.ok(!findButton(tree, 'Retry this direction safely'));
   } finally {
     if (tree) await act(async () => tree.unmount());
     globalThis.window = originalWindow;
@@ -2788,40 +2779,54 @@ for (const unavailable of [
     }
   });
 
-test('free text remains available during an early fork and uses pause without a source-choice pin', async () => {
-  const value = earlyChoiceEpisode();
-  const writes = [];
-  let tree;
-  serve(value, async (url, init) => {
-    writes.push({ url, body: JSON.parse(init.body) });
-    if (url.endsWith('/control')) {
-      value.status = 'paused';
-      value.exploration.revision = 29;
-      return Response.json(value);
+for (const checkpoint of ['early', 'before_first_result'])
+  test(`own words continue research with context: ${checkpoint}`, async () => {
+    const value = earlyChoiceEpisode();
+    if (checkpoint === 'before_first_result') {
+      value.exploration.orientation = undefined;
+      value.exploration.sources = [];
+      value.exploration.revision = 0;
     }
-    return Response.json({ id: 'next' });
-  });
-  try {
-    await act(async () => {
-      tree = create(React.createElement(Exploration, props));
+    const writes = [];
+    let tree;
+    serve(value, async (url, init) => {
+      writes.push({ url, body: JSON.parse(init.body) });
+      return Response.json({ message: 'Checkpoint changed' }, { status: 409 });
     });
-    await act(async () =>
-      tree.root.findByType('textarea').props.onChange({
-        target: { value: 'I meant a different foundation.' },
-      }),
-    );
-    await act(async () =>
-      tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),
-    );
-    assert.equal(writes.length, 2);
-    assert.equal(writes[1].body.expected_revision, 29);
-    assert.equal(writes[1].body.question, 'I meant a different foundation.');
-    assert.ok(!('orientation_revision' in writes[1].body));
-    assert.ok(!('direction' in writes[1].body));
-  } finally {
-    if (tree) await act(async () => tree.unmount());
-  }
-});
+    try {
+      await act(async () => {
+        tree = create(React.createElement(Exploration, props));
+      });
+      assert.match(
+        text(tree),
+        /Earlier public searches and sources are kept as context/,
+      );
+      await act(async () =>
+        tree.root.findByType('textarea').props.onChange({
+          target: { value: 'I meant a different foundation.' },
+        }),
+      );
+      await act(async () =>
+        tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),
+      );
+      assert.equal(writes.length, 1);
+      assert.equal(writes[0].url, `${base}/r/exploration/reply`);
+      assert.equal(
+        writes[0].body.expected_revision,
+        value.exploration.revision,
+      );
+      assert.equal(writes[0].body.question, 'I meant a different foundation.');
+      assert.equal(writes[0].body.continue_research, true);
+      assert.ok(!('orientation_revision' in writes[0].body));
+      assert.ok(!('direction' in writes[0].body));
+      assert.equal(
+        tree.root.findByType('textarea').props.value,
+        'I meant a different foundation.',
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
 
 for (const outcome of [
   'possible_answer',
@@ -3258,11 +3263,7 @@ for (const mode of [
       }[mode];
       if (expected) assert.ok(content.includes(expected), content);
       if (mode === 'limited')
-        assert.ok(
-          content.includes(
-            'Exact wording is unavailable for ',
-          ),
-        );
+        assert.ok(content.includes('Exact wording is unavailable for '));
       if (!['legacy', 'changed', 'unknown_contract'].includes(mode)) {
         const block = tree.root.findByProps({
           'aria-label': 'Recorded search attempts',
@@ -3328,35 +3329,92 @@ test('late saved-check reads cannot revive a removed or denied answer link', asy
 
 test('living dossier retains multiple current research answers while the next direction runs', async () => {
   const value = savedUpdateEpisode();
-  const earlier = structuredClone(value.exploration.question_assessments.assessments[0]);
+  const earlier = structuredClone(
+    value.exploration.question_assessments.assessments[0],
+  );
   earlier.question_id = 'q-earlier';
   earlier.question = 'What does the first public record establish?';
   earlier.status = 'partial';
-  earlier.points = [{
-    statement: 'The first record establishes a limited part of the original question.',
-    evidence: [{ source_id: 's', quote: 'The source passage is here.', locator: 'p1', role: 'support' }],
-  }];
+  earlier.points = [
+    {
+      statement:
+        'The first record establishes a limited part of the original question.',
+      evidence: [
+        {
+          source_id: 's',
+          quote: 'The source passage is here.',
+          locator: 'p1',
+          role: 'support',
+        },
+      ],
+    },
+  ];
   value.exploration.question_assessments.assessments.unshift(earlier);
-  serve(value, () => { throw new Error('Reading must not start research'); });
+  serve(value, () => {
+    throw new Error('Reading must not start research');
+  });
   let tree;
   try {
-    await act(async () => { tree = create(React.createElement(Exploration, { ...props, canEdit: false })); });
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
     const reading = tree.root.findByProps({ 'aria-label': 'Findings so far' });
-    assert.equal(reading.findAllByType('h3')[0].props.children, 'What else we have learned');
-    assert.equal(reading.findAllByType('h4').filter(x => x.props.children === earlier.question).length, 1);
-    assert.equal(tree.root.findAllByType('h3').filter(x => x.props.children === 'Which part of this question is supported?').length, 1);
+    assert.equal(
+      reading.findAllByType('h3')[0].props.children,
+      'What else we have learned',
+    );
+    assert.equal(
+      reading
+        .findAllByType('h4')
+        .filter((x) => x.props.children === earlier.question).length,
+      1,
+    );
+    assert.equal(
+      tree.root
+        .findAllByType('h3')
+        .filter(
+          (x) =>
+            x.props.children === 'Which part of this question is supported?',
+        ).length,
+      1,
+    );
     assert.ok(!reading.findAllByType('article')[0].parent.props.open);
     assert.match(text(tree), /The first record establishes a limited part/);
     assert.match(text(tree), /Counterevidence/);
     assert.equal(tree.root.findAllByType('form').length, 0);
-    assert.equal(tree.root.findAllByType('summary').filter(x => x.props.children === 'Research checkpoints by question').length, 0);
+    assert.equal(
+      tree.root
+        .findAllByType('summary')
+        .filter((x) => x.props.children === 'Research checkpoints by question')
+        .length,
+      0,
+    );
     const invalid = structuredClone(value);
-    invalid.exploration.question_assessments = { contract: 'branch-question-assessment/v1', status: 'evidence_changed' };
-    serve(invalid, () => { throw new Error('No writes'); });
-    await act(async () => { tree.unmount(); });
-    await act(async () => { tree = create(React.createElement(Exploration, { ...props, canEdit: false })); });
-    assert.equal(tree.root.findAllByProps({ 'aria-label': 'Findings so far' }).length, 0);
-    assert.doesNotMatch(text(tree), /The first record establishes a limited part/);
+    invalid.exploration.question_assessments = {
+      contract: 'branch-question-assessment/v1',
+      status: 'evidence_changed',
+    };
+    serve(invalid, () => {
+      throw new Error('No writes');
+    });
+    await act(async () => {
+      tree.unmount();
+    });
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Findings so far' }).length,
+      0,
+    );
+    assert.doesNotMatch(
+      text(tree),
+      /The first record establishes a limited part/,
+    );
   } finally {
     if (tree) await act(async () => tree.unmount());
   }

@@ -1,5 +1,11 @@
 # Changes
 
+## 1.82.0 — Refine research in your own words
+
+Continue a running investigation with one action. Corrections carry earlier public
+research into the next checks; a rejected change leaves ongoing work running.
+
+
 ## 1.81.0 — Research that builds a useful dossier
 
 New explorations share time across initial directions, analyse sources as they

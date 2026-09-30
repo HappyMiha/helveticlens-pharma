@@ -28,6 +28,7 @@ type Reply = {
   orientation_revision?: number;
   follow_up_id?: string;
   public_query_confirmed: true;
+  continue_research?: true;
 };
 
 type ExplorationProps = {
@@ -150,13 +151,16 @@ function ExplorationEpisode({
       text.trim().length < 5
     )
       return;
-    let command = pending || {
+    const command = pending || {
       id: page.id,
       body: {
         request_key: uid(),
         expected_revision: state.revision,
         question: text.trim(),
         public_query_confirmed: true as const,
+        ...(state.status === 'evidence_changed'
+          ? {}
+          : { continue_research: true as const }),
         ...(direction === undefined ? {} : { direction }),
         ...(followUpId === undefined ? {} : { follow_up_id: followUpId }),
         ...(orientationRevision === undefined
@@ -168,24 +172,8 @@ function ExplorationEpisode({
     setBusy(true);
     setError('');
     const current = lifecycle.generation;
-    let replySent = false;
+    setPending(command);
     try {
-      if (!pending && ['queued', 'running'].includes(page.status)) {
-        const paused = await api<Episode>(`${root}/${page.id}/control`, {
-          expected_revision: page.revision,
-          action: 'pause',
-        });
-        if (lifecycle.generation !== current) return;
-        command = {
-          ...command,
-          body: {
-            ...command.body,
-            expected_revision: paused.exploration.revision,
-          },
-        };
-      }
-      setPending(command);
-      replySent = true;
       await api(`${root}/${command.id}/exploration/reply`, command.body);
       if (lifecycle.generation !== current) return;
       setPending(null);
@@ -200,10 +188,9 @@ function ExplorationEpisode({
             : 'Could not continue. Retry the same direction safely.',
         );
         if (
-          !replySent ||
-          (failure instanceof ApiError &&
-            failure.status !== null &&
-            [401, 403, 404, 409, 422].includes(failure.status))
+          failure instanceof ApiError &&
+          failure.status !== null &&
+          [401, 403, 404, 409, 422].includes(failure.status)
         ) {
           setPending(null);
           await refreshList();
@@ -348,9 +335,7 @@ function ExplorationEpisode({
                   disabled={busy}
                   onClick={() => void control('pause')}
                 >
-                  {state.orientation?.status === 'ready'
-                    ? 'Pause to change direction'
-                    : 'Pause research'}
+                  Pause research
                 </Button>
               )}
               {page.status === 'paused' && state.status === 'exploring' && (
@@ -400,7 +385,8 @@ function ExplorationEpisode({
                 ))}
               </section>
             )}
-          {(earlyChoice ||
+          {(active ||
+            earlyChoice ||
             (!active &&
               (state.status !== 'exploring' ||
                 page.status === 'paused' ||
@@ -408,58 +394,62 @@ function ExplorationEpisode({
             !state.continued_by &&
             canEdit && (
               <section className="exploration-choice">
-                <h3>
-                  {earlyChoice?.clarification ||
-                    (nextCheck
-                      ? nextCheck.basis === 'further_question'
-                        ? 'Another way to investigate this question'
-                        : nextCheck.basis === 'open_question'
-                          ? 'An open question to investigate'
-                          : 'A useful next check'
-                      : brief?.clarification ||
-                        'Where would you like to go next?')}
-                </h3>
-                <p className="muted">
-                  {active
-                    ? 'Optional: choosing a direction pauses this episode and starts a focused public research episode. Earlier evidence is kept. Without a reply, the current research continues.'
-                    : 'Your choice starts one more bounded episode using public research providers. Earlier evidence is kept. No reply is needed to keep this briefing.'}
-                </p>
-                {nextCheck && !earlyChoice && (
-                  <article>
-                    <p>
-                      <strong>{nextCheck.question}</strong>
+                {(earlyChoice || !active) && (
+                  <>
+                    <h3>
+                      {earlyChoice?.clarification ||
+                        (nextCheck
+                          ? nextCheck.basis === 'further_question'
+                            ? 'Another way to investigate this question'
+                            : nextCheck.basis === 'open_question'
+                              ? 'An open question to investigate'
+                              : 'A useful next check'
+                          : brief?.clarification ||
+                            'Where would you like to go next?')}
+                    </h3>
+                    <p className="muted">
+                      {active
+                        ? 'Choose a focus when it helps. Earlier public research is carried forward. Without a reply, the current research continues.'
+                        : 'Your choice starts one more bounded episode using public research providers. Earlier evidence is kept. No reply is needed to keep this briefing.'}
                     </p>
-                    {nextUncertainty && (
-                      <p className="muted">
-                        <span className="content-origin">
-                          AI · connection to your answer
-                        </span>
-                        To investigate: {nextUncertainty}
-                      </p>
+                    {nextCheck && !earlyChoice && (
+                      <article>
+                        <p>
+                          <strong>{nextCheck.question}</strong>
+                        </p>
+                        {nextUncertainty && (
+                          <p className="muted">
+                            <span className="content-origin">
+                              AI · connection to your answer
+                            </span>
+                            To investigate: {nextUncertainty}
+                          </p>
+                        )}
+                        <p>{nextCheck.why}</p>
+                        <SavedCheckPassage check={nextCheck} />
+                        <Button
+                          disabled={busy || !!pending}
+                          onClick={() =>
+                            void reply(
+                              nextCheck.question,
+                              undefined,
+                              nextCheck.question_id,
+                            )
+                          }
+                        >
+                          Continue this check
+                        </Button>
+                      </article>
                     )}
-                    <p>{nextCheck.why}</p>
-                    <SavedCheckPassage check={nextCheck} />
-                    <Button
-                      disabled={busy || !!pending}
-                      onClick={() =>
-                        void reply(
-                          nextCheck.question,
-                          undefined,
-                          nextCheck.question_id,
-                        )
-                      }
-                    >
-                      Continue this check
-                    </Button>
-                  </article>
-                )}
-                {nextCheck && !earlyChoice && directionChoices?.length ? (
-                  <details>
-                    <summary>Other directions</summary>
-                    {directionChoices}
-                  </details>
-                ) : (
-                  directionChoices
+                    {nextCheck && !earlyChoice && directionChoices?.length ? (
+                      <details>
+                        <summary>Other directions</summary>
+                        {directionChoices}
+                      </details>
+                    ) : (
+                      directionChoices
+                    )}
+                  </>
                 )}
                 {pending && (
                   <Button
@@ -472,7 +462,10 @@ function ExplorationEpisode({
                   </Button>
                 )}
                 <details
-                  open={(!brief && !nextCheck && !earlyChoice) || undefined}
+                  open={
+                    (!active && !brief && !nextCheck && !earlyChoice) ||
+                    undefined
+                  }
                 >
                   <summary>Change direction in your own words</summary>
                   <form
@@ -481,8 +474,13 @@ function ExplorationEpisode({
                       void reply(question);
                     }}
                   >
+                    <p className="muted">
+                      {state.status === 'evidence_changed'
+                        ? 'Start a corrected public question. Changed earlier context will not be reused.'
+                        : 'Your words guide the next research. Earlier public searches and sources are kept as context. This question is sent to public research providers.'}
+                    </p>
                     <label htmlFor="exploration-direction">
-                      The public question to investigate next
+                      What should this research focus on?
                     </label>
                     <Textarea
                       id="exploration-direction"
@@ -878,13 +876,21 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           </>
         )}
         {!!earlierFindings.length && (
-          <section className="exploration-findings" aria-label="Findings so far">
+          <section
+            className="exploration-findings"
+            aria-label="Findings so far"
+          >
             <h3>What else we have learned</h3>
             {earlierFindings.map((assessment) => (
               <article key={assessment.question_id}>
-                <span className="content-origin">AI · source-backed assessment</span>
+                <span className="content-origin">
+                  AI · source-backed assessment
+                </span>
                 <h4>{assessment.question}</h4>
-                <QuestionCheckpointContent assessment={assessment} state={state} />
+                <QuestionCheckpointContent
+                  assessment={assessment}
+                  state={state}
+                />
               </article>
             ))}
           </section>
@@ -1041,13 +1047,12 @@ function BranchQuestionProgress({
 }) {
   const value = state.question_assessments;
   const visible = (item: { question_id: string }) =>
-    item.question_id !== excludeQuestionId && !excludeQuestionIds.includes(item.question_id);
+    item.question_id !== excludeQuestionId &&
+    !excludeQuestionIds.includes(item.question_id);
   if (
     state.status === 'evidence_changed' ||
     value?.status !== 'ready' ||
-    (!value.assessments.some(visible) &&
-      !value.unassessed &&
-      !value.outdated)
+    (!value.assessments.some(visible) && !value.unassessed && !value.outdated)
   )
     return null;
 
@@ -1058,32 +1063,30 @@ function BranchQuestionProgress({
         AI assessments of the passages read at each checkpoint. Capturing
         material does not mean the question is answered.
       </p>
-      {value.assessments
-        .filter(visible)
-        .map((assessment) => (
-          <article key={assessment.question_id}>
-            <h4>{assessment.question}</h4>
-            {assessment.stage === 'final_briefing' && (
-              <p className="content-origin">Updated in the research summary</p>
-            )}
-            <QuestionCheckpointContent assessment={assessment} state={state} />
-            {!!assessment.earlier?.length && (
-              <details className="exploration-citation">
-                <summary>Earlier assessment</summary>
-                <p className="muted">
-                  Saved before the later evidence was considered.
-                </p>
-                {assessment.earlier.map((earlier, index) => (
-                  <QuestionCheckpointContent
-                    key={index}
-                    assessment={earlier}
-                    state={state}
-                  />
-                ))}
-              </details>
-            )}
-          </article>
-        ))}
+      {value.assessments.filter(visible).map((assessment) => (
+        <article key={assessment.question_id}>
+          <h4>{assessment.question}</h4>
+          {assessment.stage === 'final_briefing' && (
+            <p className="content-origin">Updated in the research summary</p>
+          )}
+          <QuestionCheckpointContent assessment={assessment} state={state} />
+          {!!assessment.earlier?.length && (
+            <details className="exploration-citation">
+              <summary>Earlier assessment</summary>
+              <p className="muted">
+                Saved before the later evidence was considered.
+              </p>
+              {assessment.earlier.map((earlier, index) => (
+                <QuestionCheckpointContent
+                  key={index}
+                  assessment={earlier}
+                  state={state}
+                />
+              ))}
+            </details>
+          )}
+        </article>
+      ))}
       {!!value.outdated && (
         <p className="muted">
           Earlier assessments changed with new public evidence and need a fresh
