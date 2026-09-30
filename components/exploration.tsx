@@ -78,6 +78,19 @@ function ExplorationEpisode({
   const state = page?.exploration;
   const brief = state?.briefing;
   const nextCheck = state?.next_check;
+  const answerLink = nextCheck?.answer_link;
+  const nextUncertainty =
+    state?.status !== 'evidence_changed' &&
+    brief?.assessment?.contract === 'selected-direction-assessment/v1' &&
+    brief.assessment.status !== 'possible_answer' &&
+    answerLink?.contract === 'selected-direction-next-check/v1' &&
+    answerLink.question === brief.assessment.question &&
+    Number.isSafeInteger(answerLink.limitation_index) &&
+    answerLink.limitation_index >= 0 &&
+    answerLink.limitation ===
+      brief.assessment.limitations[answerLink.limitation_index]
+      ? answerLink.limitation
+      : null;
   const orientation = state?.orientation;
   const earlyChoice =
     !brief &&
@@ -415,6 +428,14 @@ function ExplorationEpisode({
                     <p>
                       <strong>{nextCheck.question}</strong>
                     </p>
+                    {nextUncertainty && (
+                      <p className="muted">
+                        <span className="content-origin">
+                          AI · connection to your answer
+                        </span>
+                        To investigate: {nextUncertainty}
+                      </p>
+                    )}
                     <p>{nextCheck.why}</p>
                     <SavedCheckPassage check={nextCheck} />
                     <Button

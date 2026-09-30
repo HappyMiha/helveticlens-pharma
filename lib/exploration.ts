@@ -4,6 +4,12 @@ export type ExplorationCitation = {
   locator: string;
 };
 export type SavedCheck = {
+  answer_link?: {
+    contract: 'selected-direction-next-check/v1';
+    question: string;
+    limitation_index: number;
+    limitation: string;
+  };
   basis?: 'open_question' | 'further_question';
   investigation_id: string;
   question_id: string;

@@ -2973,3 +2973,198 @@ for (const mode of ['missing', 'unavailable', 'changed'])
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+const answerLinkedEpisode = (status = 'partial') => {
+  const value = episode();
+  const limitation =
+    'Independent recipient records for other periods remain unchecked.';
+  value.exploration.briefing.assessment = {
+    contract: 'selected-direction-assessment/v1',
+    selection: {
+      investigation_id: 'earlier',
+      orientation_revision: 8,
+      direction_index: 0,
+    },
+    investigation_id: value.id,
+    selected_from_investigation_id: 'earlier',
+    question: value.question,
+    status,
+    points: [],
+    limitations: [limitation],
+  };
+  value.exploration.next_check = {
+    ...savedCheck(),
+    answer_link: {
+      contract: 'selected-direction-next-check/v1',
+      question: value.question,
+      limitation_index: 0,
+      limitation,
+    },
+  };
+  return value;
+};
+
+for (const outcome of ['partial', 'conflicting', 'not_found'])
+  test(`answer-linked next check retains one exact explicit action: ${outcome}`, async () => {
+    const value = answerLinkedEpisode(outcome);
+    const writes = [];
+    let tree;
+    serve(value, async (url, init) => {
+      writes.push(JSON.parse(init.body));
+      return Response.json({ id: 'next' });
+    });
+    try {
+      await act(async () => {
+        tree = create(React.createElement(Exploration, props));
+      });
+      assert.match(text(tree), /AI · connection to your answer/);
+      const card = tree.root
+        .findAllByType('article')
+        .find((a) =>
+          a
+            .findAllByType('button')
+            .some((b) => b.props.children === 'Continue this check'),
+        );
+      assert.ok(card);
+      assert.ok(
+        card
+          .findAllByType('p')
+          .some((p) => p.children.includes('To investigate: ')),
+      );
+      assert.ok(
+        card
+          .findAllByType('p')
+          .some((p) =>
+            p.children.includes(
+              value.exploration.next_check.answer_link.limitation,
+            ),
+          ),
+      );
+      assert.equal(
+        tree.root
+          .findAllByType('button')
+          .filter((b) => b.props.children === 'Continue this check').length,
+        1,
+      );
+      assert.ok(card.findAllByType('details').every((d) => !d.props.open));
+      assert.equal(writes.length, 0);
+      await act(async () => {
+        findButton(tree, 'Continue this check').props.onClick();
+      });
+      assert.equal(writes.length, 1);
+      assert.equal(
+        writes[0].follow_up_id,
+        value.exploration.next_check.question_id,
+      );
+      assert.equal(writes[0].question, value.exploration.next_check.question);
+      assert.ok(
+        !('answer_link' in writes[0]) && !('limitation_index' in writes[0]),
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+for (const mode of [
+  'missing',
+  'wrong_question',
+  'wrong_text',
+  'index',
+  'contract',
+  'answered',
+  'no_assessment',
+  'changed',
+])
+  test(`unverified answer link does not acquire reader authority: ${mode}`, async () => {
+    const value = answerLinkedEpisode();
+    const link = value.exploration.next_check.answer_link;
+    if (mode === 'missing') delete value.exploration.next_check.answer_link;
+    if (mode === 'wrong_question') link.question = 'Another question';
+    if (mode === 'wrong_text') link.limitation = 'UNVERIFIED LINK CANARY';
+    if (mode === 'index') link.limitation_index = 4;
+    if (mode === 'contract') link.contract = 'unknown/v1';
+    if (mode === 'answered')
+      value.exploration.briefing.assessment.status = 'possible_answer';
+    if (mode === 'no_assessment') delete value.exploration.briefing.assessment;
+    if (mode === 'changed') value.exploration.status = 'evidence_changed';
+    serve(value, () => {
+      throw new Error('Reading cannot start work');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(React.createElement(Exploration, props));
+      });
+      assert.doesNotMatch(
+        text(tree),
+        /AI · connection to your answer|UNVERIFIED LINK CANARY|To investigate:/,
+      );
+      if (mode !== 'changed')
+        assert.ok(findButton(tree, 'Continue this check'));
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('answer-linked check is read-only without edit authority', async () => {
+  const value = answerLinkedEpisode();
+  serve(value, () => {
+    throw new Error('No work without edit authority');
+  });
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.match(text(tree), /Independent recipient records/);
+    assert.equal(findButton(tree, 'Continue this check'), undefined);
+    assert.equal(tree.root.findAllByType('form').length, 0);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('late saved-check reads cannot revive a removed or denied answer link', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const value = answerLinkedEpisode();
+  serve(value, () => {
+    throw new Error('Polling must not write');
+  });
+  const initialFetch = globalThis.fetch;
+  let defer = false;
+  const pending = [];
+  globalThis.fetch = (url, init) =>
+    defer && url === `${base}/r`
+      ? new Promise((resolve) => pending.push(resolve))
+      : initialFetch(url, init);
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    assert.match(text(tree), /AI · connection to your answer/);
+    defer = true;
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    const changed = structuredClone(value);
+    changed.revision++;
+    changed.exploration.next_check = null;
+    await act(async () => pending[1](Response.json(changed)));
+    await act(async () => pending[0](Response.json(value)));
+    assert.doesNotMatch(text(tree), /AI · connection to your answer/);
+    assert.equal(findButton(tree, 'Continue this check'), undefined);
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => pending[3](Response.json({}, { status: 403 })));
+    await act(async () => pending[2](Response.json(value)));
+    assert.doesNotMatch(
+      text(tree),
+      /AI · connection to your answer|Independent recipient records/,
+    );
+    assert.equal(findButton(tree, 'Continue this check'), undefined);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
