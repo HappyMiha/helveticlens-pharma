@@ -15,6 +15,7 @@ import type {
   SavedCheck,
   CaptureProgress,
   ResearchPurpose,
+  ObservedQueries,
   ExplorationCitation as Citation,
 } from '@/lib/exploration';
 
@@ -1187,6 +1188,74 @@ function ReadRelevanceDetails({ state }: { state: ExplorationState }) {
   );
 }
 
+function RecordedQueries({ journal }: { journal?: ObservedQueries }) {
+  if (!journal || journal.contract !== 'observed-public-queries/v1')
+    return null;
+  if (journal.status === 'evidence_changed')
+    return (
+      <p className="muted">
+        The search journal is unavailable because its supporting context
+        changed.
+      </p>
+    );
+  if (journal.status === 'unknown')
+    return (
+      <p className="muted">
+        Exact search wording was not recorded for this earlier episode.
+      </p>
+    );
+  if (journal.status !== 'ready') return null;
+  const outcome = (item: (typeof journal.items)[number]) => {
+    if (item.outcome === 'unavailable')
+      return 'No usable search result was recorded.';
+    if (item.outcome === 'interrupted')
+      return 'Interrupted; execution outcome is unconfirmed.';
+    if (item.outcome !== 'completed')
+      return 'Dispatch recorded; execution outcome is unconfirmed.';
+    if (item.retrieval?.status === 'partial')
+      return 'Some search indexes did not respond.';
+    if (item.retrieval?.status === 'unavailable')
+      return 'Search indexes were unavailable.';
+    if (item.retrieval?.status !== 'complete')
+      return 'Index outcomes were not recorded.';
+    return item.retrieval.candidate_appearances
+      ? 'Search returned candidates.'
+      : 'Search returned no candidates.';
+  };
+  return (
+    <div aria-label="Recorded search attempts">
+      <p className="content-origin">Recorded search attempts</p>
+      {journal.items.length ? (
+        <ul>
+          {journal.items.map((item) => (
+            <li key={item.step_id}>
+              <q>{item.query}</q> — {outcome(item)}{' '}
+              <span className="muted">Recorded {date(item.started_at)}.</span>
+            </li>
+          ))}
+        </ul>
+      ) : journal.scope.search_steps === 0 ? (
+        <p>No search dispatch has been recorded in this episode.</p>
+      ) : null}
+      {journal.scope.unrecorded_steps > 0 && (
+        <p>
+          Exact wording is unavailable for {journal.scope.unrecorded_steps}{' '}
+          earlier search steps.
+        </p>
+      )}
+      {journal.scope.truncated && (
+        <p>
+          Showing the latest {journal.scope.limit} search steps in this episode.
+        </p>
+      )}
+      <p className="muted">
+        Planned questions and proposed alternatives are not completed searches.
+        Search results are not read evidence or an answer.
+      </p>
+    </div>
+  );
+}
+
 function ObservedResearchScope({ state }: { state: ExplorationState }) {
   const scope = state.research_scope;
   if (
@@ -1285,6 +1354,7 @@ function ObservedResearchScope({ state }: { state: ExplorationState }) {
         )}
       <details className="dossier-secondary">
         <summary>What was checked and what remains</summary>
+        <RecordedQueries journal={scope.observed_queries} />
         <ReadRelevanceDetails state={state} />
         {scope.query_recovery?.status === 'ready' &&
           scope.query_recovery.query && (

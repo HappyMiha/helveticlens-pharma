@@ -568,3 +568,14 @@ selected public research question. Silence keeps current bounded research runnin
 Free text, saved evidence, source checks and replay-safe recovery remain available.
 Monitoring still requires a separate explicit action. No additional inference or poll.
 Full research quality and human acceptance remain open.
+
+
+## Observed search journal — 1.74
+
+Existing closed research details show up to 24 actual recorded search dispatches
+with exact wording and observed index outcomes. Proposed alternatives are not
+executed searches; a pending or interrupted receipt does not confirm network
+execution. Legacy wording stays unknown. Search results are not read evidence or
+an answer. The Core rechecks public origin and access before displaying the
+journal or using it in the existing final briefing. No new form, polling or
+monitoring authority; cross-episode query reuse remains future work.

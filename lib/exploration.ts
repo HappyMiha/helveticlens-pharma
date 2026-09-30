@@ -142,6 +142,37 @@ export type ReadRelevance =
       alternative_reads: number;
       unfinished: number;
     };
+export type ObservedQueries =
+  | {
+      contract: 'observed-public-queries/v1';
+      status: 'unknown' | 'evidence_changed';
+    }
+  | {
+      contract: 'observed-public-queries/v1';
+      status: 'ready';
+      items: {
+        step_id: string;
+        question: string;
+        query: string;
+        started_at: string;
+        finished_at: string | null;
+        outcome: 'completed' | 'unavailable' | 'interrupted' | 'unconfirmed';
+        retrieval: null | {
+          status: 'complete' | 'partial' | 'unavailable' | 'unknown';
+          indexes_completed: number;
+          indexes_unavailable: number;
+          indexes_unknown: boolean;
+          candidate_appearances: number;
+        };
+      }[];
+      scope: {
+        investigation_id: string;
+        limit: number;
+        search_steps: number;
+        unrecorded_steps: number;
+        truncated: boolean;
+      };
+    };
 export type ResearchScope =
   | {
       contract: 'observed-research-scope/v1';
@@ -153,6 +184,7 @@ export type ResearchScope =
       activity: string;
       source_recovery?: SourceRecovery;
       query_recovery?: QueryRecovery;
+      observed_queries?: ObservedQueries;
       read_relevance?: ReadRelevance;
       searches: ResearchAttempts;
       indexes: {

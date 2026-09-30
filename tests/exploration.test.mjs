@@ -3126,6 +3126,163 @@ test('answer-linked check is read-only without edit authority', async () => {
   }
 });
 
+for (const mode of [
+  'complete',
+  'empty',
+  'partial',
+  'indexes_unavailable',
+  'unknown_indexes',
+  'failed',
+  'interrupted',
+  'unconfirmed',
+  'no_dispatch',
+  'legacy',
+  'changed',
+  'unknown_contract',
+  'limited',
+]) {
+  test(`recorded query journal keeps actual outcomes inside closed research details: ${mode}`, async () => {
+    const value = episode();
+    const journal = {
+      contract: 'observed-public-queries/v1',
+      status: 'ready',
+      scope: {
+        investigation_id: value.id,
+        limit: 24,
+        search_steps: 1,
+        unrecorded_steps: 0,
+        truncated: false,
+      },
+      items: [
+        {
+          step_id: 'observed-step',
+          question: 'An unfinished public question',
+          query: 'Exact recorded registry query',
+          started_at: '2026-09-30T10:00:00Z',
+          finished_at: '2026-09-30T10:00:01Z',
+          outcome: 'completed',
+          retrieval: {
+            status: 'complete',
+            indexes_completed: 1,
+            indexes_unavailable: 0,
+            indexes_unknown: false,
+            candidate_appearances: 2,
+          },
+        },
+      ],
+    };
+    const item = journal.items[0];
+    if (mode === 'empty') item.retrieval.candidate_appearances = 0;
+    if (mode === 'partial') item.retrieval.status = 'partial';
+    if (mode === 'indexes_unavailable') item.retrieval.status = 'unavailable';
+    if (mode === 'unknown_indexes') item.retrieval.status = 'unknown';
+    if (['failed', 'interrupted', 'unconfirmed'].includes(mode)) {
+      item.outcome = mode === 'failed' ? 'unavailable' : mode;
+      item.retrieval = null;
+    }
+    if (mode === 'no_dispatch') {
+      journal.items = [];
+      journal.scope.search_steps = 0;
+    }
+    if (mode === 'legacy') journal.status = 'unknown';
+    if (mode === 'changed') journal.status = 'evidence_changed';
+    if (mode === 'unknown_contract') journal.contract = 'unknown-version';
+    if (mode === 'limited')
+      Object.assign(journal.scope, {
+        limit: 1,
+        search_steps: 4,
+        unrecorded_steps: 1,
+        truncated: true,
+      });
+    value.exploration.research_scope = {
+      contract: 'observed-research-scope/v1',
+      status: 'ready',
+      activity: 'completed',
+      searches: { completed: 1, unavailable: 0, interrupted: 0, running: 0 },
+      indexes: { completed: 1, unavailable: 0, unknown_searches: 0 },
+      reads: { completed: 1, unavailable: 0, interrupted: 0, running: 0 },
+      material: {
+        sources: 1,
+        passages: 1,
+        truncated_sources: 0,
+        unknown_reader_scope: 0,
+      },
+      candidates: {
+        retrieved: 2,
+        not_evaluated: 1,
+        evaluation_unavailable: 0,
+        selected_not_read: 0,
+      },
+      questions: { open: 1, not_started: 0 },
+      budget_stops: [],
+      observed_queries: journal,
+    };
+    let tree,
+      writes = 0;
+    serve(value, () => {
+      writes++;
+      throw new Error('Reading a journal must not create work');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: false,
+            historical: true,
+          }),
+        );
+      });
+      const content = text(tree);
+      assert.equal(
+        content.includes('Exact recorded registry query'),
+        !['no_dispatch', 'legacy', 'changed', 'unknown_contract'].includes(
+          mode,
+        ),
+      );
+      const expected = {
+        complete: 'Search returned candidates.',
+        empty: 'Search returned no candidates.',
+        partial: 'Some search indexes did not respond.',
+        indexes_unavailable: 'Search indexes were unavailable.',
+        unknown_indexes: 'Index outcomes were not recorded.',
+        failed: 'No usable search result was recorded.',
+        interrupted: 'Interrupted; execution outcome is unconfirmed.',
+        unconfirmed: 'Dispatch recorded; execution outcome is unconfirmed.',
+        no_dispatch: 'No search dispatch has been recorded in this episode.',
+        legacy:
+          'Exact search wording was not recorded for this earlier episode.',
+        changed:
+          'The search journal is unavailable because its supporting context changed.',
+        limited: 'Showing the latest ',
+      }[mode];
+      if (expected) assert.ok(content.includes(expected), content);
+      if (mode === 'limited')
+        assert.ok(
+          content.includes(
+            'Exact wording is unavailable for ',
+          ),
+        );
+      if (!['legacy', 'changed', 'unknown_contract'].includes(mode)) {
+        const block = tree.root.findByProps({
+          'aria-label': 'Recorded search attempts',
+        });
+        let details = block.parent;
+        while (details && details.type !== 'details') details = details.parent;
+        assert.ok(details && !details.props.open);
+        assert.ok(
+          content.includes(
+            'Planned questions and proposed alternatives are not completed searches.',
+          ),
+        );
+      }
+      assert.equal(writes, 0);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+}
+
 test('late saved-check reads cannot revive a removed or denied answer link', async (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const value = answerLinkedEpisode();
