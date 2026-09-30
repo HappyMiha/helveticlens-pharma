@@ -663,3 +663,9 @@
 .check-source-coverage summary { cursor: pointer; }
 .check-source-coverage .coverage-list { margin-block: 1rem; }
 .check-source-coverage li + li { margin-block-start: 1rem; }
+
+.page-check-history { margin-block: 1rem; overflow-wrap: anywhere; }
+.page-check-history summary { cursor: pointer; }
+.page-check-reading article { padding-block: 1rem; }
+.page-check-reading article + article { border-top: 1px solid var(--border); }
+.page-check-reading blockquote { margin-inline: 0; padding-inline-start: 1rem; }

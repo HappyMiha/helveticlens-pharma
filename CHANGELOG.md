@@ -1,5 +1,15 @@
 # Changes
 
+## 1.79.0 — History of connected-page checks
+
+Expand a source to read its retained checks, changed or unchanged saved text,
+failures, recorded analysis status and related dossier research. Open the exact
+saved versions or a cited finding through existing readers. Current access and
+source rights still apply; opening history performs no new research. Empty or
+older records cannot claim checks or timestamps that were never recorded.
+442 tests, lint/types/build passed; Core evidence and production verification:
+`docs/PRODUCT_PAGE_CHECK_HISTORY.md`.
+
 ## 1.78.0 — Sources actually checked
 
 Scheduled results include one expandable source list: successful reading, changed

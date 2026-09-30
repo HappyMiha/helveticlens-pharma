@@ -11,6 +11,7 @@ import {
 } from '@/lib/dossier-coverage';
 import type { DossierCoverage, CoverageStatus } from '@/lib/dossier-coverage';
 import { Button } from '@/components/ui/button';
+import { PageCheckHistory } from './page-check-history';
 
 function Status({ value }: { value: CoverageStatus }) {
   return (
@@ -109,6 +110,7 @@ export function CoverageReading({
                     'Next check not scheduled.'
                   )}
                 </p>
+                <PageCheckHistory key={`${value.dossier_id}:${page.id}`} dossierId={value.dossier_id} documentId={page.id} name={page.name} onInvestigation={onInvestigation} />
               </li>
             );
           })}
