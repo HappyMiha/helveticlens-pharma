@@ -24,6 +24,7 @@ type Reply = {
   expected_revision: number;
   question: string;
   direction?: number;
+  orientation_revision?: number;
   follow_up_id?: string;
   public_query_confirmed: true;
 };
@@ -77,6 +78,19 @@ function ExplorationEpisode({
   const state = page?.exploration;
   const brief = state?.briefing;
   const nextCheck = state?.next_check;
+  const orientation = state?.orientation;
+  const earlyChoice =
+    !brief &&
+    state?.status !== 'evidence_changed' &&
+    orientation?.status === 'ready' &&
+    orientation.revision &&
+    orientation.briefing?.clarification?.trim() &&
+    (orientation.briefing.directions?.length || 0) >= 2 &&
+    orientation.briefing.directions?.every((direction) =>
+      state?.sources.some((source) => source.id === direction.source_id),
+    )
+      ? orientation.briefing
+      : null;
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -108,7 +122,12 @@ function ExplorationEpisode({
     };
   }, [refreshList, refresh, lifecycle]);
 
-  async function reply(text: string, direction?: number, followUpId?: string) {
+  async function reply(
+    text: string,
+    direction?: number,
+    followUpId?: string,
+    orientationRevision?: number,
+  ) {
     if (
       !page ||
       !state ||
@@ -117,7 +136,7 @@ function ExplorationEpisode({
       text.trim().length < 5
     )
       return;
-    const command = pending || {
+    let command = pending || {
       id: page.id,
       body: {
         request_key: uid(),
@@ -126,14 +145,33 @@ function ExplorationEpisode({
         public_query_confirmed: true as const,
         ...(direction === undefined ? {} : { direction }),
         ...(followUpId === undefined ? {} : { follow_up_id: followUpId }),
+        ...(orientationRevision === undefined
+          ? {}
+          : { orientation_revision: orientationRevision }),
       },
     };
     sending.current = true;
     setBusy(true);
     setError('');
-    setPending(command);
     const current = lifecycle.generation;
+    let replySent = false;
     try {
+      if (!pending && ['queued', 'running'].includes(page.status)) {
+        const paused = await api<Episode>(`${root}/${page.id}/control`, {
+          expected_revision: page.revision,
+          action: 'pause',
+        });
+        if (lifecycle.generation !== current) return;
+        command = {
+          ...command,
+          body: {
+            ...command.body,
+            expected_revision: paused.exploration.revision,
+          },
+        };
+      }
+      setPending(command);
+      replySent = true;
       await api(`${root}/${command.id}/exploration/reply`, command.body);
       if (lifecycle.generation !== current) return;
       setPending(null);
@@ -148,9 +186,10 @@ function ExplorationEpisode({
             : 'Could not continue. Retry the same direction safely.',
         );
         if (
-          failure instanceof ApiError &&
-          failure.status !== null &&
-          [401, 403, 404, 409, 422].includes(failure.status)
+          !replySent ||
+          (failure instanceof ApiError &&
+            failure.status !== null &&
+            [401, 403, 404, 409, 422].includes(failure.status))
         ) {
           setPending(null);
           await refreshList();
@@ -210,19 +249,28 @@ function ExplorationEpisode({
       </details>
     );
   }
-  const directionChoices = brief?.directions.map((direction, index) => (
-    <article key={direction.question}>
-      <Button
-        variant="outline"
-        disabled={busy || !!pending}
-        onClick={() => void reply(direction.question, index)}
-      >
-        {direction.question}
-      </Button>
-      <p>{direction.why}</p>
-      {quote(direction)}
-    </article>
-  ));
+  const directionChoices = (brief?.directions || earlyChoice?.directions)?.map(
+    (direction, index) => (
+      <article key={direction.question}>
+        <Button
+          variant="outline"
+          disabled={busy || !!pending}
+          onClick={() =>
+            void reply(
+              direction.question,
+              index,
+              undefined,
+              earlyChoice ? orientation?.revision : undefined,
+            )
+          }
+        >
+          {direction.question}
+        </Button>
+        <p>{direction.why}</p>
+        {quote(direction)}
+      </article>
+    ),
+  );
   const active = page && ['queued', 'running'].includes(page.status);
   return (
     <section className="exploration" aria-label="Developing your research">
@@ -338,29 +386,30 @@ function ExplorationEpisode({
                 ))}
               </section>
             )}
-          {!active &&
-            (state.status !== 'exploring' ||
-              page.status === 'paused' ||
-              page.status === 'cancelled') &&
+          {(earlyChoice ||
+            (!active &&
+              (state.status !== 'exploring' ||
+                page.status === 'paused' ||
+                page.status === 'cancelled'))) &&
             !state.continued_by &&
             canEdit && (
               <section className="exploration-choice">
                 <h3>
-                  {nextCheck
-                    ? nextCheck.basis === 'further_question'
-                      ? 'Another way to investigate this question'
-                      : nextCheck.basis === 'open_question'
-                        ? 'An open question to investigate'
-                        : 'A useful next check'
-                    : brief?.clarification ||
-                      'Where would you like to go next?'}
+                  {earlyChoice?.clarification ||
+                    (nextCheck
+                      ? nextCheck.basis === 'further_question'
+                        ? 'Another way to investigate this question'
+                        : nextCheck.basis === 'open_question'
+                          ? 'An open question to investigate'
+                          : 'A useful next check'
+                      : brief?.clarification || 'Where would you like to go next?')}
                 </h3>
                 <p className="muted">
-                  Your choice starts one more bounded episode using public
-                  research providers. Earlier evidence is kept. No reply is
-                  needed to keep this briefing.
+                  {active
+                    ? 'Optional: choosing a direction pauses this episode and starts a focused public research episode. Earlier evidence is kept. Without a reply, the current research continues.'
+                    : 'Your choice starts one more bounded episode using public research providers. Earlier evidence is kept. No reply is needed to keep this briefing.'}
                 </p>
-                {nextCheck && (
+                {nextCheck && !earlyChoice && (
                   <article>
                     <p>
                       <strong>{nextCheck.question}</strong>
@@ -381,7 +430,7 @@ function ExplorationEpisode({
                     </Button>
                   </article>
                 )}
-                {nextCheck && directionChoices?.length ? (
+                {nextCheck && !earlyChoice && directionChoices?.length ? (
                   <details>
                     <summary>Other directions</summary>
                     {directionChoices}
@@ -399,7 +448,9 @@ function ExplorationEpisode({
                       : 'Retry this direction safely'}
                   </Button>
                 )}
-                <details open={(!brief && !nextCheck) || undefined}>
+                <details
+                  open={(!brief && !nextCheck && !earlyChoice) || undefined}
+                >
                   <summary>Change direction in your own words</summary>
                   <form
                     onSubmit={(event) => {

@@ -244,6 +244,8 @@ export type ExplorationState = {
     saved_at?: string;
     revision?: number;
     briefing: null | {
+      clarification?: string;
+      directions?: (ExplorationCitation & { question: string; why: string })[];
       read_preparation?: {
         contract: 'read-informed-research/v1';
         assessed_sources: number;

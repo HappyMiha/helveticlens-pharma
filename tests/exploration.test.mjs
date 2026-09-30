@@ -2432,3 +2432,242 @@ test('current purpose polling drops an older explanation and cannot revive it af
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+function earlyChoiceEpisode(status = 'running') {
+  const value = episode({ status });
+  value.exploration.status = 'exploring';
+  const directions = value.exploration.briefing.directions;
+  value.exploration.briefing = null;
+  value.exploration.orientation = orientation();
+  Object.assign(value.exploration.orientation.briefing, {
+    clarification: 'Verify identity or investigate the surrounding context?',
+    directions,
+  });
+  return value;
+}
+
+test('optional early choice pauses then sends the exact direction and fresh revision without another form', async () => {
+  const value = earlyChoiceEpisode();
+  const writes = [];
+  let tree;
+  serve(value, async (url, init) => {
+    writes.push({ url, body: JSON.parse(init.body) });
+    if (url.endsWith('/control')) {
+      value.status = 'paused';
+      value.exploration.revision = 27;
+      return Response.json(value);
+    }
+    return Response.json({ id: 'next' });
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    assert.equal(writes.length, 0);
+    assert.match(text(tree), /Without a reply, the current research continues/);
+    assert.match(text(tree), /Verify identity or investigate/);
+    assert.equal(tree.root.findAllByType('form').length, 1);
+    await act(async () =>
+      findButton(tree, 'Check the entity in the register.').props.onClick(),
+    );
+    assert.equal(writes.length, 2);
+    assert.deepEqual(writes[0], {
+      url: `${base}/r/control`,
+      body: { expected_revision: 20, action: 'pause' },
+    });
+    assert.equal(writes[1].body.expected_revision, 27);
+    assert.equal(writes[1].body.orientation_revision, 12);
+    assert.equal(writes[1].body.direction, 0);
+    assert.equal(writes[1].body.question, 'Check the entity in the register.');
+    assert.equal(writes[1].body.public_query_confirmed, true);
+    assert.equal(value.question, 'A rough question');
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('uncertain early reply retries identical receipt without pausing twice', async () => {
+  const value = earlyChoiceEpisode();
+  const writes = [];
+  let tree;
+  serve(value, async (url, init) => {
+    writes.push({ url, body: JSON.parse(init.body) });
+    if (url.endsWith('/control')) {
+      value.status = 'paused';
+      value.exploration.revision = 28;
+      return Response.json(value);
+    }
+    if (writes.length === 2) throw new Error('Lost reply');
+    return Response.json({ id: 'next' });
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    await act(async () =>
+      findButton(tree, 'Check the entity in the register.').props.onClick(),
+    );
+    await act(async () =>
+      findButton(tree, 'Retry this direction safely').props.onClick(),
+    );
+    assert.equal(writes.length, 3);
+    assert.deepEqual(writes[1], writes[2]);
+    assert.equal(writes.filter((w) => w.url.endsWith('/control')).length, 1);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+for (const failure of ['conflict', 'lost'])
+  test(`failed early pause sends no research reply: ${failure}`, async () => {
+    const value = earlyChoiceEpisode();
+    const writes = [];
+    let tree;
+    serve(value, async (url, init) => {
+      writes.push({ url, body: JSON.parse(init.body) });
+      if (failure === 'lost') throw new Error('Lost pause response');
+      return Response.json({ message: 'Checkpoint changed' }, { status: 409 });
+    });
+    try {
+      await act(async () => {
+        tree = create(React.createElement(Exploration, props));
+      });
+      await act(async () =>
+        findButton(tree, 'Check the entity in the register.').props.onClick(),
+      );
+      assert.equal(writes.length, 1);
+      assert.equal(writes[0].url, `${base}/r/control`);
+      assert.ok(!findButton(tree, 'Retry this direction safely'));
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('session change during early pause cannot send a reply in the replacement session', async () => {
+  const value = earlyChoiceEpisode();
+  const writes = [];
+  let tree, release;
+  const originalWindow = globalThis.window;
+  const handlers = new Map();
+  globalThis.window = {
+    addEventListener: (k, fn) =>
+      handlers.set(k, [...(handlers.get(k) || []), fn]),
+    removeEventListener() {},
+  };
+  serve(value, async (url, init) => {
+    writes.push({ url, body: JSON.parse(init.body) });
+    return new Promise((resolve) => {
+      release = resolve;
+    });
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    let operation;
+    await act(async () => {
+      operation = findButton(
+        tree,
+        'Check the entity in the register.',
+      ).props.onClick();
+    });
+    await act(async () => {
+      for (const fn of handlers.get('helvetic-session-changed') || []) fn();
+    });
+    await act(async () => {
+      value.status = 'paused';
+      value.exploration.revision = 28;
+      release(Response.json(value));
+      await operation;
+    });
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url, `${base}/r/control`);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+    globalThis.window = originalWindow;
+  }
+});
+
+for (const unavailable of [
+  'evidence_changed',
+  'missing_source',
+  'unavailable',
+  'no_fork',
+  'read_only',
+  'final',
+])
+  test(`early choices are unavailable for ${unavailable}`, async () => {
+    const value = earlyChoiceEpisode();
+    let tree;
+    if (unavailable === 'evidence_changed')
+      value.exploration.status = 'evidence_changed';
+    if (unavailable === 'missing_source') value.exploration.sources = [];
+    if (unavailable === 'unavailable')
+      value.exploration.orientation.status = 'unavailable';
+    if (unavailable === 'no_fork')
+      value.exploration.orientation.briefing.directions = [];
+    if (unavailable === 'final') {
+      value.status = 'completed';
+      value.exploration.status = 'ready';
+      value.exploration.briefing = episode().exploration.briefing;
+    }
+    serve(value, () => {
+      throw new Error('No automatic action');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: unavailable !== 'read_only',
+          }),
+        );
+      });
+      assert.doesNotMatch(
+        text(tree),
+        /Verify identity or investigate the surrounding context/,
+      );
+      if (unavailable === 'final')
+        assert.match(text(tree), /Which outcome matters most/);
+      else assert.ok(!findButton(tree, 'Check the entity in the register.'));
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('free text remains available during an early fork and uses pause without a source-choice pin', async () => {
+  const value = earlyChoiceEpisode();
+  const writes = [];
+  let tree;
+  serve(value, async (url, init) => {
+    writes.push({ url, body: JSON.parse(init.body) });
+    if (url.endsWith('/control')) {
+      value.status = 'paused';
+      value.exploration.revision = 29;
+      return Response.json(value);
+    }
+    return Response.json({ id: 'next' });
+  });
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    await act(async () =>
+      tree.root
+        .findByType('textarea')
+        .props.onChange({
+          target: { value: 'I meant a different foundation.' },
+        }),
+    );
+    await act(async () =>
+      tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),
+    );
+    assert.equal(writes.length, 2);
+    assert.equal(writes[1].body.expected_revision, 29);
+    assert.equal(writes[1].body.question, 'I meant a different foundation.');
+    assert.ok(!('orientation_revision' in writes[1].body));
+    assert.ok(!('direction' in writes[1].body));
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});

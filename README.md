@@ -553,3 +553,12 @@ A source-driven follow-up includes the retained passage that prompted it; an
 initial planned purpose has no invented source. The explanation expires with the
 actual activity and remains subject to current evidence/access checks. Reading
 starts no additional work. Saved results retain their separate history.
+
+## Optional early clarification — 1.69
+
+An early source-backed reading may offer one useful question and cited alternatives.
+Choosing pauses the old episode, uses its fresh checkpoint and starts the exact
+selected public research question. Silence keeps current bounded research running.
+Free text, saved evidence, source checks and replay-safe recovery remain available.
+Monitoring still requires a separate explicit action. No additional inference or poll.
+Full research quality and human acceptance remain open.
