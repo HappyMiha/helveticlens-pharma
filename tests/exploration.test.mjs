@@ -546,6 +546,159 @@ const savedCheck = () => ({
     captured_at: '2026-09-29T10:00:00Z',
   },
 });
+
+const selectedDirection = () => ({
+  contract: 'selected-direction/v1',
+  status: 'ready',
+  investigation_id: 'earlier-run',
+  orientation_revision: 17,
+  direction_index: 0,
+  question: 'Investigate the recipient account.',
+  original_question: 'Alpin money — what is happening?',
+  why: 'The earlier record suggests comparing recipients and payments.',
+  quote: 'The retained earlier account records a payment.',
+  locator: 'p3',
+  source: {
+    id: 'prior-source',
+    title: 'Earlier recipient account',
+    url: 'https://example.org/prior-account',
+    captured_at: '2026-09-29T10:00:00Z',
+  },
+});
+
+for (const status of ['queued', 'running', 'paused', 'completed'])
+  test(`chosen direction keeps original words and an earlier passage without new controls: ${status}`, async () => {
+    const value = episode({ status, question: selectedDirection().question });
+    value.exploration.selected_direction = selectedDirection();
+    if (status !== 'completed') {
+      value.exploration.status = 'exploring';
+      value.exploration.briefing = null;
+    }
+    serve(value, () => {
+      throw new Error('Reading selected context must not write');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      assert.match(
+        text(tree),
+        /Your selected direction · earlier research context/,
+      );
+      assert.match(text(tree), /AI · why this direction/);
+      assert.match(text(tree), /earlier record suggests comparing recipients/);
+      assert.match(text(tree), /Alpin money — what is happening/);
+      const block = tree.root.findAllByProps({
+        'aria-label': 'Following your chosen direction',
+      });
+      assert.equal(block.length, 1);
+      const details = block[0].findByType('details');
+      assert.ok(!details.props.open);
+      assert.equal(
+        details.findByType('blockquote').props.children,
+        selectedDirection().quote,
+      );
+      assert.equal(
+        details.findByType('a').props.href,
+        selectedDirection().source.url,
+      );
+      assert.equal(block[0].findAllByType('button').length, 0);
+      assert.equal(block[0].findAllByType('textarea').length, 0);
+      assert.doesNotMatch(
+        text(tree),
+        /selected-direction\/v1|orientation_revision|prior-source|earlier-run/,
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+for (const mode of ['changed', 'episode_changed', 'legacy', 'unknown'])
+  test(`chosen direction does not revive unavailable or legacy context: ${mode}`, async () => {
+    const value = episode();
+    if (mode !== 'legacy')
+      value.exploration.selected_direction = selectedDirection();
+    if (mode === 'changed')
+      value.exploration.selected_direction = { status: 'evidence_changed' };
+    if (mode === 'episode_changed') {
+      value.exploration.status = 'evidence_changed';
+      value.exploration.briefing = null;
+    }
+    if (mode === 'unknown')
+      value.exploration.selected_direction.contract = 'unknown';
+    serve(value, () => {
+      throw new Error('Reading must not write');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      assert.doesNotMatch(
+        text(tree),
+        /AI · why this direction|earlier record suggests comparing recipients|retained earlier account|Alpin money/,
+      );
+      if (mode === 'changed' || mode === 'episode_changed')
+        assert.match(text(tree), /behind your chosen direction changed/);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('chosen direction polling removes changed context and rejects a late response after denial', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const value = episode({ status: 'running' });
+  value.exploration.status = 'exploring';
+  value.exploration.briefing = null;
+  value.exploration.selected_direction = selectedDirection();
+  serve(value, () => {
+    throw new Error('Context polling must not write');
+  });
+  const initialFetch = globalThis.fetch;
+  let defer = false;
+  const pending = [];
+  globalThis.fetch = (url, init) =>
+    defer && url === `${base}/r`
+      ? new Promise((resolve) => pending.push(resolve))
+      : initialFetch(url, init);
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    assert.match(text(tree), /AI · why this direction/);
+    defer = true;
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    const changed = structuredClone(value);
+    changed.revision++;
+    changed.exploration.selected_direction = { status: 'evidence_changed' };
+    await act(async () => pending[1](Response.json(changed)));
+    await act(async () => pending[0](Response.json(value)));
+    assert.match(text(tree), /behind your chosen direction changed/);
+    assert.doesNotMatch(
+      text(tree),
+      /AI · why this direction|retained earlier account/,
+    );
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => pending[3](Response.json({}, { status: 403 })));
+    await act(async () => pending[2](Response.json(value)));
+    assert.doesNotMatch(
+      text(tree),
+      /AI · why this direction|retained earlier account|Alpin money/,
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
 test('one saved check sends its typed identity and exact question, keeping alternatives secondary and retrying once', async () => {
   let tree;
   const writes = [];
@@ -2653,11 +2806,9 @@ test('free text remains available during an early fork and uses pause without a 
       tree = create(React.createElement(Exploration, props));
     });
     await act(async () =>
-      tree.root
-        .findByType('textarea')
-        .props.onChange({
-          target: { value: 'I meant a different foundation.' },
-        }),
+      tree.root.findByType('textarea').props.onChange({
+        target: { value: 'I meant a different foundation.' },
+      }),
     );
     await act(async () =>
       tree.root.findByType('form').props.onSubmit({ preventDefault() {} }),

@@ -1,5 +1,7 @@
 # HelveticLens Pharma
 
+Selected direction context 1.70 keeps the chosen public question, original wording, saved AI rationale and exact earlier passage together. The existing planner receives this typed context; the reader uses its existing earlier-research position with closed source details. Current evidence/access checks hide unavailable context. No additional model request or automatic monitoring. Verification is recorded in Core `docs/PRODUCT_SELECTED_DIRECTION.md`.
+
 ## Research from a question
 
 New dossier opens with a title and research question. Confirm public-source

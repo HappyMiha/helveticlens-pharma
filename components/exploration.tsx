@@ -402,7 +402,8 @@ function ExplorationEpisode({
                         : nextCheck.basis === 'open_question'
                           ? 'An open question to investigate'
                           : 'A useful next check'
-                      : brief?.clarification || 'Where would you like to go next?')}
+                      : brief?.clarification ||
+                        'Where would you like to go next?')}
                 </h3>
                 <p className="muted">
                   {active
@@ -1492,10 +1493,26 @@ function InterpretationChanges({ state }: { state: ExplorationState }) {
   );
 }
 
-function SavedCheckPassage({ check }: { check: SavedCheck }) {
+function SavedCheckPassage({
+  check,
+  originalQuestion,
+}: {
+  check: Pick<SavedCheck, 'quote' | 'locator' | 'source'>;
+  originalQuestion?: string;
+}) {
   return (
     <details className="exploration-citation">
-      <summary>Why this check arose · earlier source passage</summary>
+      <summary>
+        {originalQuestion
+          ? 'Why this direction arose · earlier source passage'
+          : 'Why this check arose · earlier source passage'}
+      </summary>
+      {originalQuestion && (
+        <p>
+          <span className="content-origin">Your original question</span>
+          {originalQuestion}
+        </p>
+      )}
       <blockquote>{check.quote}</blockquote>
       <a href={check.source.url} target="_blank" rel="noreferrer">
         {check.source.title}
@@ -1508,6 +1525,36 @@ function SavedCheckPassage({ check }: { check: SavedCheck }) {
 }
 
 function ContinuedCheck({ state }: { state: ExplorationState }) {
+  const direction = state.selected_direction;
+  if (direction) {
+    if (direction.status !== 'ready' || state.status === 'evidence_changed')
+      return (
+        <p className="muted">
+          The earlier evidence behind your chosen direction changed. Its context
+          is hidden; review the earlier episode or correct your question.
+        </p>
+      );
+    if (direction.contract !== 'selected-direction/v1') return null;
+    return (
+      <section
+        className="dossier-secondary"
+        aria-label="Following your chosen direction"
+      >
+        <span className="content-origin">
+          Your selected direction · earlier research context
+        </span>
+        <p>
+          <span className="content-origin">AI · why this direction</span>
+          {direction.why}
+        </p>
+        <SavedCheckPassage
+          check={direction}
+          originalQuestion={direction.original_question}
+        />
+        <EpisodeProgress progress={state.capture_progress} />
+      </section>
+    );
+  }
   const check = state.continuation;
   if (!check) return null;
   if (check.status !== 'ready')

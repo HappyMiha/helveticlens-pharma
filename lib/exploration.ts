@@ -15,6 +15,20 @@ export type SavedCheck = {
   locator: string;
   source: { id: string; title: string; url: string; captured_at: string };
 };
+export type SelectedDirection = Pick<
+  SavedCheck,
+  | 'investigation_id'
+  | 'question'
+  | 'original_question'
+  | 'why'
+  | 'quote'
+  | 'locator'
+  | 'source'
+> & {
+  contract: 'selected-direction/v1';
+  orientation_revision: number;
+  direction_index: number;
+};
 export type CaptureReference = {
   id: string;
   investigation_id: string;
@@ -227,6 +241,10 @@ export type ExplorationState = {
   research_scope?: ResearchScope;
   capture_progress?: CaptureProgress | null;
   next_check?: SavedCheck | null;
+  selected_direction?:
+    | (SelectedDirection & { status: 'ready' })
+    | { status: 'evidence_changed' }
+    | null;
   continuation?:
     | (SavedCheck & { status: 'ready' })
     | { status: 'evidence_changed' }
