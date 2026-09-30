@@ -2822,3 +2822,154 @@ test('free text remains available during an early fork and uses pause without a 
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+for (const outcome of [
+  'possible_answer',
+  'partial',
+  'conflicting',
+  'not_found',
+])
+  for (const historical of [false, true])
+    test(`chosen early direction uses one cited primary answer: ${outcome}/${historical}`, async () => {
+      const value = episode();
+      value.question =
+        'Which recipient record supports the selected direction?';
+      value.exploration.briefing.assessment = {
+        contract: 'selected-direction-assessment/v1',
+        selection: {
+          investigation_id: 'earlier',
+          orientation_revision: 8,
+          direction_index: 1,
+        },
+        investigation_id: value.id,
+        selected_from_investigation_id: 'earlier',
+        question: value.question,
+        status: outcome,
+        points: [
+          {
+            statement: 'The captured record leaves the wider question open.',
+            evidence: [
+              {
+                source_id: 's',
+                quote: 'The source passage is here.',
+                locator: 'p1',
+                role: outcome === 'not_found' ? 'context' : 'support',
+              },
+            ],
+          },
+        ],
+        limitations: ['Other periods remain unchecked.'],
+      };
+      let tree,
+        writes = 0;
+      serve(value, () => {
+        writes++;
+        throw new Error('Reading must not create work');
+      });
+      try {
+        await act(async () => {
+          tree = create(
+            React.createElement(Exploration, {
+              ...props,
+              canEdit: false,
+              historical,
+            }),
+          );
+        });
+        assert.equal(
+          tree.root.findAllByProps({
+            'aria-label': 'Assessment of the selected question',
+          }).length,
+          1,
+        );
+        assert.equal(
+          tree.root
+            .findAllByType('p')
+            .filter((p) => p.children.join('') === value.question).length,
+          1,
+        );
+        assert.match(text(tree), /What the evidence says about your question/);
+        assert.match(text(tree), /Other periods remain unchecked/);
+        const background = tree.root
+          .findAllByType('details')
+          .find((d) =>
+            d
+              .findAllByType('summary')
+              .some(
+                (s) =>
+                  s.children.join('') ===
+                  'Research context & earlier understanding',
+              ),
+          );
+        assert.ok(background && !background.props.open);
+        const quote = tree.root
+          .findAllByType('details')
+          .find((d) =>
+            d
+              .findAllByType('summary')
+              .some(
+                (s) =>
+                  s.children.join('') === 'Read the evidence for this point',
+              ),
+          );
+        assert.ok(quote && !quote.props.open);
+        assert.ok(
+          quote
+            .findAllByType('a')
+            .some((a) => a.props.href === 'https://example.org/record'),
+        );
+        assert.equal(tree.root.findAllByType('form').length, 0);
+        assert.equal(writes, 0);
+      } finally {
+        if (tree) await act(async () => tree.unmount());
+      }
+    });
+
+for (const mode of ['missing', 'unavailable', 'changed'])
+  test(`selected direction answer recovery preserves honest summary: ${mode}`, async () => {
+    const value = episode();
+    if (mode !== 'missing')
+      value.exploration.briefing.selected_direction_assessment = {
+        status: 'unavailable',
+      };
+    if (mode === 'changed') {
+      value.exploration.status = 'evidence_changed';
+      value.exploration.briefing = null;
+    }
+    let tree;
+    serve(value, () => {
+      throw new Error('No recovery inference from the reader');
+    });
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      if (mode === 'unavailable') {
+        assert.match(
+          text(tree),
+          /An assessment of your selected question is unavailable/,
+        );
+        assert.match(text(tree), /An AI interpretation/);
+        assert.match(text(tree), /The source passage is here/);
+      } else
+        assert.doesNotMatch(
+          text(tree),
+          /An assessment of your selected question is unavailable/,
+        );
+      assert.equal(
+        tree.root.findAllByProps({
+          'aria-label': 'Assessment of the selected question',
+        }).length,
+        0,
+      );
+      assert.equal(tree.root.findAllByType('form').length, 0);
+      assert.doesNotMatch(
+        text(tree),
+        /INVALID OPTIONAL|direction_assessment_context/,
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

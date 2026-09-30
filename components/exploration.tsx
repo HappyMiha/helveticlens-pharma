@@ -904,6 +904,12 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
     return (
       <>
         <ContinuedCheck state={state} />
+        {brief.selected_direction_assessment?.status === 'unavailable' && (
+          <p className="muted">
+            An assessment of your selected question is unavailable. The research
+            summary is still available below.
+          </p>
+        )}
         {background}
         {questionUpdateNotice}
         <BranchQuestionProgress state={state} />

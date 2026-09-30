@@ -1,5 +1,7 @@
 # HelveticLens Pharma
 
+Selected direction answer 1.71 uses the existing final request to assess an explicitly chosen early goal against current read passages. One primary answer preserves support, counterevidence, limits and earlier context. Invalid optional output leaves a valid cited summary available; changed shared inputs hide dependent results. No extra request, form or automatic monitoring. Verification is recorded in Core `docs/PRODUCT_DIRECTION_ASSESSMENT.md`.
+
 Selected direction context 1.70 keeps the chosen public question, original wording, saved AI rationale and exact earlier passage together. The existing planner receives this typed context; the reader uses its existing earlier-research position with closed source details. Current evidence/access checks hide unavailable context. No additional model request or automatic monitoring. Verification is recorded in Core `docs/PRODUCT_SELECTED_DIRECTION.md`.
 
 ## Research from a question

@@ -78,6 +78,17 @@ export type QuestionAssessment = {
   }[];
   limitations: string[];
 };
+export type DirectionAssessment = Omit<
+  QuestionAssessment,
+  'contract' | 'question_id'
+> & {
+  contract: 'selected-direction-assessment/v1';
+  selection: {
+    investigation_id: string;
+    orientation_revision: number;
+    direction_index: number;
+  };
+};
 export type SourceRecovery =
   | { contract: 'source-recovery/v1'; status: 'unknown' | 'evidence_changed' }
   | {
@@ -291,8 +302,9 @@ export type ExplorationState = {
     reads_completed: number;
   })[];
   briefing: null | {
-    assessment?: QuestionAssessment;
+    assessment?: QuestionAssessment | DirectionAssessment;
     question_updates?: { status: 'unavailable' };
+    selected_direction_assessment?: { status: 'unavailable' };
     understanding: string;
     findings: (ExplorationCitation & {
       statement: string;
