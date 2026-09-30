@@ -1,5 +1,15 @@
 # Changes
 
+## 1.78.0 — Sources actually checked
+
+Scheduled results include one expandable source list: successful reading, changed
+or unchanged captures, failed analysis, interrupted reads and earlier sources not
+checked this time. Exact worker receipts and current source permissions determine
+these states. The prior-source list is bounded and older checks without receipts
+stay explicitly unknown. No additional search, fetch, model call or consent.
+437 tests, lint/types/build passed before publication; Core acceptance and exact
+production verification: `docs/PRODUCT_CHECK_SOURCE_COVERAGE.md`.
+
 ## 1.34.0 — Evidence-driven iterative research
 
 - Start a research dossier with a title and question, independently of monitoring.

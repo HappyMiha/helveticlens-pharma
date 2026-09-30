@@ -2508,3 +2508,72 @@ for (const separated of [false, true])
     } else
       assert.doesNotMatch(html, /Quoted saved text|Quotation is not truth/);
   });
+
+const { CheckSourceCoverageReader } = require(resolve('components/check-source-coverage.tsx'));
+const checkedSource = {
+  title: '<script>Captured registry</script>', url: 'https://example.org/registry',
+  source_id: 'captured', investigation_id: 'run-first', read_status: 'read',
+  analysis_status: 'analysed', capture_state: 'changed', attempt_count: 1,
+  attempt: { status: 'completed', started_at: '2026-09-30T12:00:00Z', finished_at: '2026-09-30T12:01:00Z' },
+  last_success_at: '2026-09-30T12:02:00Z',
+};
+const checkCoverage = {
+  contract: 'check-source-coverage/v1', recorded: true, scope: 'Returned sources only; earlier captures are not automatically revisited.',
+  sources: [checkedSource], search: { status: 'completed' }, prior_limit: 12, prior_truncated: false, prior_hidden: 0,
+};
+function renderCoverage(value) {
+  return renderToStaticMarkup(React.createElement(CheckSourceCoverageReader, { value, onOpen() {} }));
+}
+test('source coverage opens inline, escapes titles and connects retained evidence', () => {
+  const html = renderCoverage(checkCoverage);
+  assert.match(html, /<details[^>]*><summary>Sources in this check/);
+  assert.doesNotMatch(html, /<details[^>]*open|<script>/);
+  assert.match(html, /&lt;script&gt;Captured registry/);
+  assert.match(html, /href="https:\/\/example.org\/registry"/);
+  assert.match(html, /noopener noreferrer nofollow ugc/);
+  assert.match(html, /Captured text differs/);
+  assert.match(html, /Last successful analysis/);
+  assert.match(html, /Open captured evidence/);
+});
+for (const [read_status, expected] of Object.entries({
+  reading: 'Reading started; no result recorded', failed: 'Could not read', interrupted: 'Reading interrupted',
+  not_checked: 'Not checked this time', unavailable: 'Source no longer available',
+})) test(`source ${read_status} never renders retained capture success`, () => {
+  const html = renderCoverage({ ...checkCoverage, sources: [{ ...checkedSource, read_status, last_success_at: null }] });
+  assert.ok(html.includes(expected));
+  assert.doesNotMatch(html, /Captured text differs|Evidence analysed|Last successful analysis/);
+  if (read_status === 'not_checked') assert.match(html, /Open earlier capture/);
+});
+test('read but failed analysis is visibly different from failure to read', () => {
+  const html = renderCoverage({ ...checkCoverage, sources: [{ ...checkedSource, analysis_status: 'failed', last_success_at: null }] });
+  assert.match(html, /Read successfully/);
+  assert.match(html, /Read, but analysis failed/);
+  assert.doesNotMatch(html, /Last successful analysis|Could not read/);
+});
+test('unchanged capture explains skipped analysis without implying comprehensive coverage', () => {
+  const html = renderCoverage({ ...checkCoverage, sources: [{ ...checkedSource, capture_state: 'unchanged', analysis_status: 'not_needed' }] });
+  assert.match(html, /Captured text unchanged/);
+  assert.match(html, /analysis was not repeated/);
+  assert.match(html, /earlier captures are not automatically revisited/);
+});
+test('bounded lookback and unavailable older sources stay explicit', () => {
+  const html = renderCoverage({ ...checkCoverage, prior_truncated: true, prior_hidden: 1 });
+  assert.match(html, /outside this bounded list/);
+  assert.match(html, /Some earlier source details are no longer available/);
+});
+test('legacy source receipts are unavailable rather than retroactively inferred', () => {
+  const html = renderCoverage({ ...checkCoverage, recorded: false, scope: 'Receipts were not recorded.' });
+  assert.match(html, /history unavailable|not recorded/);
+  assert.doesNotMatch(html, /Captured registry|Read successfully|Open captured evidence/);
+});
+test('unsafe source addresses cannot create executable links', () => {
+  const html = renderCoverage({ ...checkCoverage, sources: [{ ...checkedSource, url: 'javascript:alert(1)' }] });
+  assert.doesNotMatch(html, /javascript:|href=/);
+});
+test('unavailable monitoring result hides retained source coverage and unknown contracts are ignored', () => {
+  const html = renderToStaticMarkup(React.createElement(MonitoringOutcomeReader, {
+    outcome: { ...monitoringResult, state: 'unavailable', source_coverage: checkCoverage }, onOpen() {},
+  }));
+  assert.doesNotMatch(html, /Sources in this check|Captured registry/);
+  assert.equal(renderCoverage({ ...checkCoverage, contract: 'unknown/v2' }), '');
+});

@@ -2,6 +2,7 @@
 import type { ComparedFinding } from '@/lib/claim-evolution';
 import type { MonitoringOutcome } from '@/lib/web-research';
 import { Button } from './ui/button';
+import { CheckSourceCoverageReader } from './check-source-coverage';
 
 const progress = {
   queued: ['Waiting to check', 'This check has not started yet.'],
@@ -160,6 +161,9 @@ export function MonitoringOutcomeReader({
           />
         </details>
       ))}
+      {outcome.state !== 'unavailable' && outcome.source_coverage && (
+        <CheckSourceCoverageReader value={outcome.source_coverage} onOpen={onOpen} />
+      )}
       {showEvidence && (
         <p className="source-meta">
           {outcome.scope} Preview of up to three findings and three comparisons.

@@ -24,6 +24,7 @@ export type MonitoringOutcome = {
   findings: ComparedFinding[];
   comparisons: EvidenceChange[];
   scope: string;
+  source_coverage?: CheckSourceCoverage;
 };
 
 export type WebCoverage = {
@@ -98,3 +99,33 @@ export function currentWebResearch(
 ) {
   return !error && data?.dossier_id === dossierId ? data : null;
 }
+
+export type CheckAttempt = {
+  status: 'not_started' | 'running' | 'completed' | 'unavailable' | 'interrupted';
+  started_at: string | null;
+  finished_at: string | null;
+};
+export type CheckedSource = {
+  title: string;
+  url: string | null;
+  source_id: string | null;
+  investigation_id: string | null;
+  read_status: 'read' | 'reading' | 'failed' | 'interrupted' | 'not_checked' | 'unavailable';
+  analysis_status: 'analysed' | 'analysing' | 'failed' | 'interrupted' | 'not_started' | 'not_needed' | 'unavailable';
+  capture_state: 'first_capture' | 'changed' | 'unchanged' | null;
+  attempt: CheckAttempt | null;
+  attempt_count: number;
+  analysis_attempt?: CheckAttempt | null;
+  captured_at?: string;
+  last_success_at: string | null;
+};
+export type CheckSourceCoverage = {
+  contract: 'check-source-coverage/v1';
+  recorded: boolean;
+  scope: string;
+  sources: CheckedSource[];
+  search: CheckAttempt | null;
+  prior_limit: number;
+  prior_truncated: boolean;
+  prior_hidden: number;
+};

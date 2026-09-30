@@ -655,3 +655,11 @@
   max-width: 52rem;
   overflow-wrap: anywhere;
 }
+
+.check-source-coverage {
+  margin-block: 1rem;
+  overflow-wrap: anywhere;
+}
+.check-source-coverage summary { cursor: pointer; }
+.check-source-coverage .coverage-list { margin-block: 1rem; }
+.check-source-coverage li + li { margin-block-start: 1rem; }
