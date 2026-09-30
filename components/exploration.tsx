@@ -641,6 +641,11 @@ function CurrentResearchReceipt({
       <output>
         <strong>{labels[activity.phase]}</strong>
         {activity.question !== originalQuestion && <> · {activity.question}</>}
+        {activity.checking_alternative && (
+          <>
+            . Checking another source after an earlier page could not be read.
+          </>
+        )}
       </output>
       {activity.latest_source && (
         <p className="muted">
@@ -852,6 +857,23 @@ function ObservedResearchScope({ state }: { state: ExplorationState }) {
           `${count(questions.open, 'research question')} still open. `}
         Selected passages; wider coverage remains unverified.
       </p>
+      {scope.source_recovery?.status === 'ready' &&
+        scope.source_recovery.failed_reads > 0 && (
+          <p className="muted" aria-label="Source recovery">
+            After unsuccessful reading attempts,{' '}
+            {count(
+              scope.source_recovery.reads_attempted,
+              'alternative reading attempt',
+            )}{' '}
+            saved passages from{' '}
+            {count(scope.source_recovery.captures, 'alternative source')}.{' '}
+            {scope.source_recovery.candidate_sets_exhausted > 0 &&
+              'Some directions have no further candidates in the saved search results. '}
+            {scope.source_recovery.unfinished > 0 &&
+              'Alternative checks remain unfinished. '}
+            These sources do not establish equal authority or a settled answer.
+          </p>
+        )}
       <details className="dossier-secondary">
         <summary>What was checked and what remains</summary>
         <ul>

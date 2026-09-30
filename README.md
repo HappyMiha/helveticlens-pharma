@@ -471,3 +471,10 @@ separate latest captured-source link. Current activity is bounded by the worker
 receipt and expires in the browser, including delayed responses or refreshes.
 Queue, pause, unavailable activity and old metadata remain honest. Reading history
 starts no work; the existing refresh and explicit monitoring remain unchanged.
+
+## Bounded source recovery — 1.59
+
+New exploratory episodes can gate already retrieved alternatives after a failed
+public read, within unchanged episode limits. Failed URLs are not automatically
+retried. The reader distinguishes current alternative work, captured material and
+exhausted candidates. No new setup field, search or monitoring authority.

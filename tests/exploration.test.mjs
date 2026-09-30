@@ -1185,3 +1185,152 @@ test('queue, pause, legacy and access changes replace prior working details; fin
   assert.equal(tree.root.findAllByType('button').length, 0);
   await act(async () => tree.unmount());
 });
+
+const recoveryScope = (recovery) => ({
+  contract: 'observed-research-scope/v1',
+  status: 'ready',
+  activity: 'completed',
+  searches: { completed: 1, unavailable: 0, interrupted: 0, running: 0 },
+  indexes: { completed: 1, unavailable: 0, unknown_searches: 0 },
+  reads: { completed: 1, unavailable: 2, interrupted: 0, running: 0 },
+  material: {
+    sources: 1,
+    passages: 1,
+    truncated_sources: 0,
+    unknown_reader_scope: 0,
+  },
+  candidates: {
+    retrieved: 4,
+    not_evaluated: 0,
+    evaluation_unavailable: 0,
+    selected_not_read: 0,
+  },
+  questions: { open: 1, not_started: 0 },
+  budget_stops: [],
+  source_recovery: {
+    contract: 'source-recovery/v1',
+    status: 'ready',
+    failed_reads: 2,
+    candidates_checked: 2,
+    reads_attempted: 1,
+    captures: 1,
+    candidate_sets_exhausted: 0,
+    unfinished: 0,
+    ...recovery,
+  },
+});
+
+for (const mode of ['captured', 'exhausted', 'budget']) {
+  test(`source recovery explains ${mode} without new actions or invented certainty`, async () => {
+    const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+    const value = episode();
+    const scope = recoveryScope(
+      mode === 'captured'
+        ? {}
+        : {
+            reads_attempted: 0,
+            captures: 0,
+            candidate_sets_exhausted: Number(mode === 'exhausted'),
+            unfinished: Number(mode === 'budget'),
+          },
+    );
+    if (mode === 'budget') scope.budget_stops = ['source_fetches'];
+    value.exploration.research_scope = scope;
+    let requests = 0;
+    globalThis.fetch = async () => {
+      requests++;
+      throw new Error('History cannot start research');
+    };
+    let tree;
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    const summary = tree.root.findByProps({ 'aria-label': 'Source recovery' });
+    const content = JSON.stringify(
+      summary.toJSON ? summary.toJSON() : summary.props.children,
+    );
+    assert.ok(
+      content.includes(
+        mode === 'captured'
+          ? '1 alternative reading attempt'
+          : '0 alternative reading attempts',
+      ),
+    );
+    assert.ok(
+      text(tree).includes(
+        mode === 'captured' ? '1 alternative source' : '0 alternative sources',
+      ),
+    );
+    assert.equal(
+      text(tree).includes('no further candidates'),
+      mode === 'exhausted',
+    );
+    assert.equal(
+      text(tree).includes('Alternative checks remain unfinished'),
+      mode === 'budget',
+    );
+    if (mode === 'budget')
+      assert.ok(text(tree).includes('source reading budget'));
+    assert.equal(tree.root.findAllByType('button').length, 0);
+    assert.equal(requests, 0);
+    await act(async () => tree.unmount());
+  });
+}
+
+test('source recovery drops prior counts when access changes and does not invent legacy recovery', async () => {
+  const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+  const value = episode();
+  let tree;
+  for (const status of ['ready', 'unknown', 'evidence_changed']) {
+    value.exploration.research_scope =
+      status === 'evidence_changed'
+        ? { contract: 'observed-research-scope/v1', status }
+        : recoveryScope({ status });
+    await act(async () => {
+      const element = React.createElement(ExplorationBrief, {
+        state: value.exploration,
+      });
+      if (tree) tree.update(element);
+      else tree = create(element);
+    });
+    assert.equal(
+      tree.root.findAllByProps({ 'aria-label': 'Source recovery' }).length,
+      Number(status === 'ready'),
+    );
+  }
+  await act(async () => tree.unmount());
+});
+
+test('only a current alternative receipt explains checking another source and expiry removes it', async (t) => {
+  let clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { ResearchActivity } = require(resolve('components/exploration.tsx'));
+  const value = episode();
+  value.exploration.current_activity = {
+    ...liveActivity(),
+    phase: 'gate',
+    checking_alternative: true,
+  };
+  let tree;
+  await act(async () => {
+    tree = create(
+      React.createElement(ResearchActivity, {
+        state: value.exploration,
+        readStartedAt: clock,
+      }),
+    );
+  });
+  assert.ok(
+    text(tree).includes(
+      'Checking another source after an earlier page could not be read',
+    ),
+  );
+  clock = 151;
+  await act(async () => t.mock.timers.tick(51));
+  assert.ok(!text(tree).includes('Checking another source'));
+  assert.ok(text(tree).includes('Current activity is not confirmed'));
+  await act(async () => tree.unmount());
+});

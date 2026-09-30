@@ -63,6 +63,18 @@ export type QuestionAssessment = {
   }[];
   limitations: string[];
 };
+export type SourceRecovery =
+  | { contract: 'source-recovery/v1'; status: 'unknown' | 'evidence_changed' }
+  | {
+      contract: 'source-recovery/v1';
+      status: 'ready';
+      failed_reads: number;
+      candidates_checked: number;
+      reads_attempted: number;
+      captures: number;
+      candidate_sets_exhausted: number;
+      unfinished: number;
+    };
 export type ResearchScope =
   | {
       contract: 'observed-research-scope/v1';
@@ -72,6 +84,7 @@ export type ResearchScope =
       contract: 'observed-research-scope/v1';
       status: 'ready';
       activity: string;
+      source_recovery?: SourceRecovery;
       searches: ResearchAttempts;
       indexes: {
         completed: number;
@@ -118,6 +131,7 @@ export type ResearchActivity =
       question: string;
       observed_at: string;
       valid_for_ms: number;
+      checking_alternative?: boolean;
       latest_source: {
         id: string;
         title: string;
