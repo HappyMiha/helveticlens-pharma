@@ -676,6 +676,26 @@ function CurrentResearchReceipt({
 
 export function ExplorationBrief({ state }: { state: ExplorationState }) {
   const brief = state.briefing;
+  const update = state.research_update;
+  const promotedAssessment =
+    !brief &&
+    state.status !== 'evidence_changed' &&
+    state.question_assessments?.status === 'ready' &&
+    update?.contract === 'question-research-update/v1' &&
+    Number.isSafeInteger(update.event_sequence) &&
+    update.event_sequence > 0 &&
+    !Number.isNaN(Date.parse(update.saved_at))
+      ? state.question_assessments.assessments.find(
+          (item) =>
+            item.question_id === update.question_id &&
+            item.stage !== 'final_briefing' &&
+            item.points.every((point) =>
+              point.evidence.every((ref) =>
+                state.sources.some((source) => source.id === ref.source_id),
+              ),
+            ),
+        )
+      : undefined;
   function quote(item: Citation) {
     const source = state?.sources.find(
       (source) => source.id === item.source_id,
@@ -698,9 +718,43 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
     return (
       <>
         <ContinuedCheck state={state} />
-        <EarlyOrientation state={state} />
-        <InterpretationChanges state={state} />
-        <BranchQuestionProgress state={state} />
+        {promotedAssessment && update ? (
+          <>
+            <section
+              className="exploration-understanding"
+              key={`${promotedAssessment.question_id}:${update.event_sequence}`}
+            >
+              <span className="content-origin">AI · saved research update</span>
+              <h3>{promotedAssessment.question}</h3>
+              <p className="muted">
+                Saved {date(update.saved_at)} · Based on the passages read.
+              </p>
+              <QuestionCheckpointContent
+                assessment={promotedAssessment}
+                state={state}
+              />
+              <p className="muted">
+                This assessment remains open to human review.
+              </p>
+            </section>
+            {(state.orientation || !!state.changes?.length) && (
+              <details className="dossier-secondary">
+                <summary>Earlier research context</summary>
+                <EarlyOrientation state={state} historical />
+                <InterpretationChanges state={state} />
+              </details>
+            )}
+          </>
+        ) : (
+          <>
+            <EarlyOrientation state={state} />
+            <InterpretationChanges state={state} />
+          </>
+        )}
+        <BranchQuestionProgress
+          state={state}
+          excludeQuestionId={promotedAssessment?.question_id}
+        />
         <ObservedResearchScope state={state} />
       </>
     );
@@ -831,12 +885,22 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
   );
 }
 
-function BranchQuestionProgress({ state }: { state: ExplorationState }) {
+function BranchQuestionProgress({
+  state,
+  excludeQuestionId,
+}: {
+  state: ExplorationState;
+  excludeQuestionId?: string;
+}) {
   const value = state.question_assessments;
   if (
     state.status === 'evidence_changed' ||
     value?.status !== 'ready' ||
-    (!value.assessments.length && !value.unassessed && !value.outdated)
+    (!value.assessments.some(
+      (item) => item.question_id !== excludeQuestionId,
+    ) &&
+      !value.unassessed &&
+      !value.outdated)
   )
     return null;
 
@@ -847,30 +911,32 @@ function BranchQuestionProgress({ state }: { state: ExplorationState }) {
         AI assessments of the passages read at each checkpoint. Capturing
         material does not mean the question is answered.
       </p>
-      {value.assessments.map((assessment) => (
-        <article key={assessment.question_id}>
-          <h4>{assessment.question}</h4>
-          {assessment.stage === 'final_briefing' && (
-            <p className="content-origin">Updated in the research summary</p>
-          )}
-          <QuestionCheckpointContent assessment={assessment} state={state} />
-          {!!assessment.earlier?.length && (
-            <details className="exploration-citation">
-              <summary>Earlier assessment</summary>
-              <p className="muted">
-                Saved before the later evidence was considered.
-              </p>
-              {assessment.earlier.map((earlier, index) => (
-                <QuestionCheckpointContent
-                  key={index}
-                  assessment={earlier}
-                  state={state}
-                />
-              ))}
-            </details>
-          )}
-        </article>
-      ))}
+      {value.assessments
+        .filter((item) => item.question_id !== excludeQuestionId)
+        .map((assessment) => (
+          <article key={assessment.question_id}>
+            <h4>{assessment.question}</h4>
+            {assessment.stage === 'final_briefing' && (
+              <p className="content-origin">Updated in the research summary</p>
+            )}
+            <QuestionCheckpointContent assessment={assessment} state={state} />
+            {!!assessment.earlier?.length && (
+              <details className="exploration-citation">
+                <summary>Earlier assessment</summary>
+                <p className="muted">
+                  Saved before the later evidence was considered.
+                </p>
+                {assessment.earlier.map((earlier, index) => (
+                  <QuestionCheckpointContent
+                    key={index}
+                    assessment={earlier}
+                    state={state}
+                  />
+                ))}
+              </details>
+            )}
+          </article>
+        ))}
       {!!value.outdated && (
         <p className="muted">
           Earlier assessments changed with new public evidence and need a fresh

@@ -531,3 +531,16 @@ verification; live semantic quality and professional/human acceptance remain ope
 Question renewal 1.65 can update a cited question assessment in the existing research summary after later evidence. Earlier eligible checkpoints remain in closed details; no new form or automatic continuation is introduced. Full semantic and human acceptance remain open.
 
 New explorations can keep an independently valid cited research summary when an optional question update fails. The reader explains the unchanged earlier assessments; shared evidence changes and invalid required answers still withhold dependent results. No extra research request is started.
+
+
+### Saved research updates (1.67)
+
+While exploration continues, the working reader can show one completed question
+assessment with its retained support/counterevidence passages and limitations.
+The Core selects by an actual saved assessment event, not list position or fetch
+time. The saved result remains distinct from current activity and pause/cancel.
+Earlier understanding remains folded context; other question checkpoints remain
+secondary, with no duplicate promoted question. The final briefing takes over.
+Legacy, unavailable or changed evidence never manufactures a fresh update.
+Existing request/session/access fences handle delayed polling; reading starts no
+new work. Source containment is not independent semantic or human acceptance.

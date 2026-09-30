@@ -1992,3 +1992,275 @@ for (const mode of [
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+function savedUpdateEpisode(status = 'running') {
+  const value = episode({ status });
+  value.exploration.status = 'exploring';
+  value.exploration.briefing = null;
+  value.exploration.orientation = orientation();
+  value.exploration.research_update = {
+    contract: 'question-research-update/v1',
+    question_id: 'q-update',
+    event_sequence: 12,
+    saved_at: '2026-09-30T08:00:00Z',
+  };
+  value.exploration.question_assessments = {
+    contract: 'branch-question-assessment/v1',
+    status: 'ready',
+    unassessed: 0,
+    assessments: [
+      {
+        question_id: 'q-update',
+        question: 'Which part of this question is supported?',
+        status: 'conflicting',
+        points: [
+          {
+            statement: 'The read accounts disagree about the reported scope.',
+            evidence: [
+              {
+                source_id: 's',
+                quote: 'The source passage is here.',
+                locator: 'p1',
+                role: 'support',
+              },
+              {
+                source_id: 's',
+                quote: 'A different retained passage.',
+                locator: 'p2',
+                role: 'counterevidence',
+              },
+            ],
+          },
+        ],
+        limitations: ['The wider context still needs investigation.'],
+      },
+    ],
+  };
+  return value;
+}
+
+for (const mode of ['running', 'paused', 'cancelled', 'history'])
+  test(`saved research update promotes one cited assessment without invented activity: ${mode}`, async () => {
+    const value = savedUpdateEpisode(mode === 'history' ? 'cancelled' : mode);
+    value.exploration.current_activity = {
+      contract: 'research-activity/v1',
+      status: mode === 'paused' ? 'paused' : 'finished',
+    };
+    serve(value, () => {
+      throw new Error('Reading must not start work');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, {
+            ...props,
+            canEdit: false,
+            historical: mode === 'history',
+          }),
+        );
+      });
+      assert.match(text(tree), /AI · saved research update/);
+      assert.match(
+        text(tree),
+        /Conflicting evidence; the question remains open/,
+      );
+      assert.match(text(tree), /Supporting passage/);
+      assert.match(text(tree), /Counterevidence/);
+      assert.match(text(tree), /The wider context still needs investigation/);
+      assert.equal(
+        tree.root
+          .findAllByType('h3')
+          .filter(
+            (x) =>
+              x.props.children === 'Which part of this question is supported?',
+          ).length,
+        1,
+      );
+      assert.equal(
+        tree.root
+          .findAllByType('h4')
+          .filter(
+            (x) =>
+              x.props.children === 'Which part of this question is supported?',
+          ).length,
+        0,
+      );
+      assert.ok(
+        tree.root
+          .findAllByType('a')
+          .some((x) => x.props.href === 'https://example.org/record'),
+      );
+      const earlier = tree.root
+        .findAllByType('summary')
+        .find((x) => x.props.children === 'Earlier research context');
+      assert.ok(earlier);
+      assert.notEqual(earlier.parent.props.open, true);
+      assert.equal(tree.root.findAllByType('form').length, 0);
+      assert.doesNotMatch(
+        text(tree),
+        /Research checkpoints by question|Searching for sources/,
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+for (const invalid of [
+  'legacy',
+  'unknown_contract',
+  'wrong_question',
+  'bad_time',
+  'bad_order',
+  'changed',
+  'missing_source',
+])
+  test(`saved research update never promotes unknown or stale context: ${invalid}`, async () => {
+    const value = savedUpdateEpisode();
+    if (invalid === 'legacy') delete value.exploration.research_update;
+    if (invalid === 'unknown_contract')
+      value.exploration.research_update.contract = 'unknown';
+    if (invalid === 'wrong_question')
+      value.exploration.research_update.question_id = 'unrelated';
+    if (invalid === 'bad_time')
+      value.exploration.research_update.saved_at = 'not a date';
+    if (invalid === 'bad_order')
+      value.exploration.research_update.event_sequence = 0;
+    if (invalid === 'changed')
+      value.exploration.question_assessments = {
+        contract: 'branch-question-assessment/v1',
+        status: 'evidence_changed',
+      };
+    if (invalid === 'missing_source') value.exploration.sources = [];
+    serve(value, () => {
+      throw new Error('Reading must not start work');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      assert.doesNotMatch(
+        text(tree),
+        /AI · saved research update|Earlier research context/,
+      );
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });
+
+test('saved research update yields to final summary and returns only when an available finding remains', async () => {
+  const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+  const value = savedUpdateEpisode();
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(ExplorationBrief, { state: value.exploration }),
+      );
+    });
+    assert.match(text(tree), /AI · saved research update/);
+    const ready = {
+      ...value.exploration,
+      status: 'ready',
+      briefing: episode().exploration.briefing,
+    };
+    await act(async () => {
+      tree.update(React.createElement(ExplorationBrief, { state: ready }));
+    });
+    assert.doesNotMatch(
+      text(tree),
+      /AI · saved research update|Earlier research context/,
+    );
+    assert.match(text(tree), /An AI interpretation/);
+    assert.match(text(tree), /Research checkpoints by question/);
+    const unavailable = { ...value.exploration, status: 'unavailable' };
+    await act(async () => {
+      tree.update(
+        React.createElement(ExplorationBrief, { state: unavailable }),
+      );
+    });
+    assert.match(text(tree), /AI · saved research update/);
+    await act(async () => {
+      tree.update(
+        React.createElement(ExplorationBrief, {
+          state: { ...unavailable, status: 'evidence_changed' },
+        }),
+      );
+    });
+    assert.doesNotMatch(
+      text(tree),
+      /AI · saved research update|The read accounts disagree/,
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('saved research update polling retains identity and rejects late reads after a newer finding or denial', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const value = savedUpdateEpisode();
+  serve(value, () => {
+    throw new Error('Polling must not write');
+  });
+  const initialFetch = globalThis.fetch;
+  let defer = false;
+  const pending = [];
+  globalThis.fetch = (url, init) =>
+    defer && url === `${base}/r`
+      ? new Promise((resolve) => pending.push(resolve))
+      : initialFetch(url, init);
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(
+        React.createElement(Exploration, { ...props, canEdit: false }),
+      );
+    });
+    const section = () =>
+      tree.root
+        .findAllByType('section')
+        .find((x) =>
+          x
+            .findAllByType('h3')
+            .some(
+              (h) =>
+                h.props.children ===
+                'Which part of this question is supported?',
+            ),
+        );
+    const savedNode = section();
+    defer = true;
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => pending[0](Response.json(value)));
+    assert.strictEqual(section(), savedNode);
+    assert.equal(
+      savedNode.findAll((x) => x.props['aria-live'] || x.props.autoFocus)
+        .length,
+      0,
+    );
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    const newer = structuredClone(value);
+    newer.revision++;
+    newer.exploration.research_update.event_sequence = 25;
+    newer.exploration.question_assessments.assessments[0].points[0].statement =
+      'A later supported checkpoint.';
+    await act(async () => pending[2](Response.json(newer)));
+    await act(async () => pending[1](Response.json(value)));
+    assert.match(text(tree), /A later supported checkpoint/);
+    assert.doesNotMatch(text(tree), /The read accounts disagree/);
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => t.mock.timers.tick(10000));
+    await act(async () => pending[4](Response.json({}, { status: 403 })));
+    await act(async () => pending[3](Response.json(newer)));
+    assert.doesNotMatch(
+      text(tree),
+      /AI · saved research update|A later supported checkpoint/,
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});

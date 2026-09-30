@@ -201,6 +201,12 @@ export type BranchQuestionAssessments =
       })[];
     };
 export type ExplorationState = {
+  research_update?: {
+    contract: 'question-research-update/v1';
+    question_id: string;
+    event_sequence: number;
+    saved_at: string;
+  } | null;
   question_assessments?: BranchQuestionAssessments;
   current_activity?: ResearchActivity;
   research_scope?: ResearchScope;
