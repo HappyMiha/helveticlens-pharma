@@ -16,9 +16,11 @@ import { NativeSelect, NativeSelectOption } from './ui/native-select';
 export function WebResearchPanel({
   dossierId,
   onOpen,
+  showSettings = true,
 }: {
   dossierId: string;
   onOpen: (id: string) => void;
+  showSettings?: boolean;
 }) {
   const base = `/products/${product.id}/dossiers/${dossierId}/web-research`;
   const [offset, setOffset] = useState(0);
@@ -51,19 +53,20 @@ export function WebResearchPanel({
       )}
       {page && (
         <>
-          <WebPolicyStatus policy={page.policy} />
-          {page.can_manage ? (
-            <WebPolicyForm
-              key={page.policy.revision}
-              base={base}
-              policy={page.policy}
-              onSaved={refresh}
-            />
-          ) : (
-            <p className="investigation-muted">
-              A dossier editor can manage recurring search.
-            </p>
-          )}
+          {showSettings && <WebPolicyStatus policy={page.policy} />}
+          {showSettings &&
+            (page.can_manage ? (
+              <WebPolicyForm
+                key={page.policy.revision}
+                base={base}
+                policy={page.policy}
+                onSaved={refresh}
+              />
+            ) : (
+              <p className="investigation-muted">
+                A dossier editor can manage recurring search.
+              </p>
+            ))}
           <div className="evolution-tools">
             <h3>Recurring search history</h3>
             <Button variant="ghost" onClick={refresh}>
@@ -135,7 +138,7 @@ export function WebPolicyStatus({ policy }: { policy: WebResearch['policy'] }) {
       <p className="investigation-muted">{policy.readiness.reason}</p>
       <p>
         {policy.cadence_hours === 24 ? 'Daily' : 'Weekly'} · {policy.used_today}{' '}
-        of {policy.daily_limit} starts/retries used today
+        starts or retries today · no daily start quota
       </p>
       <p className="source-meta">Last checked: {date(policy.checked_at)}</p>
       <p className="source-meta">
@@ -144,7 +147,8 @@ export function WebPolicyStatus({ policy }: { policy: WebResearch['policy'] }) {
       </p>
       <p className="investigation-muted">
         Capacity or source availability can delay a run. Missed runs do not
-        accumulate. The daily limit resets at 00:00 UTC.
+        accumulate. Research and retries stay within this dossier’s existing
+        place.
       </p>
     </div>
   );

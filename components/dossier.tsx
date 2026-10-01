@@ -1,5 +1,5 @@
 'use client';
-import { PrivateDossierFollowing } from './research-following';
+import { DossierControls } from './dossier-controls';
 import { researchFocus } from '@/lib/research-following';
 import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
@@ -324,6 +324,7 @@ export function Dossier({
           {d.research_monitoring && (
             <QuestionMonitoring
               key={`question-monitoring:${d.id}:${userId || ''}`}
+              onManage={() => setTab('monitoring')}
               dossierId={d.id}
               onChanged={reload}
             />
@@ -1055,81 +1056,59 @@ export function Dossier({
           >
             <p className="chapter-kicker">06 / Monitoring</p>
             <h2>How this dossier stays up to date</h2>
-            <div className="dossier-actions">
-              <Status status={p.status} />
-              {p.status === 'draft' ? (
-                <Button
-                  variant="outline"
-                  disabled={!canConfigure || !!busy}
-                  onClick={onSetup}
-                >
-                  Monitoring setup
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  disabled={!canMonitor || !!busy}
-                  onClick={() =>
-                    run('Updating topic monitoring', async () => {
-                      await api(`/monitoring-profiles/${p.id}/status`, {
-                        expected_revision: p.revision,
-                        status: p.status === 'active' ? 'paused' : 'active',
-                      });
-                      await refreshed();
-                      notify(
-                        'Topic monitoring updated. Shared source collection and document page watches keep their separate settings.',
-                      );
-                    })
-                  }
-                >
-                  {p.status === 'active' ? (
-                    <Pause size={16} />
-                  ) : (
-                    <Play size={16} />
-                  )}{' '}
-                  {p.status === 'active' ? 'Pause topics' : 'Resume topics'}
-                </Button>
-              )}
-            </div>
-            <section className="surface delivery-card">
-              <Bell size={21} />
-              <h3>Delivery</h3>
-              <p>In-app dossier and your personal organization digest.</p>
-              <span className="tag">
-                {c.delivery === 'keep'
-                  ? 'Existing email settings'
-                  : c.delivery === 'off'
-                    ? 'Email turned off at setup'
-                    : c.delivery + ' at setup'}
-              </span>
-              <p className="muted">
-                Delivery choices shown here record the setup. Manage current
-                email settings in the platform.
-              </p>
-              <a
-                className="source-link"
-                href="https://helveticlens.ch/digests"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open digest settings
-                <ArrowUpRight size={15} />
-              </a>
-            </section>
-            {userId && (
-              <PrivateDossierFollowing
-                key={`${d.id}:${userId}`}
-                dossierId={d.id}
-                userId={userId}
-              />
-            )}
-            <MonitoringResearchPanel
+            <DossierControls
               key={`${d.id}:${userId || ''}`}
               dossierId={d.id}
-              onOpen={openInvestigation}
+              question={c.goal || ''}
+              onChanged={refreshed}
             />
+            <details className="monitoring-research-settings">
+              <summary>Advanced connected-source settings</summary>
+              <div className="dossier-actions">
+                <Status status={p.status} />
+                {p.status === 'draft' ? (
+                  <Button
+                    variant="outline"
+                    disabled={!canConfigure || !!busy}
+                    onClick={onSetup}
+                  >
+                    Monitoring setup
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    disabled={!canMonitor || !!busy}
+                    onClick={() =>
+                      run('Updating topic monitoring', async () => {
+                        await api(`/monitoring-profiles/${p.id}/status`, {
+                          expected_revision: p.revision,
+                          status: p.status === 'active' ? 'paused' : 'active',
+                        });
+                        await refreshed();
+                        notify(
+                          'Topic monitoring updated. Shared source collection and document page watches keep their separate settings.',
+                        );
+                      })
+                    }
+                  >
+                    {p.status === 'active' ? (
+                      <Pause size={16} />
+                    ) : (
+                      <Play size={16} />
+                    )}{' '}
+                    {p.status === 'active' ? 'Pause topics' : 'Resume topics'}
+                  </Button>
+                )}
+              </div>
+              <MonitoringResearchPanel
+                key={`${d.id}:${userId || ''}`}
+                dossierId={d.id}
+                onOpen={openInvestigation}
+              />
+            </details>
             <WebResearchPanel
               key={`web:${d.id}:${userId || ''}`}
+              showSettings={false}
               dossierId={d.id}
               onOpen={openInvestigation}
             />

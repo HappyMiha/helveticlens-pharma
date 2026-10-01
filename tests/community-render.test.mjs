@@ -1492,7 +1492,7 @@ test('recurring status and access guard hide stale data without inventing a chec
   const html = renderToStaticMarkup(
     React.createElement(WebPolicyStatus, { policy: webPolicy }),
   );
-  assert.match(html, /0 of 2 starts\/retries/);
+  assert.match(html, /0 starts or retries today · no daily start quota/);
   assert.match(html, /Not scheduled/);
   assert.match(html, /Not checked yet/);
   assert.doesNotMatch(html, /lens-overlay|Verified|100%/);

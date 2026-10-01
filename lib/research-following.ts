@@ -8,6 +8,12 @@ export type ResearchSummary = {
 export type PersonalFollow = {
   following: boolean;
   delivery_mode?: 'immediate' | 'digest' | 'silent';
+  email?: {
+    mode: 'off' | 'immediate' | 'daily' | 'weekly';
+    state: string | null;
+    last_sent_at: string | null;
+    next_delivery_at: string | null;
+  };
   available: boolean;
   revision: number;
   marker: string | null;

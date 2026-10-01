@@ -1,5 +1,12 @@
 # Changes
 
+## 1.89.0
+
+- One dossier surface for the public monitoring question, schedule, personal in-app updates and separately opted-in email.
+- Shared completion-based research for scheduled checks, with saved deeper discovery and no daily start quota.
+- Actual source and provider limitations remain visible alongside the evidence.
+
+
 ## 1.88.0 — Finish dense documents across saved review steps
 
 Large originals can now finish reconciliation across multiple analysis requests. All sections and internal-reference targets enter saved reviews, then cited findings are brought together. A failed merge resumes from completed work. The dossier distinguishes checking citations from bringing findings together; invented merge quotations are rejected.

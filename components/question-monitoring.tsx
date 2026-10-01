@@ -11,9 +11,11 @@ import { Button } from './ui/button';
 export function QuestionMonitoring({
   dossierId,
   onChanged,
+  onManage,
 }: {
   dossierId: string;
   onChanged: () => Promise<void>;
+  onManage?: () => void;
 }) {
   const base = `/products/${product.id}/dossiers/${dossierId}/web-research`;
   const resource = useResource<WebResearch>(base);
@@ -101,13 +103,15 @@ export function QuestionMonitoring({
             <Button
               variant="outline"
               disabled={busy}
-              onClick={() => void toggle()}
+              onClick={() => (onManage ? onManage() : void toggle())}
             >
-              {busy
-                ? 'Saving…'
-                : page.policy.enabled
-                  ? 'Pause monitoring'
-                  : 'Resume monitoring'}
+              {onManage
+                ? 'Manage monitoring and updates'
+                : busy
+                  ? 'Saving…'
+                  : page.policy.enabled
+                    ? 'Pause monitoring'
+                    : 'Resume monitoring'}
             </Button>
           )}
         </>

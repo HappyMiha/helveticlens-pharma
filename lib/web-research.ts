@@ -74,7 +74,7 @@ export type WebResearch = {
     revision: number;
     question: string;
     cadence_hours: 24 | 168;
-    daily_limit: number;
+    daily_limit: number | null;
     used_today: number;
     readiness: { configured: boolean; reason: string };
     next_run_at: string | null;
@@ -105,7 +105,12 @@ export function currentWebResearch(
 }
 
 export type CheckAttempt = {
-  status: 'not_started' | 'running' | 'completed' | 'unavailable' | 'interrupted';
+  status:
+    | 'not_started'
+    | 'running'
+    | 'completed'
+    | 'unavailable'
+    | 'interrupted';
   started_at: string | null;
   finished_at: string | null;
 };
@@ -114,8 +119,21 @@ export type CheckedSource = {
   url: string | null;
   source_id: string | null;
   investigation_id: string | null;
-  read_status: 'read' | 'reading' | 'failed' | 'interrupted' | 'not_checked' | 'unavailable';
-  analysis_status: 'analysed' | 'analysing' | 'failed' | 'interrupted' | 'not_started' | 'not_needed' | 'unavailable';
+  read_status:
+    | 'read'
+    | 'reading'
+    | 'failed'
+    | 'interrupted'
+    | 'not_checked'
+    | 'unavailable';
+  analysis_status:
+    | 'analysed'
+    | 'analysing'
+    | 'failed'
+    | 'interrupted'
+    | 'not_started'
+    | 'not_needed'
+    | 'unavailable';
   capture_state: 'first_capture' | 'changed' | 'unchanged' | null;
   attempt: CheckAttempt | null;
   attempt_count: number;

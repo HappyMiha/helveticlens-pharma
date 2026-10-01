@@ -1655,3 +1655,44 @@
 .research-update-findings li {
   margin-block: 0.75rem;
 }
+.dossier-controls {
+  max-width: 52rem;
+  margin-block: 1.5rem;
+  padding: clamp(1rem, 4vw, 2rem);
+}
+.dossier-controls h3 {
+  margin-block: 0 0.7rem;
+}
+.dossier-controls hr {
+  margin-block: 2rem;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.dossier-controls fieldset {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+.dossier-controls label {
+  display: grid;
+  gap: 0.5rem;
+}
+.dossier-controls select {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+.dossier-controls .evolution-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+.dossier-controls p {
+  overflow-wrap: anywhere;
+}

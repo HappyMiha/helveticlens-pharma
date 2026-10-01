@@ -374,7 +374,7 @@ export default function Guide() {
               </p>
               <h3>Keep discovering new sources.</h3>
               <p>
-                Open Monitoring → Keep discovering new sources in any dossier,
+                Open Monitoring → Keep this dossier current in any dossier,
                 including a private draft. An editor can enter one public
                 question, choose daily or weekly searching and confirm recurring
                 use by external providers. The question is never expanded with
@@ -382,21 +382,29 @@ export default function Guide() {
                 audience.
               </p>
               <p>
-                Each run uses Jev/TypeSafe with Laya fallback across the
-                configured public indexes, then reads up to three permitted
-                sources. Unchanged captured bodies and excerpts skip repeated
-                analysis. New evidence is extracted independently before
-                comparison with earlier findings. Search snippets are not
-                evidence.
+                Each scheduled check uses the same research mission as your
+                original question. It discovers primary sources, follows useful
+                result pages and accessible archive dates, reads retained
+                originals through to the end and compares the evidence with
+                earlier findings. Search snippets are not evidence. Missing
+                access and unresolved contradictions remain visible.
               </p>
               <p>
                 Inspect the last check, next scheduled search and actual run
-                history. Two starts or explicit retries are allowed per UTC day,
-                within the shared platform query budget. Source reading still
-                runs for unchanged pages. Cost estimates cover only reported
-                decision inference; unavailable costs and unmeasured accuracy
-                remain explicit. Pause the schedule at any time. This adds no
-                publication or email subscription.
+                history. There is no daily research-start quota or internal
+                completion budget. One investigation runs per dossier at a time;
+                missed schedules do not accumulate. Costs are reported where
+                measured and otherwise remain unknown. Your account dossier
+                allowance covers both products and includes later research in
+                the same dossier. Pause the schedule at any time.
+              </p>
+              <p>
+                Under Your updates, choose immediate, daily or quiet in-app
+                updates. Email is off by default. With a verified address, you
+                can explicitly enable immediate, daily or weekly dossier emails.
+                This is your personal preference. Access and current evidence
+                are checked again before delivery. Uncertain delivery is shown
+                honestly and is retried only when you request it.
               </p>
               <h3>Let saved page changes update your research.</h3>
               <p>
@@ -1067,8 +1075,9 @@ export default function Guide() {
             Unchanged repeat captures and research progress do not create
             updates. Mark current updates seen only affects your reading
             position; it does not verify claims or review monitoring
-            observations. Following sends no email. Current access is checked
-            whenever updates refresh.
+            observations. Following alone enables no email. Private dossier
+            emails require a separate choice under Monitoring. Current access is
+            checked whenever updates refresh and before email delivery.
           </p>
         </section>
       </main>

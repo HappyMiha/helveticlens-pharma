@@ -34,7 +34,10 @@ export function FollowControls({
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  async function change(read = false, mode?: 'immediate' | 'digest' | 'silent') {
+  async function change(
+    read = false,
+    mode?: 'immediate' | 'digest' | 'silent',
+  ) {
     setBusy(true);
     setError('');
     try {
@@ -42,7 +45,11 @@ export function FollowControls({
         `${baseFor(audience, id)}${read ? '/read' : ''}`,
         read
           ? { expected_revision: state.revision, marker: state.marker }
-          : { expected_revision: state.revision, following: mode ? state.following : !state.following, ...(mode ? { delivery_mode: mode } : {}) },
+          : {
+              expected_revision: state.revision,
+              following: mode ? state.following : !state.following,
+              ...(mode ? { delivery_mode: mode } : {}),
+            },
       );
       window.dispatchEvent(new Event('helvetic-following-changed'));
       await onChanged();
@@ -84,15 +91,32 @@ export function FollowControls({
           </Button>
         )}
       </div>
-      {state.following && <label className="research-delivery-choice">In-app updates
-        <select aria-label="When to show dossier updates" value={state.delivery_mode || 'immediate'} disabled={busy}
-          onChange={e => void change(false, e.target.value as 'immediate' | 'digest' | 'silent')}>
-          <option value="immediate">New findings and important changes now</option>
-          <option value="digest">Daily summary</option>
-          <option value="silent">Quietly save updates</option>
-        </select>
-        <span className="muted">Daily summaries include the previous UTC day. No email is enabled.</span>
-      </label>}
+      {state.following && (
+        <label className="research-delivery-choice">
+          In-app updates
+          <select
+            aria-label="When to show dossier updates"
+            value={state.delivery_mode || 'immediate'}
+            disabled={busy}
+            onChange={(e) =>
+              void change(
+                false,
+                e.target.value as 'immediate' | 'digest' | 'silent',
+              )
+            }
+          >
+            <option value="immediate">
+              New findings and important changes now
+            </option>
+            <option value="digest">Daily summary</option>
+            <option value="silent">Quietly save updates</option>
+          </select>
+          <span className="muted">
+            Daily summaries include the previous UTC day. Private dossier email
+            is managed under Monitoring.
+          </span>
+        </label>
+      )}
       {state.following && state.unread && (
         <p className="public-meta">
           Marks the current dossier updates seen. This does not verify or
@@ -130,7 +154,8 @@ export function ResearchUpdateItem({
     <article className="research-update">
       <p className="public-meta">
         {item.unseen ? 'Unseen · ' : ''}Saved {date(item.completed_at)}
-        {item.delivery === 'waiting_for_digest' && ' · Included in the next daily summary'}
+        {item.delivery === 'waiting_for_digest' &&
+          ' · Included in the next daily summary'}
         {item.delivery === 'silent' && ' · Saved quietly'}
       </p>
       <h3>
@@ -148,75 +173,90 @@ export function ResearchUpdateItem({
           ? ` · ${item.comparison_counts.CORROBORATES} supporting comparisons`
           : ''}
       </p>
-      {item.outcome ? <MonitoringOutcomeReader outcome={item.outcome} onOpen={(run) => { window.location.href = href(run); }} /> : <>
-      {item.findings.length > 0 && (
-        <ul
-          className="research-update-findings"
-          aria-label="Source-linked machine findings"
-        >
-          {item.findings.map((finding) => (
-            <li key={finding.id}>
-              <a href={href(item.investigation_id, `claim-${finding.id}`)}>
-                {finding.statement}
-              </a>
-              <span className="public-meta">
-                {' '}
-                · {finding.status.toLowerCase()}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {item.sources.map((source) => (
-        <figure key={source.id}>
-          <blockquote>
-            {source.quote}
-            {source.truncated ? '…' : ''}
-          </blockquote>
-          <figcaption>
-            <a href={href(item.investigation_id, `source-${source.id}`)}>
-              {source.title} · {source.locator} · Open captured evidence
-            </a>
-          </figcaption>
-        </figure>
-      ))}
-      {item.comparisons.map((change) => (
-        <details key={change.id} className="research-update-comparison">
-          <summary>
-            {change.kind === 'CONTRADICTS'
-              ? 'Possible contradiction'
-              : change.kind === 'UPDATES'
-                ? 'Proposed update'
-                : 'Supporting comparison'}{' '}
-            · inspect both sources
-          </summary>
-          {[change.previous, change.current].map((finding, index) => (
-            <figure key={finding.id}>
+      {item.outcome ? (
+        <MonitoringOutcomeReader
+          outcome={item.outcome}
+          onOpen={(run) => {
+            window.location.href = href(run);
+          }}
+        />
+      ) : (
+        <>
+          {item.findings.length > 0 && (
+            <ul
+              className="research-update-findings"
+              aria-label="Source-linked machine findings"
+            >
+              {item.findings.map((finding) => (
+                <li key={finding.id}>
+                  <a href={href(item.investigation_id, `claim-${finding.id}`)}>
+                    {finding.statement}
+                  </a>
+                  <span className="public-meta">
+                    {' '}
+                    · {finding.status.toLowerCase()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {item.sources.map((source) => (
+            <figure key={source.id}>
+              <blockquote>
+                {source.quote}
+                {source.truncated ? '…' : ''}
+              </blockquote>
               <figcaption>
-                {index ? 'Later evidence' : 'Earlier evidence'} ·{' '}
-                <a href={href(finding.investigation_id, `claim-${finding.id}`)}>
-                  {finding.statement}
+                <a href={href(item.investigation_id, `source-${source.id}`)}>
+                  {source.title} · {source.locator} · Open captured evidence
                 </a>
               </figcaption>
-              {finding.evidence && (
-                <>
-                  <blockquote>{finding.evidence.quote}</blockquote>
-                  <a
-                    href={href(
-                      finding.investigation_id,
-                      `source-${finding.evidence.source.id}`,
-                    )}
-                  >
-                    {finding.evidence.source.title} · {finding.evidence.locator}
-                  </a>
-                </>
-              )}
             </figure>
           ))}
-          <p className="public-meta">{change.basis}</p>
-        </details>
-      ))}
-      </>}
+          {item.comparisons.map((change) => (
+            <details key={change.id} className="research-update-comparison">
+              <summary>
+                {change.kind === 'CONTRADICTS'
+                  ? 'Possible contradiction'
+                  : change.kind === 'UPDATES'
+                    ? 'Proposed update'
+                    : 'Supporting comparison'}{' '}
+                · inspect both sources
+              </summary>
+              {[change.previous, change.current].map((finding, index) => (
+                <figure key={finding.id}>
+                  <figcaption>
+                    {index ? 'Later evidence' : 'Earlier evidence'} ·{' '}
+                    <a
+                      href={href(
+                        finding.investigation_id,
+                        `claim-${finding.id}`,
+                      )}
+                    >
+                      {finding.statement}
+                    </a>
+                  </figcaption>
+                  {finding.evidence && (
+                    <>
+                      <blockquote>{finding.evidence.quote}</blockquote>
+                      <a
+                        href={href(
+                          finding.investigation_id,
+                          `source-${finding.evidence.source.id}`,
+                        )}
+                      >
+                        {finding.evidence.source.title} ·{' '}
+                        {finding.evidence.locator}
+                      </a>
+                    </>
+                  )}
+                </figure>
+              ))}
+              <p className="public-meta">{change.basis}</p>
+            </details>
+          ))}
+        </>
+      )}
       <p className="public-meta">
         Preview of up to three sources, findings and comparisons.{' '}
         <a href={href(item.investigation_id)}>Open the full research record</a>
@@ -334,7 +374,7 @@ export function PrivateDossierFollowing({
       </div>
       <p>
         Follow this dossier for completed research and possible changes to
-        earlier findings. Personal to you; no email.
+        earlier findings. Personal to you. Email is optional under Monitoring.
       </p>
       {result.error ? (
         <p role="alert">
