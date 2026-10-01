@@ -990,8 +990,7 @@ for (const [status, label] of [
       );
     });
     const sections = tree.root.findAll(
-      (node) =>
-        node.props['aria-label'] === 'Assessment of the selected question',
+      (node) => node.props['aria-label'] === 'Assessment of your question',
     );
     assert.equal(sections.length, 1);
     assert.equal(
@@ -1059,7 +1058,7 @@ test('invalidated assessment is absent while retained public passages remain rea
   });
   assert.equal(
     tree.root.findAll(
-      (n) => n.props['aria-label'] === 'Assessment of the selected question',
+      (n) => n.props['aria-label'] === 'Assessment of your question',
     ).length,
     0,
   );
@@ -2883,7 +2882,7 @@ for (const outcome of [
         });
         assert.equal(
           tree.root.findAllByProps({
-            'aria-label': 'Assessment of the selected question',
+            'aria-label': 'Assessment of your question',
           }).length,
           1,
         );
@@ -2952,20 +2951,17 @@ for (const mode of ['missing', 'unavailable', 'changed'])
         );
       });
       if (mode === 'unavailable') {
-        assert.match(
-          text(tree),
-          /An assessment of your selected question is unavailable/,
-        );
+        assert.match(text(tree), /An answer to your question is unavailable/);
         assert.match(text(tree), /An AI interpretation/);
         assert.match(text(tree), /The source passage is here/);
       } else
         assert.doesNotMatch(
           text(tree),
-          /An assessment of your selected question is unavailable/,
+          /An answer to your question is unavailable/,
         );
       assert.equal(
         tree.root.findAllByProps({
-          'aria-label': 'Assessment of the selected question',
+          'aria-label': 'Assessment of your question',
         }).length,
         0,
       );
@@ -3414,6 +3410,85 @@ test('living dossier retains multiple current research answers while the next di
     assert.doesNotMatch(
       text(tree),
       /The first record establishes a limited part/,
+    );
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});
+
+test('ordinary question leads with its answer, evidence and one useful next action', async () => {
+  const value = answerLinkedEpisode('partial');
+  const answer = value.exploration.briefing.assessment;
+  answer.contract = 'research-question-assessment/v1';
+  delete answer.selection;
+  delete answer.selected_from_investigation_id;
+  answer.points = [
+    {
+      statement: 'The recipient account needs reconciliation.',
+      evidence: [
+        {
+          source_id: 's',
+          quote: 'The source passage is here.',
+          locator: 'p1',
+          role: 'support',
+        },
+      ],
+    },
+  ];
+  const writes = [];
+  serve(value, async (url, init) => {
+    writes.push(JSON.parse(init.body));
+    return Response.json({ id: 'next' });
+  });
+  let tree;
+  try {
+    await act(async () => {
+      tree = create(React.createElement(Exploration, props));
+    });
+    const section = tree.root.findByProps({
+      'aria-label': 'Assessment of your question',
+    });
+    assert.match(
+      JSON.stringify(
+        section.toJSON?.() ||
+          section.findAllByType('p').map((n) => n.props.children),
+      ),
+      /recipient account needs reconciliation/,
+    );
+    assert.equal(
+      section.findByType('blockquote').props.children,
+      'The source passage is here.',
+    );
+    assert.equal(
+      section.findByType('a').props.href,
+      'https://example.org/record',
+    );
+    assert.equal(
+      tree.root
+        .findAllByType('p')
+        .filter((n) => n.children.join('') === value.question).length,
+      1,
+    );
+    const background = tree.root
+      .findAllByType('details')
+      .find((n) =>
+        n
+          .findAllByType('summary')
+          .some(
+            (s) =>
+              s.props.children === 'Research context & earlier understanding',
+          ),
+      );
+    assert.ok(background && !background.props.open);
+    assert.match(text(tree), /AI · connection to your answer/);
+    assert.equal(writes.length, 0);
+    await act(async () =>
+      findButton(tree, 'Continue this check').props.onClick(),
+    );
+    assert.equal(writes.length, 1);
+    assert.equal(
+      writes[0].follow_up_id,
+      value.exploration.next_check.question_id,
     );
   } finally {
     if (tree) await act(async () => tree.unmount());

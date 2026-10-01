@@ -1,5 +1,9 @@
 # Changes
 
+## 1.83.0 — A coherent answer to the research question
+
+Initial questions and natural refinements now share the evidence-backed answer reader, including conflicts, limitations and an explicit useful next check. Research detail remains available beneath the primary answer. No extra inference request or automatic monitoring.
+
 ## 1.82.0 — Refine research in your own words
 
 Continue a running investigation with one action. Corrections carry earlier public

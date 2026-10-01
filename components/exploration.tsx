@@ -83,7 +83,8 @@ function ExplorationEpisode({
   const answerLink = nextCheck?.answer_link;
   const nextUncertainty =
     state?.status !== 'evidence_changed' &&
-    brief?.assessment?.contract === 'selected-direction-assessment/v1' &&
+    (brief?.assessment?.contract === 'selected-direction-assessment/v1' ||
+      brief?.assessment?.contract === 'research-question-assessment/v1') &&
     brief.assessment.status !== 'possible_answer' &&
     answerLink?.contract === 'selected-direction-next-check/v1' &&
     answerLink.question === brief.assessment.question &&
@@ -960,14 +961,17 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         <ContinuedCheck state={state} />
         {brief.selected_direction_assessment?.status === 'unavailable' && (
           <p className="muted">
-            An assessment of your selected question is unavailable. The research
-            summary is still available below.
+            An answer to your question is unavailable. The research summary is
+            still available below.
           </p>
         )}
         {background}
         {questionUpdateNotice}
-        <BranchQuestionProgress state={state} />
-        <ObservedResearchScope state={state} />
+        <details className="dossier-secondary">
+          <summary>Research detail & source coverage</summary>
+          <BranchQuestionProgress state={state} />
+          <ObservedResearchScope state={state} />
+        </details>
       </>
     );
   const label = {
@@ -978,7 +982,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
   }[assessment.status];
   return (
     <>
-      <section aria-label="Assessment of the selected question">
+      <section aria-label="Assessment of your question">
         <span className="content-origin">AI · source-backed assessment</span>
         <h3>{label}</h3>
         <p className="exploration-question">{assessment.question}</p>
@@ -1025,12 +1029,12 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         </p>
       </section>
       {questionUpdateNotice}
-      <BranchQuestionProgress state={state} />
-      <ObservedResearchScope state={state} />
       <details className="dossier-secondary">
         <summary>Research context & earlier understanding</summary>
         <ContinuedCheck state={state} />
         {background}
+        <BranchQuestionProgress state={state} />
+        <ObservedResearchScope state={state} />
       </details>
     </>
   );

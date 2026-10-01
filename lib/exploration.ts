@@ -95,6 +95,12 @@ export type DirectionAssessment = Omit<
     direction_index: number;
   };
 };
+export type ResearchQuestionAssessment = Omit<
+  QuestionAssessment,
+  'contract' | 'question_id' | 'selected_from_investigation_id'
+> & {
+  contract: 'research-question-assessment/v1';
+};
 export type SourceRecovery =
   | { contract: 'source-recovery/v1'; status: 'unknown' | 'evidence_changed' }
   | {
@@ -340,7 +346,10 @@ export type ExplorationState = {
     reads_completed: number;
   })[];
   briefing: null | {
-    assessment?: QuestionAssessment | DirectionAssessment;
+    assessment?:
+      | QuestionAssessment
+      | DirectionAssessment
+      | ResearchQuestionAssessment;
     question_updates?: { status: 'unavailable' };
     selected_direction_assessment?: { status: 'unavailable' };
     understanding: string;
