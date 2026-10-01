@@ -3494,3 +3494,71 @@ test('ordinary question leads with its answer, evidence and one useful next acti
     if (tree) await act(async () => tree.unmount());
   }
 });
+
+for (const phase of ['queued', 'failed', 'completed'])
+  test(`earlier findings stay readable through continuation: ${phase}`, async () => {
+    const earlier = episode();
+    earlier.question = 'The earlier funding question.';
+    earlier.exploration.briefing.understanding =
+      'Earlier foundation interpretation.';
+    const current = episode();
+    current.question = 'Investigate the recipient side now.';
+    current.status = phase;
+    if (phase !== 'completed') {
+      current.exploration.status =
+        phase === 'queued' ? 'exploring' : 'unavailable';
+      current.exploration.briefing = null;
+      current.exploration.sources = [];
+    }
+    current.exploration.retained_research = {
+      investigation_id: 'prior',
+      question: earlier.question,
+      updated_at: '2026-10-01T01:00:00Z',
+      exploration: earlier.exploration,
+    };
+    let writes = 0;
+    serve(current, () => {
+      writes++;
+      throw new Error('Reading must not start work');
+    });
+    let tree;
+    try {
+      await act(async () => {
+        tree = create(
+          React.createElement(Exploration, { ...props, canEdit: false }),
+        );
+      });
+      const saved = tree.root
+        .findAllByType('details')
+        .find((n) =>
+          n
+            .findAllByType('summary')
+            .some(
+              (s) => s.props.children === 'Findings kept from earlier research',
+            ),
+        );
+      assert.ok(saved);
+      assert.equal(!!saved.props.open, phase !== 'completed');
+      assert.match(
+        JSON.stringify(saved.findAllByType('p').map((p) => p.props.children)),
+        /Earlier foundation interpretation/,
+      );
+      assert.match(text(tree), /The earlier funding question/);
+      assert.ok(
+        saved
+          .findAllByType('a')
+          .some((a) => a.props.href === 'https://example.org/record'),
+      );
+      assert.ok(
+        saved
+          .findAllByType('blockquote')
+          .some((q) => q.props.children === 'The source passage is here.'),
+      );
+      if (phase === 'queued')
+        assert.match(text(tree), /Continuing your research/);
+      if (phase === 'failed') assert.match(text(tree), /Your saved research/);
+      assert.equal(writes, 0);
+    } finally {
+      if (tree) await act(async () => tree.unmount());
+    }
+  });

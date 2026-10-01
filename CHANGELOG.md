@@ -1,5 +1,9 @@
 # Changes
 
+## 1.84.0 — Keep findings available while research continues
+
+Saved answers and early findings remain readable when a linked continuation starts or fails. Fresh results lead when available; earlier questions and captured-source dates stay explicit. Opening this reading makes no new research request.
+
 ## 1.83.0 — A coherent answer to the research question
 
 Initial questions and natural refinements now share the evidence-backed answer reader, including conflicts, limitations and an explicit useful next check. Research detail remains available beneath the primary answer. No extra inference request or automatic monitoring.

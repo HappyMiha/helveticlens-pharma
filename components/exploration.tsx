@@ -285,8 +285,12 @@ function ExplorationEpisode({
             ? 'What the evidence says about your question'
             : 'What the first evidence suggests'
           : active
-            ? 'Getting to know your question'
-            : 'Your research checkpoint'}
+            ? state?.retained_research
+              ? 'Continuing your research'
+              : 'Getting to know your question'
+            : state?.retained_research
+              ? 'Your saved research'
+              : 'Your research checkpoint'}
       </h2>
       {(list.error || resource.error) && (
         <p role="alert">
@@ -821,6 +825,15 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
             ),
         )
       : [];
+  const retained =
+    state.status !== 'evidence_changed' && state.retained_research ? (
+      <RetainedResearch
+        value={state.retained_research}
+        collapsed={Boolean(
+          brief || promotedAssessment || state.orientation?.status === 'ready',
+        )}
+      />
+    ) : null;
   function quote(item: Citation) {
     const source = state?.sources.find(
       (source) => source.id === item.source_id,
@@ -842,6 +855,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
   if (!brief)
     return (
       <>
+        {retained}
         <ContinuedCheck state={state} />
         {promotedAssessment && update ? (
           <>
@@ -952,6 +966,7 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
           <EarlyOrientation state={state} historical />
         </details>
       )}
+      {retained}
     </>
   );
   const assessment = brief.assessment;
@@ -1037,6 +1052,31 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
         <ObservedResearchScope state={state} />
       </details>
     </>
+  );
+}
+
+function RetainedResearch({
+  value,
+  collapsed,
+}: {
+  value: NonNullable<ExplorationState['retained_research']>;
+  collapsed: boolean;
+}) {
+  return (
+    <details className="dossier-secondary" open={!collapsed || undefined}>
+      <summary>Findings kept from earlier research</summary>
+      <p className="muted">
+        These saved findings address the earlier question below. Continuing the
+        research keeps them available; it does not recheck their sources.
+      </p>
+      <p className="source-meta">
+        Earlier research updated {date(value.updated_at)}
+      </p>
+      {!value.exploration.briefing?.assessment && (
+        <p className="exploration-question">{value.question}</p>
+      )}
+      <ExplorationBrief state={value.exploration} />
+    </details>
   );
 }
 

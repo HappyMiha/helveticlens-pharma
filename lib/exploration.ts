@@ -285,6 +285,12 @@ export type BranchQuestionAssessments =
       })[];
     };
 export type ExplorationState = {
+  retained_research?: {
+    investigation_id: string;
+    question: string;
+    updated_at: string;
+    exploration: Omit<ExplorationState, 'retained_research'>;
+  };
   research_update?: {
     contract: 'question-research-update/v1';
     question_id: string;
