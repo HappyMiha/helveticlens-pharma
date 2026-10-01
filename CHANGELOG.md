@@ -1,5 +1,9 @@
 # Changes
 
+## 1.88.0 — Finish dense documents across saved review steps
+
+Large originals can now finish reconciliation across multiple analysis requests. All sections and internal-reference targets enter saved reviews, then cited findings are brought together. A failed merge resumes from completed work. The dossier distinguishes checking citations from bringing findings together; invented merge quotations are rejected.
+
 ## 1.87.0 — Complete research and a shared dossier allowance
 
 One question starts evidence-led research with saved checkpoints, whole-document reading and analysis, cited conflicts and explicit gaps. Both products show current cross-run knowledge, professional context and personal immediate/digest/silent following. Large originals upload as streams.

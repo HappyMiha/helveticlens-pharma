@@ -50,7 +50,11 @@ export function MissionProgress({
               ? `${doc.pages_read || 0} of ${doc.page_count} pages read`
               : 'Reading source material'}
             {doc.read_complete
-              ? ' · Analysing sections and checking the whole document'
+              ? doc.review_progress
+                ? doc.review_progress.phase === 'synthesis'
+                  ? ' · Bringing the document’s findings together'
+                  : ' · Checking sections and citations across the document'
+                : ' · Analysing sections and checking the whole document'
               : ''}
             {doc.error ? ` · ${doc.error}` : ''}
           </p>

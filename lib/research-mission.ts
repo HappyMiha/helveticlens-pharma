@@ -44,6 +44,7 @@ export type ResearchMission = {
     read_complete?: boolean;
     analysis_complete?: boolean;
     sections_analysed?: number;
+    review_progress?: { phase: 'sections_and_references' | 'synthesis'; completed: number; complete: boolean };
     error?: string;
     pages: [number, number] | null;
     page_count: number | null;
