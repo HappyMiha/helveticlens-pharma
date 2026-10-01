@@ -1,5 +1,11 @@
 # Changes
 
+## 1.87.0 — Complete research and a shared dossier allowance
+
+One question starts evidence-led research with saved checkpoints, whole-document reading and analysis, cited conflicts and explicit gaps. Both products show current cross-run knowledge, professional context and personal immediate/digest/silent following. Large originals upload as streams.
+
+Accounts start with three owned dossiers shared across Legal and Pharma. Existing dossier research and retries do not consume places. Request a higher total with a short reason; the owner receives an email linking authenticated approval, rejection or an alternative total. Email links never change a limit without confirmation.
+
 ## 1.84.0 — Keep findings available while research continues
 
 Saved answers and early findings remain readable when a linked continuation starts or fails. Fresh results lead when available; earlier questions and captured-source dates stay explicit. Opening this reading makes no new research request.

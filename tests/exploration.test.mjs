@@ -3562,3 +3562,26 @@ for (const phase of ['queued', 'failed', 'completed'])
       if (tree) await act(async () => tree.unmount());
     }
   });
+
+test('mission reader separates the answer, counterevidence and named gaps without setup fields', async () => {
+  const { MissionReading } = require(resolve('components/research-mission.tsx'));
+  const ref = { source_id: 'source-one', quote: 'The two reported amounts differ.', locator: 'page-25-text-1-char-1' };
+  const state = { status: 'ready', sources: [{ id: 'source-one', title: 'Fictional original', url: 'https://example.org/original' }],
+    mission: { contract: 'research-mission/v1', stage: 'finished', round: 2, stop: 'available_checks_complete', question: 'Who received the grant?',
+      answer: { status: 'conflicting', points: [{ statement: 'The reported amounts conflict.', evidence: [{ ...ref, role: 'counterevidence' }] }], limitations: ['The reason for the discrepancy is unknown.'] },
+      checkpoints: [{ round: 1, reason: 'Read the revised original.', gaps: [], action: 'continue' }, { round: 2, reason: 'The original still does not resolve the conflict.', gaps: [], action: 'finish' }],
+      documents: [{ url: 'https://example.org/original', portions: 7, page_count: 25, complete: true, warnings: [] }] } };
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(MissionReading, { state })); });
+    assert.match(text(tree), /What the evidence says/);
+    assert.match(text(tree), /Where the evidence conflicts/);
+    assert.match(text(tree), /The reason for the discrepancy is unknown/);
+    assert.match(text(tree), /page-25-text-1-char-1/);
+    assert.equal(tree.root.findAllByType('input').length, 0);
+    assert.equal(tree.root.findAllByType('select').length, 0);
+    assert.equal(tree.root.findAllByType('blockquote')[0].props.children, ref.quote);
+    await act(async () => tree.update(React.createElement(MissionReading, { state: { ...state, mission: { ...state.mission, stage: 'evidence_changed', answer: null } } })));
+    assert.equal(tree.toJSON(), null);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});

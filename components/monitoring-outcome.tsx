@@ -116,6 +116,10 @@ export function MonitoringOutcomeReader({
         <strong>{title}</strong>
       </p>
       <p>{description}</p>
+      {outcome.materiality && <section aria-label="Why this update matters">
+        <strong>{outcome.materiality.category === 'material' ? 'Why this may affect the answer' : outcome.materiality.category === 'coverage_gap' ? 'A gap in monitoring' : outcome.materiality.category === 'quiet' ? 'Saved without an alert' : 'New evidence to review'}</strong>
+        {outcome.materiality.reasons.map((reason, i) => <p key={i}>{reason}</p>)}
+      </section>}
       {!!outcome.limitations.length && (
         <ul aria-label="Check limitations">
           {outcome.limitations.map((text, i) => (

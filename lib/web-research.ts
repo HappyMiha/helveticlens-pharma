@@ -3,6 +3,7 @@ import type { InvestigationSummary } from './investigation';
 import type { ComparedFinding, EvidenceChange } from './claim-evolution';
 
 export type MonitoringOutcome = {
+  materiality?: import('./research-mission').Materiality;
   contract: 'monitoring-outcome/v1';
   state:
     | 'queued'

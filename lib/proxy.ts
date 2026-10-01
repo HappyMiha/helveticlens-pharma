@@ -24,14 +24,16 @@ export async function proxy(
           (action) => route === `products/${product.id}/${action}`,
         )) ||
       (request.method === 'GET' &&
-        ['templates', 'research-capabilities'].some(name => route === `products/${product.id}/${name}`)) ||
+        ['templates', 'research-capabilities', 'research-allowance'].some(
+          (name) => route === `products/${product.id}/${name}`,
+        )) ||
       (request.method === 'GET' &&
         new RegExp(
           `^products/${product.id}/public-dossiers/[\\p{L}\\p{N}_-]{1,180}$`,
           'u',
         ).test(route)) ||
       new RegExp(
-        `^products/${product.id}/(?:dossiers(?:/[a-zA-Z0-9_/-]+)?|public-knowledge|public-dossiers(?:/[\\w-]{1,180}(?:/(?:(?:entity-identities|claim-reviews)(?:/(?:workspace|review))?|evidence-changes(?:/(?:workspace|[0-9a-f-]{36}/review))?|files(?:/[0-9a-f-]{36})?|research(?:/[0-9a-f-]{36}(?:/(?:events|workspace|control))?)?|discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/(?:read|updates))?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|shared-dossiers|followed-dossiers|followed-private-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
+        `^products/${product.id}/(?:dossier-limit-requests(?:/[0-9a-f-]{36}(?:/decision)?)?|dossiers(?:/[a-zA-Z0-9_/-]+)?|public-knowledge|public-dossiers(?:/[\\w-]{1,180}(?:/(?:(?:entity-identities|claim-reviews)(?:/(?:workspace|review))?|evidence-changes(?:/(?:workspace|[0-9a-f-]{36}/review))?|files(?:/[0-9a-f-]{36})?|research(?:/[0-9a-f-]{36}(?:/(?:events|workspace|control))?)?|discussion(?:/(?:workspace|[0-9a-f-]{36}(?:/action)?))?|follow(?:/(?:read|updates))?|reuse(?:/preview)?))?)?|dossier-invitations(?:/[0-9a-f-]{36}/accept)?|shared-dossiers|followed-dossiers|followed-private-dossiers|workbench|discover(?:/(?:plan|expand|engines|decision|runs(?:/[0-9a-f-]{36}(?:/(?:labels|inspect))?)?))?)$`,
       ).test(route)
     )
   )
@@ -67,25 +69,50 @@ export async function proxy(
     .filter((x) => /^helvetic_lens_(session|csrf)=/.test(x))
     .join('; ');
   if (cookies) headers.set('cookie', cookies);
-  let body: ArrayBuffer | undefined;
+  let body: ArrayBuffer | ReadableStream<Uint8Array> | undefined;
+  let uploadTooLarge = false;
+  const largeUpload =
+    request.headers.get('content-type')?.startsWith('multipart/form-data') &&
+    route.endsWith('/files');
+  const bodyLimit = (largeUpload ? 101 : 11) * 1024 * 1024;
   if (!['GET', 'HEAD'].includes(request.method)) {
-    if (Number(request.headers.get('content-length')) > 11 * 1024 * 1024)
+    if (Number(request.headers.get('content-length')) > bodyLimit)
       return Response.json(
-        { detail: 'Files must be at most 10 MB.' },
+        { detail: 'Files must be at most 100 MB.' },
         { status: 413 },
       );
     const reader = request.body?.getReader();
-    if (reader) {
+    if (reader && largeUpload) {
+      let size = 0;
+      body = new ReadableStream<Uint8Array>({
+        async pull(controller) {
+          const next = await reader.read();
+          if (next.done) {
+            controller.close();
+            return;
+          }
+          size += next.value.byteLength;
+          if (size > bodyLimit) {
+            uploadTooLarge = true;
+            await reader.cancel();
+            controller.error(new Error('Upload exceeds file size limit.'));
+          } else controller.enqueue(next.value);
+        },
+        cancel(reason) {
+          return reader.cancel(reason);
+        },
+      });
+    } else if (reader) {
       const chunks: Uint8Array[] = [];
       let size = 0;
       while (true) {
         const next = await reader.read();
         if (next.done) break;
         size += next.value.byteLength;
-        if (size > 11 * 1024 * 1024) {
+        if (size > bodyLimit) {
           await reader.cancel();
           return Response.json(
-            { detail: 'Files must be at most 10 MB.' },
+            { detail: 'Files must be at most 100 MB.' },
             { status: 413 },
           );
         }
@@ -108,6 +135,7 @@ export async function proxy(
         headers,
         body,
         redirect: 'manual',
+        ...(body instanceof ReadableStream ? { duplex: 'half' } : {}),
         signal: AbortSignal.timeout(115000),
       },
     );
@@ -133,6 +161,11 @@ export async function proxy(
       headers: output,
     });
   } catch {
+    if (uploadTooLarge)
+      return Response.json(
+        { detail: 'Files must be at most 100 MB.' },
+        { status: 413 },
+      );
     return Response.json(
       {
         detail:

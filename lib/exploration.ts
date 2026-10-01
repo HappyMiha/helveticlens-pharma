@@ -285,6 +285,7 @@ export type BranchQuestionAssessments =
       })[];
     };
 export type ExplorationState = {
+  mission?: import('./research-mission').ResearchMission | null;
   retained_research?: {
     investigation_id: string;
     question: string;

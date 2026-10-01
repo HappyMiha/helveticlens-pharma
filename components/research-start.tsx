@@ -1,7 +1,9 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
+import type { DossierAllowance } from '@/lib/dossier-allowance';
+import { DossierLimitRequest } from './dossier-limit-request';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 
@@ -22,6 +24,30 @@ export function ResearchStart({
   const [busy, setBusy] = useState(false);
   const [frozen, setFrozen] = useState(false);
   const [error, setError] = useState('');
+  const [allowance, setAllowance] = useState<DossierAllowance | null>(null);
+  const [allowanceError, setAllowanceError] = useState('');
+  useEffect(() => {
+    if (!signedIn || !canCreate) return;
+    const controller = new AbortController();
+    void api<DossierAllowance>(
+      `/products/${product.id}/research-allowance`,
+      undefined,
+      undefined,
+      controller.signal,
+    )
+      .then((value) => {
+        if (!controller.signal.aborted) setAllowance(value);
+      })
+      .catch((failure) => {
+        if (!controller.signal.aborted)
+          setAllowanceError(
+            failure instanceof Error
+              ? failure.message
+              : 'Could not load research availability.',
+          );
+      });
+    return () => controller.abort();
+  }, [signedIn, canCreate]);
   const sending = useRef(false);
   const pending = useRef<{
     request_key: string;
@@ -34,7 +60,7 @@ export function ResearchStart({
       onSignIn?.();
       return;
     }
-    if (!canCreate) return;
+    if (!canCreate || (!frozen && allowance?.remaining === 0)) return;
     pending.current ||= {
       request_key: uid(),
       question: question.trim(),
@@ -96,10 +122,19 @@ export function ResearchStart({
           }
         />
         <p className="investigation-muted" id="question-start-disclosure">
-          Starting sends this question to public research providers for one
-          bounded exploration. Your research stays private. Recurring monitoring
-          is off until you choose to enable it.
+          Starting sends this question to public research providers. Your
+          research stays private. Recurring monitoring is off until you choose
+          to enable it.
         </p>
+        <p className="investigation-muted" aria-live="polite">
+          {allowance
+            ? `${allowance.remaining} dossier places available.`
+            : '3 dossiers per account, shared across Legal and Pharma.'}{' '}
+          Continuing existing research is included.
+        </p>
+        {allowanceError && (
+          <p className="investigation-muted">{allowanceError}</p>
+        )}
         {error && (
           <p role="alert" className="investigation-error">
             {error}
@@ -116,7 +151,10 @@ export function ResearchStart({
             type="submit"
             aria-describedby="question-start-disclosure"
             disabled={
-              busy || question.trim().length < 5 || (signedIn && !canCreate)
+              busy ||
+              question.trim().length < 5 ||
+              (signedIn && !canCreate) ||
+              (!frozen && allowance?.remaining === 0)
             }
           >
             {busy
@@ -125,7 +163,9 @@ export function ResearchStart({
                 ? 'Sign in to start'
                 : frozen
                   ? 'Retry safely'
-                  : 'Start exploring'}
+                  : allowance?.remaining === 0
+                    ? 'Request a higher dossier limit below'
+                    : 'Start exploring'}
           </Button>
           {onCancel && (
             <Button
@@ -144,6 +184,9 @@ export function ResearchStart({
           </p>
         )}
       </form>
+      {signedIn && canCreate && allowance && (
+        <DossierLimitRequest value={allowance} onUpdated={setAllowance} />
+      )}
       <details className="question-start-details">
         <summary>How it works</summary>
         <p>
@@ -152,10 +195,11 @@ export function ResearchStart({
           visible.
         </p>
         <p>
-          Each episode can use up to 12 search requests and 6 source reads, with
-          bounded processing time. We save a short briefing, explain
-          uncertainties and offer a useful next direction. You can leave and
-          return to it.
+          We read the relevant documents in full, analyse their sections and
+          check contradictions before bringing the answer together. Progress is
+          saved, so you can leave and return. Unreadable material and unresolved
+          questions stay visible; internal request budgets do not stop a started
+          research mission.
         </p>
         <p>
           Follow-up search questions come from public evidence. Selected

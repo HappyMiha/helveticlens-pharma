@@ -2713,3 +2713,14 @@ code {
 .exploration-choice button { white-space: normal; height: auto; min-height: 2.75rem; text-align: start; max-width: 100%; }
 .exploration-choice form { display: grid; gap: .8rem; margin-block: 1rem; }
 .exploration li { margin-block: .65rem; }
+
+/* Research is a readable dossier, with technical detail available on demand. */
+.research-mission { max-width: 72ch; margin-inline: auto; overflow-wrap: anywhere; }
+.research-mission > section { margin-block: 2rem; }
+.research-mission h4 { font-size: 1.1rem; margin-block: 1.25rem .7rem; }
+.research-mission dl > div { padding-block: .7rem; border-bottom: 1px solid var(--border); }
+.research-mission dt { text-transform: capitalize; font-weight: 600; }
+.research-mission dd { margin-inline: 0; }
+.mission-progress { display: block; padding-block: .75rem; font-size: .9rem; border-bottom: 1px solid var(--border); }
+.research-delivery-choice { display: grid; gap: .5rem; margin-block: 1rem; max-width: 34rem; }
+.research-delivery-choice select { width: 100%; min-height: 44px; padding: .65rem; border: 1px solid var(--border); border-radius: .5rem; color: inherit; background: var(--background); }

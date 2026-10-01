@@ -1485,3 +1485,27 @@ test('exploration start forwards only the product POST with consent, cookies and
   );
   assert.equal(count, 1);
 });
+
+test('original document uploads stream past the former limit without buffering in the gateway', async () => {
+  const route = `products/${product.id}/dossiers/11111111-1111-4111-8111-111111111111/files`;
+  const chunk = new Uint8Array(1024 * 1024).fill(97);
+  let produced = 0;
+  const body = new ReadableStream({ pull(controller) {
+    if (produced++ < 13) controller.enqueue(chunk);
+    else controller.close();
+  } });
+  globalThis.fetch = async (_url, init) => {
+    assert.ok(init.body instanceof ReadableStream);
+    assert.ok(produced < 13, 'gateway starts forwarding before reading the whole upload');
+    const reader = init.body.getReader();
+    let total = 0;
+    while (true) { const value = await reader.read(); if (value.done) break; total += value.value.length; }
+    assert.equal(total, 13 * 1024 * 1024);
+    return Response.json({ retained: true }, { status: 201 });
+  };
+  const response = await proxy(new Request(`https://product.test/api/${route}`, {
+    method: 'POST', headers: { origin: 'https://product.test', 'content-type': 'multipart/form-data; boundary=fixture' },
+    body, duplex: 'half',
+  }), context(route));
+  assert.equal(response.status, 201);
+});

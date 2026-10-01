@@ -55,6 +55,7 @@ export type ResearchQuestion = {
 };
 export type ResearchState = {
   version: 'iterative-v1';
+  execution_policy?: 'completion_based';
   limits: ResearchLimits;
   used: Partial<ResearchLimits>;
   questions: ResearchQuestion[];

@@ -1,4 +1,5 @@
 'use client';
+import { MissionProgress, MissionReading } from './research-mission';
 import { ResearchCoverageReading } from './research-coverage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError, date, uid } from '@/lib/api';
@@ -642,12 +643,15 @@ export function ResearchActivity({
       ? readStartedAt + Math.max(0, Math.min(90000, activity.valid_for_ms))
       : null;
   return (
+    <>
+    <MissionProgress mission={state.mission} />
     <CurrentResearchReceipt
       key={deadline ?? 'unconfirmed'}
       state={state}
       deadline={deadline}
       originalQuestion={originalQuestion}
     />
+    </>
   );
 }
 
@@ -704,6 +708,7 @@ function CurrentResearchReceipt({
     gate_review: 'Reviewing an uncertain source match',
     read: 'Reading selected source passages',
     extract: 'Analysing captured passages',
+    document_review: 'Checking the complete document for exceptions and contradictions',
     reflect: 'Checking what to investigate next',
     orient: 'Preparing a first interpretation',
     brief: 'Preparing the research briefing',
@@ -793,6 +798,12 @@ function CurrentResearchPurpose({ value }: { value?: ResearchPurpose | null }) {
 }
 
 export function ExplorationBrief({ state }: { state: ExplorationState }) {
+  if (state.mission?.answer && state.status !== 'evidence_changed') return <>
+    <MissionReading state={state} />
+    <details className="dossier-secondary"><summary>Research detail & source coverage</summary>
+      <BranchQuestionProgress state={state} /><ObservedResearchScope state={state} />
+    </details>
+  </>;
   const brief = state.briefing;
   const update = state.research_update;
   const promotedAssessment =

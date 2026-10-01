@@ -88,9 +88,9 @@ export function DossierContributions({
     try {
       if (
         kind === 'file' &&
-        (!file || !file.size || file.size > 10 * 1024 * 1024)
+        (!file || !file.size || file.size > 100 * 1024 * 1024)
       )
-        throw new Error('Choose a non-empty file of at most 10 MB.');
+        throw new Error('Choose a non-empty file of at most 100 MB.');
       const digest =
         kind === 'file' && file
           ? Array.from(
@@ -205,8 +205,8 @@ export function DossierContributions({
                   onChange={(event) => setFile(event.target.files?.[0] || null)}
                 />
                 <small>
-                  Save up to 10 MB. Automatic reading: TXT, Markdown, CSV, HTML
-                  PDF, DOCX, XLSX, PPTX, JSON and email (.eml) up to 2 MB.
+                  Save up to 100 MB. Automatic reading: TXT, Markdown, CSV, HTML
+                  PDF, DOCX, XLSX, PPTX, JSON and email (.eml) up to 100 MB.
                   Scanned PDFs use local OCR for up to four pages. Check
                   quotations against the original when layout or recognition matters.
                 </small>

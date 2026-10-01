@@ -34,7 +34,7 @@ export function FollowControls({
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  async function change(read = false) {
+  async function change(read = false, mode?: 'immediate' | 'digest' | 'silent') {
     setBusy(true);
     setError('');
     try {
@@ -42,7 +42,7 @@ export function FollowControls({
         `${baseFor(audience, id)}${read ? '/read' : ''}`,
         read
           ? { expected_revision: state.revision, marker: state.marker }
-          : { expected_revision: state.revision, following: !state.following },
+          : { expected_revision: state.revision, following: mode ? state.following : !state.following, ...(mode ? { delivery_mode: mode } : {}) },
       );
       window.dispatchEvent(new Event('helvetic-following-changed'));
       await onChanged();
@@ -84,6 +84,15 @@ export function FollowControls({
           </Button>
         )}
       </div>
+      {state.following && <label className="research-delivery-choice">In-app updates
+        <select aria-label="When to show dossier updates" value={state.delivery_mode || 'immediate'} disabled={busy}
+          onChange={e => void change(false, e.target.value as 'immediate' | 'digest' | 'silent')}>
+          <option value="immediate">New findings and important changes now</option>
+          <option value="digest">Daily summary</option>
+          <option value="silent">Quietly save updates</option>
+        </select>
+        <span className="muted">Daily summaries include the previous UTC day. No email is enabled.</span>
+      </label>}
       {state.following && state.unread && (
         <p className="public-meta">
           Marks the current dossier updates seen. This does not verify or
@@ -120,7 +129,9 @@ export function ResearchUpdateItem({
   return (
     <article className="research-update">
       <p className="public-meta">
-        {item.unseen ? 'Unseen · ' : ''}Completed {date(item.completed_at)}
+        {item.unseen ? 'Unseen · ' : ''}Saved {date(item.completed_at)}
+        {item.delivery === 'waiting_for_digest' && ' · Included in the next daily summary'}
+        {item.delivery === 'silent' && ' · Saved quietly'}
       </p>
       <h3>
         <a href={href(item.investigation_id)}>{item.question}</a>

@@ -7,6 +7,7 @@ export type ResearchSummary = {
 };
 export type PersonalFollow = {
   following: boolean;
+  delivery_mode?: 'immediate' | 'digest' | 'silent';
   available: boolean;
   revision: number;
   marker: string | null;
@@ -24,6 +25,8 @@ export type PrivateFollowPage = {
   page_size: number;
 };
 export type ResearchUpdate = {
+  materiality?: import('./research-mission').Materiality;
+  delivery?: 'immediate' | 'digest' | 'silent' | 'waiting_for_digest';
   outcome?: import('./web-research').MonitoringOutcome | null;
   investigation_id: string;
   question: string;

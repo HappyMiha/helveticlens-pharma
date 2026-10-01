@@ -1049,3 +1049,10 @@ button[data-slot='button'] {
   padding-inline: 0;
   border-top: 1px solid var(--line);
 }
+
+.dossier-limit-request { margin-block: 1.5rem; padding-block: 1.2rem; border-top: 1px solid var(--border); }
+.dossier-limit-request form, .limit-decision-page form { display: grid; gap: .85rem; max-width: 38rem; margin-block: 1rem; }
+.dossier-limit-request input, .dossier-limit-request textarea, .limit-decision-page input, .limit-decision-page select { width: 100%; padding: .7rem; min-height: 44px; border: 1px solid var(--border); border-radius: .55rem; background: var(--background); color: inherit; font: inherit; }
+.limit-decision-page { width: min(100% - 2rem, 48rem); margin: 3rem auto; line-height: 1.65; }
+.limit-decision-page h1 { margin-block: 1.5rem; font-size: clamp(1.7rem, 4vw, 2.3rem); }
+.limit-decision-page blockquote { white-space: pre-wrap; border-left: 3px solid var(--border); padding-left: 1rem; }

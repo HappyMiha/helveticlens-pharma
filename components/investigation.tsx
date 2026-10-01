@@ -560,7 +560,7 @@ export function DossierInvestigation({
           )}
           {value.exploration && <ExplorationBrief state={value.exploration} />}
           {value.outcome ? <MonitoringOutcomeReader outcome={value.outcome} onOpen={onOpen} /> : <ResearchCoverageReading value={value.coverage_manifest} />}
-          {value.research && (
+          {value.research && value.research.execution_policy !== 'completion_based' && (
             <ResearchBudget
               key={`${value.id}:${value.research.limits.branches}:${value.revision}`}
               value={value.research}

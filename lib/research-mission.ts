@@ -1,0 +1,93 @@
+import type { ExplorationCitation, QuestionAssessment } from './exploration';
+
+export type MissionAnswer = Pick<
+  QuestionAssessment,
+  'status' | 'points' | 'limitations'
+>;
+export type ProfessionalFact = ExplorationCitation & {
+  domain: 'legal' | 'pharma';
+  dimension: string;
+  value: string;
+};
+export type Materiality = {
+  contract: 'research-materiality/v1';
+  category: 'material' | 'coverage_gap' | 'findings' | 'quiet';
+  reasons: string[];
+  scope: string;
+};
+export type ResearchMission = {
+  contract: 'research-mission/v1';
+  stage:
+    | 'mapping'
+    | 'deepening'
+    | 'synthesizing'
+    | 'waiting_for_direction'
+    | 'finished'
+    | 'incomplete'
+    | 'evidence_changed';
+  round?: number;
+  stop?: string | null;
+  question?: string;
+  answer: MissionAnswer | null;
+  checkpoints: {
+    round: number;
+    answer: MissionAnswer;
+    reason: string;
+    action: string;
+    gaps: (ExplorationCitation & { question: string; purpose: string })[];
+  }[];
+  documents?: {
+    url: string;
+    portions: number;
+    title?: string;
+    pages_read?: number | null;
+    read_complete?: boolean;
+    analysis_complete?: boolean;
+    sections_analysed?: number;
+    error?: string;
+    pages: [number, number] | null;
+    page_count: number | null;
+    complete: boolean;
+    next_cursor: { page: number; offset: number } | null;
+    unread_reason: string | null;
+    warnings: string[];
+  }[];
+  knowledge?: {
+    claims: {
+      id: string;
+      statement: string;
+      reading_state: string;
+      human_status: string;
+      evidence: ExplorationCitation[];
+      later_evidence: {
+        claim_id: string;
+        kind: string;
+        explanation: string;
+        reviewed: boolean;
+      }[];
+    }[];
+    identities: {
+      id: string;
+      names: string[];
+      basis: string;
+      mentions: {
+        id: string;
+        quote: string;
+        locator: string;
+        identifier: { value: string; issuer: string; jurisdiction: string };
+        source: { id: string; title: string; url: string };
+      }[];
+    }[];
+    document_origins: {
+      sha256: string;
+      independence: string;
+      sources: { id: string; url: string; title: string }[];
+    }[];
+    professional_context: {
+      facts: ProfessionalFact[];
+      unassessed_sources: number;
+      scope: string;
+    };
+    scope: { note: string; truncated: boolean };
+  };
+};

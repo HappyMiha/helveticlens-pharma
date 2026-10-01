@@ -556,7 +556,7 @@ function ContributionForm({
           )}
           {living && kind === 'file' && !item && (
             <label htmlFor={`${formId}-file`}>
-              Public original · up to 2 MB
+              Public original · up to 100 MB
               <Input
                 id={`${formId}-file`}
                 type="file"
