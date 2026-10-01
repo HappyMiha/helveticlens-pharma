@@ -24,7 +24,7 @@ export async function proxy(
           (action) => route === `products/${product.id}/${action}`,
         )) ||
       (request.method === 'GET' &&
-        route === `products/${product.id}/templates`) ||
+        ['templates', 'research-capabilities'].some(name => route === `products/${product.id}/${name}`)) ||
       (request.method === 'GET' &&
         new RegExp(
           `^products/${product.id}/public-dossiers/[\\p{L}\\p{N}_-]{1,180}$`,

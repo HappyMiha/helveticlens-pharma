@@ -1,3 +1,4 @@
+import type { ResearchCoverage } from './research-coverage';
 import type { ExplorationState } from './exploration';
 import type { ResearchState } from './research-engine';
 import type { MonitoringTrigger } from './monitoring-research';
@@ -51,6 +52,7 @@ export type EvidenceLink = {
   mentions?: (EvidenceLink & { name: string })[];
 };
 export type Investigation = InvestigationSummary & {
+  coverage_manifest?: ResearchCoverage | null;
   exploration?: ExplorationState | null;
   research?: ResearchState | null;
   monitoring_trigger?: MonitoringTrigger | null;

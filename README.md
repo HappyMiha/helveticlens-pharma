@@ -579,3 +579,16 @@ execution. Legacy wording stays unknown. Search results are not read evidence or
 an answer. The Core rechecks public origin and access before displaying the
 journal or using it in the existing final briefing. No new form, polling or
 monitoring authority; cross-episode query reuse remains future work.
+
+## Unified research core — 1.85
+
+The same native research gateway now records task/provider versions and source outcomes
+for both products. Research can reuse exact earlier public captures, with original
+dates and current evidence permissions, before discovering sources for the remaining
+questions. Private evidence does not become a public query.
+
+The existing research reader includes a collapsed **What was checked** section:
+retained versus newly captured passages, unavailable search channels, unread candidates
+and open questions. It describes an actual bounded episode, never exhaustive coverage.
+The shared knowledge API resolves claims, contrary evidence, source versions and human
+review under versioned domain policies. Existing review and monitoring controls remain.

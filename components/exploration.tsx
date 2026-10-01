@@ -1,4 +1,5 @@
 'use client';
+import { ResearchCoverageReading } from './research-coverage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
@@ -370,6 +371,7 @@ function ExplorationEpisode({
             </output>
           )}
           <ExplorationBrief state={state} />
+          <ResearchCoverageReading value={page?.coverage_manifest} />
           {!brief &&
             state.orientation?.status !== 'ready' &&
             !!state.sources.length && (
