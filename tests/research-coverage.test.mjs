@@ -74,3 +74,28 @@ test('unavailable and legacy manifests stay hidden instead of claiming checks', 
   for (const current of [null, { ...value, recorded: false }])
     assert.equal(renderToStaticMarkup(React.createElement(ResearchCoverageReading, { value: current })), '');
 });
+
+test('document and direct-source limits remain visible beside the evidence', () => {
+  const current = { ...value,
+    sources: [{ ...value.sources[0], extraction_methods: ['tesseract-ocr'], extraction_warnings: ['Later scanned pages were not read.'], text_truncated: true }],
+    channels: [{ name: 'Official feed', status: 'complete', count: 12, scope: 'Current feed, not an archive search.', more_available: true }],
+    saved_evidence: { method: 'BM25 and cited relationships', retrieval: { semantic_status: 'preparation_budget', prepared_records: 128, examined_records: 900 } },
+  };
+  const html = renderToStaticMarkup(React.createElement(ResearchCoverageReading, { value: current }));
+  assert.match(html, /OCR text/);
+  assert.match(html, /Later scanned pages were not read/);
+  assert.match(html, /not an archive search/);
+  assert.match(html, /128 of 900 passages/);
+});
+test('shared monitoring reading distinguishes a human review from machine support', () => {
+  const { MonitoringOutcomeReader } = require(resolve('components/monitoring-outcome.tsx'));
+  const outcome = { contract: 'monitoring-outcome/v1', state: 'completed', finding_state: 'findings', limitations: [], comparisons: [], scope: 'Bounded check.',
+    findings: [{ id: 'finding', investigation_id: 'run', statement: 'The fictional report changed.', status: 'SUPPORTED', revision: 1,
+      human_status: 'UNREVIEWED', review_requirement: { required: true, accepted_for_use: false, reasons: ['unreviewed_interpretation'] },
+      evidence: { quote: '<script>untrusted quotation</script>', locator: 'page-1-ocr', source: { title: 'Saved report' } } }], coverage_manifest: value };
+  const html = renderToStaticMarkup(React.createElement(MonitoringOutcomeReader, { outcome, onOpen() {} }));
+  assert.match(html, /Human review needed before relying on this finding/);
+  assert.match(html, /What was checked/);
+  assert.match(html, /page-1-ocr/);
+  assert.doesNotMatch(html, /<script>/);
+});

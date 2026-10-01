@@ -62,6 +62,7 @@ export type ResearchState = {
   completion_criteria: string[];
   stops: string[];
   budget_basis: string;
+  search_budget_scope?: 'paid_provider_requests';
   decision_order?: 'jev_first' | 'laya_first';
 };
 export function questionLabel(question: ResearchQuestion) {

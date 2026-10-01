@@ -1,3 +1,4 @@
+import type { MonitoringOutcome } from './web-research';
 import type { InvestigationSummary } from './investigation';
 
 export type MonitoringTrigger = {
@@ -15,6 +16,7 @@ export type MonitoringTrigger = {
   reason: string;
   source: { title: string; url: string; sha256: string };
   investigation: InvestigationSummary | null;
+  outcome?: MonitoringOutcome | null;
 };
 export type MonitoringResearch = {
   dossier_id: string;

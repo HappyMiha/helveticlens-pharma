@@ -1,4 +1,5 @@
 'use client';
+import { ResearchCoverageReading } from './research-coverage';
 import type { ComparedFinding } from '@/lib/claim-evolution';
 import type { MonitoringOutcome } from '@/lib/web-research';
 import { Button } from './ui/button';
@@ -74,6 +75,7 @@ function QuotedFinding({
         <strong>{label}</strong>
       </figcaption>
       <p>{finding.statement}</p>
+      {finding.review_requirement && <p className="content-origin">{finding.review_requirement.accepted_for_use ? 'Accepted in a current human review' : finding.human_status === 'REJECTED' ? 'Rejected in human review — retained as history' : 'Human review needed before relying on this finding'}</p>}
       {finding.evidence && (
         <>
           <blockquote>{finding.evidence.quote}</blockquote>
@@ -161,7 +163,8 @@ export function MonitoringOutcomeReader({
           />
         </details>
       ))}
-      {outcome.state !== 'unavailable' && outcome.source_coverage && (
+      {outcome.state !== 'unavailable' && outcome.coverage_manifest && <ResearchCoverageReading value={outcome.coverage_manifest} />}
+      {outcome.state !== 'unavailable' && !outcome.coverage_manifest && outcome.source_coverage && (
         <CheckSourceCoverageReader value={outcome.source_coverage} onOpen={onOpen} />
       )}
       {showEvidence && (

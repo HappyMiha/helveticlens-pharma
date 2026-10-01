@@ -19,7 +19,7 @@ export type PageCheck = {
   outcome: string;
   analysis_status: string;
   versions: CheckedPageVersion[];
-  research: { state: string; investigation_id: string | null; finding: ComparedFinding | null } | null;
+  research: { state: string; investigation_id: string | null; finding: ComparedFinding | null; outcome?: import('./web-research').MonitoringOutcome } | null;
   limitation: string | null;
 };
 export type PageCheckHistory = {

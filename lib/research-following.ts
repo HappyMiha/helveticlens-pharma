@@ -24,6 +24,7 @@ export type PrivateFollowPage = {
   page_size: number;
 };
 export type ResearchUpdate = {
+  outcome?: import('./web-research').MonitoringOutcome | null;
   investigation_id: string;
   question: string;
   completed_at: string;

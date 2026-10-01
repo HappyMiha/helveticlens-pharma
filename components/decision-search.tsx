@@ -383,8 +383,8 @@ export function DecisionDiscovery({
             </p>
             <p>{readiness.data.privacy}</p>
             <p>
-              {readiness.data.retention} Platform daily limit:{' '}
-              {readiness.data.daily_limit} query units.{' '}
+              {readiness.data.retention} Daily paid-search allowance:{' '}
+              {readiness.data.daily_limit} paid requests.{' '}
               {readiness.data.budget_unit}
             </p>
           </>

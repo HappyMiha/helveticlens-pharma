@@ -560,7 +560,7 @@ function ContributionForm({
               <Input
                 id={`${formId}-file`}
                 type="file"
-                accept=".txt,.md,.csv,.html,.htm,.pdf"
+                accept=".txt,.md,.csv,.html,.htm,.pdf,.docx,.xlsx,.pptx,.eml,.json"
                 required
                 onChange={(e) => {
                   setFile(e.target.files?.[0] || null);
@@ -568,7 +568,7 @@ function ContributionForm({
                 }}
               />
               <span>
-                TXT, Markdown, CSV, HTML or text PDF. The original and extracted
+                Text, PDF (including bounded local OCR), Office, JSON or email. The original, email attachments and extracted
                 findings will be public.
               </span>
             </label>

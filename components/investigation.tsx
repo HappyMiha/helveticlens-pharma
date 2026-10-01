@@ -1,4 +1,5 @@
 'use client';
+import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { ResearchCoverageReading } from './research-coverage';
 import { ExplorationBrief } from './exploration';
 import { EntityIdentities } from './entity-identity';
@@ -558,7 +559,7 @@ export function DossierInvestigation({
             </p>
           )}
           {value.exploration && <ExplorationBrief state={value.exploration} />}
-          <ResearchCoverageReading value={value.coverage_manifest} />
+          {value.outcome ? <MonitoringOutcomeReader outcome={value.outcome} onOpen={onOpen} /> : <ResearchCoverageReading value={value.coverage_manifest} />}
           {value.research && (
             <ResearchBudget
               key={`${value.id}:${value.research.limits.branches}:${value.revision}`}

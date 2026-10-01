@@ -206,8 +206,9 @@ export function DossierContributions({
                 />
                 <small>
                   Save up to 10 MB. Automatic reading: TXT, Markdown, CSV, HTML
-                  and text PDF up to 2 MB. Images, Office files and scanned PDFs
-                  are retained for download; OCR is unavailable.
+                  PDF, DOCX, XLSX, PPTX, JSON and email (.eml) up to 2 MB.
+                  Scanned PDFs use local OCR for up to four pages. Check
+                  quotations against the original when layout or recognition matters.
                 </small>
               </label>
             ) : (

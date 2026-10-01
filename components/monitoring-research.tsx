@@ -1,4 +1,5 @@
 'use client';
+import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { useEffect, useId, useRef, useState } from 'react';
 import { api, date, uid } from '@/lib/api';
 import { readable, sourceHref } from '@/lib/investigation';
@@ -119,6 +120,7 @@ export function MonitoringResearchPanel({
                 <li key={item.revision}>
                   <strong>{readable(item.action)}</strong>
                   <p>{item.reason}</p>
+
                   <p className="source-meta">
                     {date(item.at)} · Settings revision {item.revision} ·{' '}
                     {item.daily_limit} starts per UTC day
@@ -204,6 +206,7 @@ export function MonitoringTriggerRow({
         <p className="source-meta">Saved page change</p>
       )}
       <p>{item.reason}</p>
+      {item.outcome && <MonitoringOutcomeReader outcome={item.outcome} onOpen={onOpen} />}
       {item.investigation?.stop_reason && (
         <p>{item.investigation.stop_reason}</p>
       )}

@@ -31,7 +31,8 @@ export interface EvidenceSearchItem {
   human_review?: SearchReview | null;
   text_truncated: boolean;
   text_characters: number;
-  semantic_similarity?: number;
+  semantic_similarity?: number | null;
+  graph_related?: boolean;
   embedding_truncated?: boolean;
   semantic_match: boolean;
   literal_match: boolean;
@@ -46,7 +47,8 @@ export interface EvidenceSearchPage {
     | 'literal'
     | 'local_semantic_hybrid'
     | 'local_corpus_hybrid'
-    | 'literal_fallback';
+    | 'literal_fallback'
+    | 'lexical_graph_fallback';
   preparing?: boolean;
   prepared_records?: number;
   preparation_batch?: number;

@@ -347,7 +347,8 @@ export function EvidenceSearchResults({
           batch; switch to Words to search the full saved ledger.
         </output>
       )}
-      {corpus && page.measurement.error && (
+      {page.method === 'lexical_graph_fallback' && <output>Meaning search is temporarily unavailable. These results use words and cited evidence relationships. Prepared work is saved for your next search.</output>}
+      {corpus && page.method !== 'lexical_graph_fallback' && page.measurement.error && (
         <output>
           Some direct model opinions are unavailable. The full dossier ranking
           and exact sources remain available.
@@ -502,15 +503,16 @@ export function EvidenceSearchResult({
       </div>
       <details>
         <summary>Why this result & provenance</summary>
+        {item.graph_related && <p>Connected by a cited relationship or by evidence for the same finding. This link does not establish identity or truth.</p>}
         <p>
           {item.relevance_probability === null &&
-          item.semantic_similarity !== undefined
+          item.semantic_similarity != null
             ? 'This record was ranked by local meaning and word similarity. A direct model opinion is unavailable.'
             : item.semantic_match
               ? 'The local model judged this record relevant.'
               : item.literal_match
                 ? 'This record matched the search words.'
-                : 'The model did not judge this record relevant. It remains visible for your review so an uncertain score cannot hide evidence.'}{' '}
+                : item.relevance_probability === null ? 'No direct model opinion is available. This record remains in the word and evidence-relationship ranking.' : 'The model did not judge this record relevant. It remains visible for your review so an uncertain score cannot hide evidence.'}{' '}
           {item.literal_match && item.semantic_match
             ? 'It also matched all search words.'
             : ''}{' '}
@@ -523,9 +525,9 @@ export function EvidenceSearchResult({
             model signals, not measured accuracy.
           </p>
         )}
-        {item.semantic_similarity !== undefined && (
+        {item.semantic_similarity != null && (
           <p>
-            Whole-dossier ranking combines meaning and word similarity; direct
+            Whole-dossier ranking combines meaning and word similarity with cited evidence relationships; direct
             model opinions do not remove or reorder candidates.
             {item.embedding_truncated
               ? ' The preparation model read only the first 512 tokens of this record.'

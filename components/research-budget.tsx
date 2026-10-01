@@ -20,6 +20,10 @@ export function ResearchBudget({
   onContinue: (limits: ResearchLimits) => Promise<void>;
 }) {
   const [limits, setLimits] = useState(() => nextResearchLimits(value.limits));
+  const label = (key: keyof ResearchLimits) =>
+    key === 'search_requests' && value.search_budget_scope === 'paid_provider_requests'
+      ? 'Paid search requests'
+      : limitLabels[key];
   return (
     <details className="research-budget">
       <summary>Research limits & continuation</summary>
@@ -38,14 +42,14 @@ export function ResearchBudget({
             {(Object.keys(value.limits) as (keyof ResearchLimits)[]).map(
               (key) => (
                 <tr key={key}>
-                  <th scope="row">{limitLabels[key]}</th>
+                  <th scope="row">{label(key)}</th>
                   <td>{value.used[key] ?? '—'}</td>
                   <td>{value.limits[key]}</td>
                   {canContinue && (
                     <td>
                       <input
                         type="number"
-                        aria-label={`New total: ${limitLabels[key]}`}
+                        aria-label={`New total: ${label(key)}`}
                         min={value.limits[key]}
                         max={maximumResearchLimits[key]}
                         step={1}

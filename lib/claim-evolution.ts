@@ -5,6 +5,8 @@ export type ComparedFinding = {
   statement: string;
   status: string;
   revision: number;
+  human_status?: string;
+  review_requirement?: { required: boolean; accepted_for_use: boolean; reasons: string[] };
   evidence: {
     quote: string;
     locator: string;

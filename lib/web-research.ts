@@ -1,3 +1,4 @@
+import type { ResearchCoverage } from './research-coverage';
 import type { InvestigationSummary } from './investigation';
 import type { ComparedFinding, EvidenceChange } from './claim-evolution';
 
@@ -25,6 +26,8 @@ export type MonitoringOutcome = {
   comparisons: EvidenceChange[];
   scope: string;
   source_coverage?: CheckSourceCoverage;
+  coverage_manifest?: ResearchCoverage;
+  question?: string;
 };
 
 export type WebCoverage = {

@@ -20,8 +20,11 @@ export function ResearchCoverageReading({ value }: { value?: ResearchCoverage | 
             <p className="coverage-caption">
               {source.read_status === 'reused' ? 'Retained evidence' : source.read_status === 'unchanged' ? 'Previously captured text' : 'Captured passages'}
               {' · '}{date(source.captured_at)}
+              {source.extraction_methods?.includes('tesseract-ocr') && ' · OCR text — check against the original'}
+              {source.text_truncated && ' · Partial document'}
               {source.analysis_status === 'failed' ? ' · Analysis unavailable' : source.analysis_status === 'analysed' ? ' · Analysed' : ''}
             </p>
+            {!!source.extraction_warnings?.length && <p className="coverage-caption">{source.extraction_warnings.join(' ')}</p>}
           </li>;
         })}
       </ul>}
@@ -34,8 +37,11 @@ export function ResearchCoverageReading({ value }: { value?: ResearchCoverage | 
         <ul className="coverage-list">{value.channels.map((channel, index) => <li key={`${channel.name}-${index}`}>
           <strong>{channel.name}</strong>{' — '}
           {channel.status === 'complete' ? channel.count === 0 ? 'No candidates returned' : `${channel.count ?? 'Unknown number of'} candidates returned` : channel.status === 'running' ? 'In progress' : channel.status === 'unknown' ? 'Outcome not recorded' : 'Unavailable'}
+          {channel.scope && <p className="coverage-caption">{channel.scope}{channel.more_available ? ' Further records were outside this pass.' : ''}</p>}
         </li>)}</ul>
+        {!!value.skipped_channels?.length && <ul>{value.skipped_channels.map((channel, i) => <li key={i}>{channel.name}: {channel.reason}</li>)}</ul>}
       </details>}
+      {value.saved_evidence?.retrieval && <p className="coverage-caption">Saved evidence: {value.saved_evidence.method}. {value.saved_evidence.retrieval.prepared_records ?? 0} of {value.saved_evidence.retrieval.examined_records ?? 0} passages prepared locally.</p>}
       {value.open_questions.length > 0 && <details>
         <summary>Questions still open</summary>
         <ul>{value.open_questions.map((item, index) => <li key={index}>{item.question}</li>)}</ul>

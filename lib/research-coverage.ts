@@ -11,7 +11,7 @@ export type ResearchCoverage = {
     open_questions: number;
     omitted_candidates: number;
   };
-  channels: { name: string; status: string; count: number | null; reason?: string }[];
+  channels: { name: string; status: string; count: number | null; reason?: string; scope?: string; more_available?: boolean }[];
   sources: {
     id: string;
     title: string;
@@ -20,7 +20,12 @@ export type ResearchCoverage = {
     read_status: string;
     analysis_status: string;
     fresh_source_check: boolean;
+    extraction_methods?: string[];
+    extraction_warnings?: string[];
+    text_truncated?: boolean;
   }[];
+  saved_evidence?: { method?: string; retrieval?: { semantic_status?: string; prepared_records?: number; examined_records?: number } | null };
+  skipped_channels?: { name: string; reason: string }[];
   candidates: { title: string; url: string; read_status: string }[];
   open_questions: { question: string; status: string; reason?: string | null }[];
 };

@@ -1,4 +1,5 @@
 'use client';
+import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Bell, BellOff, Check, RefreshCw } from 'lucide-react';
@@ -136,6 +137,7 @@ export function ResearchUpdateItem({
           ? ` · ${item.comparison_counts.CORROBORATES} supporting comparisons`
           : ''}
       </p>
+      {item.outcome ? <MonitoringOutcomeReader outcome={item.outcome} onOpen={(run) => { window.location.href = href(run); }} /> : <>
       {item.findings.length > 0 && (
         <ul
           className="research-update-findings"
@@ -203,6 +205,7 @@ export function ResearchUpdateItem({
           <p className="public-meta">{change.basis}</p>
         </details>
       ))}
+      </>}
       <p className="public-meta">
         Preview of up to three sources, findings and comparisons.{' '}
         <a href={href(item.investigation_id)}>Open the full research record</a>

@@ -1,4 +1,5 @@
 'use client';
+import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { useState } from 'react';
 import { date } from '@/lib/api';
 import { product } from '@/lib/product';
@@ -60,7 +61,8 @@ export function PageChecksReading({ value, onVersion, onInvestigation }: {
           {item.research ? (
             <>
               <p>Dossier research: {item.research.state === 'completed' ? 'completed' : item.research.state === 'failed' ? 'could not be completed' : item.research.state === 'unavailable' ? 'evidence no longer available' : item.research.state === 'skipped' ? 'not started for this capture' : item.research.state}.</p>
-              {item.research.finding && ['completed', 'failed'].includes(item.research.state) && (
+              {item.research.outcome && <MonitoringOutcomeReader outcome={item.research.outcome} onOpen={onInvestigation} />}
+              {!item.research.outcome && item.research.finding && ['completed', 'failed'].includes(item.research.state) && (
                 <details>
                   <summary>{item.research.finding.statement}</summary>
                   <p className="content-origin">AI finding · read the supporting passage</p>
