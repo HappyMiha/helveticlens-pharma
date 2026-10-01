@@ -207,7 +207,7 @@ function ExplorationEpisode({
       }
     }
   }
-  async function control(action: 'pause' | 'resume' | 'cancel') {
+  async function control(action: 'pause' | 'resume' | 'cancel' | 'retry') {
     if (!page || !canEdit || sending.current) return;
     sending.current = true;
     setBusy(true);
@@ -350,6 +350,12 @@ function ExplorationEpisode({
                   Resume research
                 </Button>
               )}
+              {['completed', 'failed'].includes(page.status) &&
+                page.branches.some((branch) => branch.status === 'failed') && (
+                  <Button disabled={busy} onClick={() => void control('retry')}>
+                    Continue saved research
+                  </Button>
+                )}
               {(active || page.status === 'paused') && (
                 <Button
                   variant="ghost"
@@ -368,7 +374,9 @@ function ExplorationEpisode({
                 : state.status === 'exploring'
                   ? page.stop_reason ||
                     'Research is paused. Saved sources remain below.'
-                  : 'There is not enough validated evidence for a briefing yet. Saved passages remain below; you can correct the question and try another bounded episode.'}
+                  : page.status === 'failed'
+                    ? 'The research could not finish. Your sources and reading progress are saved; continue when you are ready.'
+                    : 'There is not enough validated evidence for an answer yet. Saved passages remain below.'}
             </output>
           )}
           <ExplorationBrief state={state} />
@@ -644,13 +652,13 @@ export function ResearchActivity({
       : null;
   return (
     <>
-    <MissionProgress mission={state.mission} />
-    <CurrentResearchReceipt
-      key={deadline ?? 'unconfirmed'}
-      state={state}
-      deadline={deadline}
-      originalQuestion={originalQuestion}
-    />
+      <MissionProgress mission={state.mission} />
+      <CurrentResearchReceipt
+        key={deadline ?? 'unconfirmed'}
+        state={state}
+        deadline={deadline}
+        originalQuestion={originalQuestion}
+      />
     </>
   );
 }
@@ -708,7 +716,8 @@ function CurrentResearchReceipt({
     gate_review: 'Reviewing an uncertain source match',
     read: 'Reading selected source passages',
     extract: 'Analysing captured passages',
-    document_review: 'Checking the complete document for exceptions and contradictions',
+    document_review:
+      'Checking the complete document for exceptions and contradictions',
     reflect: 'Checking what to investigate next',
     orient: 'Preparing a first interpretation',
     brief: 'Preparing the research briefing',
@@ -798,12 +807,17 @@ function CurrentResearchPurpose({ value }: { value?: ResearchPurpose | null }) {
 }
 
 export function ExplorationBrief({ state }: { state: ExplorationState }) {
-  if (state.mission?.answer && state.status !== 'evidence_changed') return <>
-    <MissionReading state={state} />
-    <details className="dossier-secondary"><summary>Research detail & source coverage</summary>
-      <BranchQuestionProgress state={state} /><ObservedResearchScope state={state} />
-    </details>
-  </>;
+  if (state.mission?.answer && state.status !== 'evidence_changed')
+    return (
+      <>
+        <MissionReading state={state} />
+        <details className="dossier-secondary">
+          <summary>Research detail & source coverage</summary>
+          <BranchQuestionProgress state={state} />
+          <ObservedResearchScope state={state} />
+        </details>
+      </>
+    );
   const brief = state.briefing;
   const update = state.research_update;
   const promotedAssessment =

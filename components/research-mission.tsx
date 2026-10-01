@@ -78,7 +78,10 @@ export function MissionReading({ state }: { state: ExplorationState }) {
     ...(knowledge?.document_origins.flatMap((o) => o.sources) || []),
   ];
   const sourceFor = (id: string) => sourceList.find((s) => s.id === id);
-  const quote = (ref: ExplorationCitation, index: number) => {
+  const quote = (
+    ref: ExplorationCitation & { role?: string },
+    index: number,
+  ) => {
     const source = sourceFor(ref.source_id);
     if (!source) return null;
     return (
@@ -86,7 +89,14 @@ export function MissionReading({ state }: { state: ExplorationState }) {
         className="exploration-citation"
         key={`${ref.source_id}:${ref.locator}:${index}`}
       >
-        <summary>{source.title} · supporting passage</summary>
+        <summary>
+          {source.title} ·{' '}
+          {ref.role === 'counterevidence'
+            ? 'counterevidence'
+            : ref.role === 'context'
+              ? 'context'
+              : 'supporting passage'}
+        </summary>
         <blockquote>{ref.quote}</blockquote>
         <a href={source.url} target="_blank" rel="noreferrer">
           Open original source
@@ -147,14 +157,16 @@ export function MissionReading({ state }: { state: ExplorationState }) {
           ))}
         </section>
       )}
-      <section aria-label="Unresolved gaps">
-        <h4>What we still do not know</h4>
-        <ul>
-          {answer.limitations.map((gap, i) => (
-            <li key={i}>{gap}</li>
-          ))}
-        </ul>
-      </section>
+      {!!answer.limitations.length && (
+        <section aria-label="Unresolved gaps">
+          <h4>What we still do not know</h4>
+          <ul>
+            {answer.limitations.map((gap, i) => (
+              <li key={i}>{gap}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       <MissionProgress mission={mission} />
       {mission.stop && (
         <p className="muted">
