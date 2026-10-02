@@ -602,3 +602,14 @@ member/revision controls. Source-backed follow-up and paused-run resume remain
 separate actions. OCR pages are labelled processed until reading is complete.
 Reused captures retain their original timestamp and describe prior passage analysis
 without claiming a new source check or a complete whole-document review.
+
+
+The research reader distinguishes the last saved answer from a later unsuccessful
+attempt. Failed document review is pending, never displayed as active reading.
+Answer and gap navigation leads directly to the evidence-based assessment;
+source-level claims remain available in a collapsed section, with their exact
+quotes and deep links. Programmatic and hash links reveal collapsed ancestors.
+Verified with469 existing/affected tests, lint, typecheck and production build.
+The retained real public-source case renders all7 answer points,28 citations,
+1 gap,100 source-level claims and111 claim quotations; these rendering checks
+do not establish the substantive quality or completion of that research.

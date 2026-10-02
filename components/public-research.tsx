@@ -1,4 +1,5 @@
 'use client';
+import { revealResearchTarget } from '@/lib/research-target';
 import { EntityIdentities } from './entity-identity';
 import { ClaimReviews } from './claim-review';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
@@ -130,6 +131,7 @@ export function PublicResearchView({
   useEffect(() => {
     if (hasValue && window.location.hash) {
       const element = document.getElementById(window.location.hash.slice(1));
+      revealResearchTarget(element);
       element?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     }
   }, [selected, hasValue]);

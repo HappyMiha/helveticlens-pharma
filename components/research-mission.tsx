@@ -26,19 +26,23 @@ const stops: Record<string, string> = {
   rounds_complete:
     'This research has reached its saved checkpoint. Further work remains possible; coverage is not exhaustive.',
   answer_unavailable:
-    'A validated answer could not be prepared. The captured material remains available.',
+    'The latest attempt did not produce a new answer. Your sources and completed work are saved.',
 };
 
 export function MissionProgress({
   mission,
+  status,
 }: {
   mission?: ResearchMission | null;
+  status?: ExplorationState['status'];
 }) {
   if (!mission) return null;
+  const active = status !== 'unavailable' &&
+    ['mapping', 'deepening', 'synthesizing'].includes(mission.stage);
   return (
     <div>
       <output className="mission-progress">
-        {stages[mission.stage]}
+        {mission.stop === 'answer_unavailable' ? 'Latest attempt stopped' : stages[mission.stage]}
         {mission.round && mission.round > 1 ? ` · Round ${mission.round}` : ''}
       </output>
       {mission.documents
@@ -48,15 +52,17 @@ export function MissionProgress({
             {doc.title || 'Document'} ·{' '}
             {doc.page_count
               ? `${doc.pages_read || 0} of ${doc.page_count} pages ${doc.read_complete ? 'read' : 'processed'}`
-              : 'Reading source material'}
+              : active ? 'Reading source material' : 'Source reading is incomplete'}
             {doc.read_complete
-              ? doc.review_progress
+              ? !active || doc.review_failed
+                ? ' · Analysis is pending'
+                : doc.review_progress
                 ? doc.review_progress.phase === 'synthesis'
                   ? ' · Bringing the document’s findings together'
                   : ' · Checking sections and citations across the document'
                 : ' · Analysing sections and checking the whole document'
               : ''}
-            {doc.error ? ` · ${doc.error}` : !doc.read_complete && doc.unread_reason ? ` · ${doc.unread_reason}` : ''}
+            {doc.error ? ` · ${doc.error}` : (!active || !doc.read_complete || doc.review_failed) && doc.unread_reason ? ` · ${doc.unread_reason}` : ''}
           </p>
         ))}
     </div>
@@ -112,11 +118,14 @@ export function MissionReading({ state }: { state: ExplorationState }) {
     p.evidence.some((e) => e.role === 'counterevidence'),
   );
   return (
-    <article className="research-mission" aria-label="Research answer">
+    <article id="research-answer" className="research-mission" aria-label="Research answer">
       <span className="content-origin">
         AI · evidence-based assessment · open to human review
       </span>
       <h3>What the evidence says</h3>
+      {mission.stop === 'answer_unavailable' && (
+        <p className="muted"><strong>Last saved answer.</strong> This answer comes from an earlier round; the latest attempt has not replaced it.</p>
+      )}
       <p className="exploration-question">{mission.question}</p>
       {answer.status === 'not_found' && (
         <p>
@@ -158,7 +167,7 @@ export function MissionReading({ state }: { state: ExplorationState }) {
         </section>
       )}
       {!!answer.limitations.length && (
-        <section aria-label="Unresolved gaps">
+        <section id="answer-gaps" aria-label="Unresolved gaps">
           <h4>What we still do not know</h4>
           <ul>
             {answer.limitations.map((gap, i) => (
@@ -167,7 +176,7 @@ export function MissionReading({ state }: { state: ExplorationState }) {
           </ul>
         </section>
       )}
-      <MissionProgress mission={mission} />
+      <MissionProgress mission={mission} status={state.status} />
       {mission.stop && (
         <p className="muted">
           {stops[mission.stop] || 'The current research is saved.'}

@@ -654,7 +654,7 @@ export function ResearchActivity({
       : null;
   return (
     <>
-      <MissionProgress mission={state.mission} />
+      <MissionProgress mission={state.mission} status={state.status} />
       <CurrentResearchReceipt
         key={deadline ?? 'unconfirmed'}
         state={state}

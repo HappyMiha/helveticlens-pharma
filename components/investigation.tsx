@@ -1,4 +1,5 @@
 'use client';
+import { revealResearchTarget } from '@/lib/research-target';
 import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { ResearchCoverageReading } from './research-coverage';
 import { ExplorationBrief } from './exploration';
@@ -198,6 +199,7 @@ export function DossierInvestigation({
       const target = document.getElementById(
         focusRequest?.anchor || `investigation-${value?.id}`,
       );
+      revealResearchTarget(target);
       const details = target?.querySelector('details');
       if (details && focusRequest?.anchor?.startsWith('source-'))
         details.open = true;
@@ -562,6 +564,20 @@ export function DossierInvestigation({
               appear in Changes over time.
             </p>
           )}
+          <nav className="dossier-section-nav" aria-label="Dossier sections">
+            {value.exploration?.mission?.answer &&
+              value.exploration.status !== 'evidence_changed' &&
+              value.exploration.mission.stage !== 'evidence_changed' && <>
+                <a href="#research-answer">Answer</a>
+                {!!value.exploration.mission.answer.limitations.length && <a href="#answer-gaps">Gaps</a>}
+              </>}
+            <a href="#key-findings">Source findings</a>
+            <a href="#research-sources">Sources</a>
+            <a href="#research-timeline">Timeline</a>
+            <a href="#open-questions">Open questions</a>
+            <a href="#research-method">Method</a>
+            <a href="#evidence-changes">Changes over time</a>
+          </nav>
           {value.exploration && <ExplorationBrief state={value.exploration} />}
           {value.outcome ? <MonitoringOutcomeReader outcome={value.outcome} onOpen={onOpen} /> : <ResearchCoverageReading value={value.coverage_manifest} />}
           {value.research && value.research.execution_policy !== 'completion_based' && (
@@ -606,14 +622,7 @@ export function DossierInvestigation({
               />
             </dl>
           )}
-          <nav className="dossier-section-nav" aria-label="Dossier sections">
-            <a href="#key-findings">Findings</a>
-            <a href="#research-sources">Sources</a>
-            <a href="#research-timeline">Timeline</a>
-            <a href="#open-questions">Open questions</a>
-            <a href="#research-method">Method</a>
-            <a href="#evidence-changes">Changes over time</a>
-          </nav>
+
           <div className="investigation-layout">
             <InvestigationFindings value={value} />
             <DossierSection

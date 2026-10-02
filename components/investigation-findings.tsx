@@ -1,3 +1,6 @@
+'use client';
+import { useEffect } from 'react';
+import { revealResearchTarget } from '@/lib/research-target';
 import type { Investigation, EvidenceLink } from '@/lib/investigation';
 import { readable } from '@/lib/investigation';
 import { SourceCard } from './source-card';
@@ -14,6 +17,18 @@ function Evidence({ value }: { value: EvidenceLink }) {
   );
 }
 export function InvestigationFindings({ value }: { value: Investigation }) {
+  useEffect(() => {
+    const reveal = () => {
+      const hash = window.location?.hash;
+      if (!hash?.startsWith('#claim-')) return;
+      const target = document.getElementById(hash.slice(1));
+      revealResearchTarget(target);
+      target?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    };
+    reveal();
+    window.addEventListener('hashchange', reveal);
+    return () => window.removeEventListener('hashchange', reveal);
+  }, [value.id]);
   const names = new Map(
     value.entities.map((entity) => [entity.id, entity.name]),
   );
@@ -40,6 +55,8 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
               : 'No validated findings yet. Captured sources and completed steps stay here even when a branch cannot finish.'}
           </div>
         )}
+        {!!value.claims.length && <details className="dossier-secondary">
+          <summary>Inspect {value.claims.length} source-level findings and their evidence</summary>
         {value.claims.map((claim) => (
           <article
             className="investigation-claim"
@@ -100,6 +117,7 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
             </details>
           </article>
         ))}
+        </details>}
       </DossierSection>
       {!!value.entities.length && (
         <DossierSection

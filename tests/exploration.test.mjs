@@ -3631,3 +3631,25 @@ test('retry requires a server-confirmed unfinished operation and uses the native
     } finally { if (tree) await act(async () => tree.unmount()); }
   }
 });
+
+
+test('failed later round keeps the saved answer and reports pending analysis without claiming active work', async () => {
+  const { MissionReading } = require(resolve('components/research-mission.tsx'));
+  const state = { status: 'unavailable', sources: [{ id: 's', title: 'Original', url: 'https://example.org/original' }],
+    mission: { stage: 'finished', round: 3, stop: 'answer_unavailable', question: 'What changed?', checkpoints: [],
+      answer: { status: 'partial', points: [{ statement: 'The earlier finding is retained.', evidence: [{ source_id: 's', quote: 'Original evidence.', locator: 'page-1', role: 'support' }] }], limitations: ['The long document still needs analysis.'] },
+      documents: [{ title: 'Long original', url: 'https://example.org/original', page_count: 55, pages_read: 55, read_complete: true, complete: false, review_failed: true,
+        review_progress: { phase: 'sections_and_references', completed: 1, complete: false }, unread_reason: 'Section analysis and whole-document review are pending.', warnings: [] }] } };
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(MissionReading, { state })); });
+    assert.match(text(tree), /Last saved answer/);
+    assert.match(text(tree), /Latest attempt stopped/);
+    assert.match(text(tree), /55 of 55 pages read/);
+    assert.match(text(tree), /Analysis is pending/);
+    assert.doesNotMatch(text(tree), /Checking sections and citations|Bringing the document/);
+    assert.equal(tree.root.findByProps({ id: 'research-answer' }).type, 'article');
+    assert.equal(tree.root.findByProps({ id: 'answer-gaps' }).type, 'section');
+    assert.equal(tree.root.findByType('blockquote').props.children, 'Original evidence.');
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
