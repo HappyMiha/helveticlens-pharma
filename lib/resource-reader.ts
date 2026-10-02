@@ -58,6 +58,12 @@ export class ResourceReader<T> {
     return this.refresh();
   };
 
+  /** Background polls wait for the current read; explicit refresh still supersedes it. */
+  poll = async () => {
+    if (this.controller) return;
+    return this.refresh();
+  };
+
   refresh = async () => {
     if (!this.active || !this.url) return;
     this.controller?.abort();

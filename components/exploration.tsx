@@ -119,7 +119,9 @@ function ExplorationEpisode({
   const sending = useRef(false);
   const lifecycle = useMemo(() => ({ generation: 0 }), []);
   const refreshList = list.refresh,
-    refresh = resource.refresh;
+    refresh = resource.refresh,
+    pollList = list.poll,
+    poll = resource.poll;
   useEffect(() => {
     const reset = () => {
       lifecycle.generation++;
@@ -130,8 +132,8 @@ function ExplorationEpisode({
       setQuestion('');
     };
     const timer = setInterval(() => {
-      void refreshList();
-      void refresh();
+      void pollList();
+      void poll();
     }, 10000);
     window.addEventListener('helvetic-session-changed', reset);
     return () => {
@@ -139,7 +141,7 @@ function ExplorationEpisode({
       clearInterval(timer);
       window.removeEventListener('helvetic-session-changed', reset);
     };
-  }, [refreshList, refresh, lifecycle]);
+  }, [pollList, poll, lifecycle]);
 
   async function reply(
     text: string,

@@ -33,6 +33,7 @@ export function useResource<T>(url: string | null, refreshToken = 0) {
   return {
     ...state,
     refresh: reader.refresh,
+    poll: reader.poll,
     readStartedAt: reader.readStartedAt(),
   };
 }

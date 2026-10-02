@@ -218,3 +218,21 @@ test('late and retired responses cannot renew the accepted read timestamp', asyn
   reader.deactivate();
   assert.equal(reader.readStartedAt(), null);
 });
+
+
+test('background polls let a slow read finish before starting another read', async () => {
+  const { reader, pending } = fixture();
+  const first = reader.refresh();
+  await reader.poll();
+  await reader.poll();
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].signal.aborted, false);
+  pending[0].resolve({ value: 'complete original' });
+  await first;
+  assert.equal(reader.snapshot().data.value, 'complete original');
+  const next = reader.poll();
+  assert.equal(pending.length, 2);
+  pending[1].resolve({ value: 'updated original' });
+  await next;
+  assert.equal(reader.snapshot().data.value, 'updated original');
+});

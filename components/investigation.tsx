@@ -84,8 +84,10 @@ export function DossierInvestigation({
   useEffect(() => {
     currentSelection.current = selected;
   }, [selected]);
+  const refreshPending = useRef(false);
   const refresh = useCallback(async () => {
-    if (!selected) return;
+    if (!selected || refreshPending.current) return;
+    refreshPending.current = true;
     const epoch = accessEpoch.current;
     try {
       const next = await api<Investigation>(`${base}/${selected}`);
@@ -109,6 +111,8 @@ export function DossierInvestigation({
       setError(
         e instanceof Error ? e.message : 'Could not load this investigation.',
       );
+    } finally {
+      refreshPending.current = false;
     }
   }, [base, selected]);
   useEffect(() => {

@@ -22,9 +22,12 @@ export function DossierResearchSources({ dossierId, onOpen }: {
   const value = !list.error && !research.error && research.data?.id === id ? research.data : null;
   const error = list.error || research.error;
   useEffect(() => {
-    const timer = setInterval(() => setTick(n => n + 1), 30000);
-    return () => clearInterval(timer);
-  }, []);
+    // Let a slow original read finish before scheduling its next refresh.
+    // A fixed interval aborts/restarts reads that take longer than the interval.
+    if (list.loading || list.refreshing || research.loading || research.refreshing) return;
+    const timer = setTimeout(() => setTick(n => n + 1), 30000);
+    return () => clearTimeout(timer);
+  }, [id, list.loading, list.refreshing, research.loading, research.refreshing]);
   return <section aria-label="Research sources" className="dossier-research-sources">
     <div className="section-header">
       <div><h2>Research sources</h2><p className="muted">Originals found and read while investigating your question.</p></div>

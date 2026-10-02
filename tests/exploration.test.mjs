@@ -651,7 +651,7 @@ for (const mode of ['changed', 'episode_changed', 'legacy', 'unknown'])
     }
   });
 
-test('chosen direction polling removes changed context and rejects a late response after denial', async (t) => {
+test('chosen direction polling coalesces slow reads and removes changed or denied context', async (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const value = episode({ status: 'running' });
   value.exploration.status = 'exploring';
@@ -678,11 +678,11 @@ test('chosen direction polling removes changed context and rejects a late respon
     defer = true;
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
+    assert.equal(pending.length, 1);
     const changed = structuredClone(value);
     changed.revision++;
     changed.exploration.selected_direction = { status: 'evidence_changed' };
-    await act(async () => pending[1](Response.json(changed)));
-    await act(async () => pending[0](Response.json(value)));
+    await act(async () => pending[0](Response.json(changed)));
     assert.match(text(tree), /behind your chosen direction changed/);
     assert.doesNotMatch(
       text(tree),
@@ -690,8 +690,8 @@ test('chosen direction polling removes changed context and rejects a late respon
     );
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
-    await act(async () => pending[3](Response.json({}, { status: 403 })));
-    await act(async () => pending[2](Response.json(value)));
+    assert.equal(pending.length, 2);
+    await act(async () => pending[1](Response.json({}, { status: 403 })));
     assert.doesNotMatch(
       text(tree),
       /AI · why this direction|retained earlier account|Alpin money/,
@@ -2380,7 +2380,7 @@ test('saved research update yields to final summary and returns only when an ava
   }
 });
 
-test('saved research update polling retains identity and rejects late reads after a newer finding or denial', async (t) => {
+test('saved research update polling retains identity and removes outdated or denied findings', async (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const value = savedUpdateEpisode();
   serve(value, () => {
@@ -2424,19 +2424,19 @@ test('saved research update polling retains identity and rejects late reads afte
     );
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
+    assert.equal(pending.length, 2);
     const newer = structuredClone(value);
     newer.revision++;
     newer.exploration.research_update.event_sequence = 25;
     newer.exploration.question_assessments.assessments[0].points[0].statement =
       'A later supported checkpoint.';
-    await act(async () => pending[2](Response.json(newer)));
-    await act(async () => pending[1](Response.json(value)));
+    await act(async () => pending[1](Response.json(newer)));
     assert.match(text(tree), /A later supported checkpoint/);
     assert.doesNotMatch(text(tree), /The read accounts disagree/);
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
-    await act(async () => pending[4](Response.json({}, { status: 403 })));
-    await act(async () => pending[3](Response.json(newer)));
+    assert.equal(pending.length, 3);
+    await act(async () => pending[2](Response.json({}, { status: 403 })));
     assert.doesNotMatch(
       text(tree),
       /AI · saved research update|A later supported checkpoint/,
@@ -2534,7 +2534,7 @@ for (const invalid of [
     }
   });
 
-test('current purpose polling drops an older explanation and cannot revive it after denied access', async (t) => {
+test('current purpose polling coalesces slow reads and removes older or denied explanations', async (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   t.mock.method(performance, 'now', () => 100);
   const value = episode({ status: 'running' });
@@ -2565,18 +2565,18 @@ test('current purpose polling drops an older explanation and cannot revive it af
     defer = true;
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
+    assert.equal(pending.length, 1);
     const newer = structuredClone(value);
     newer.revision++;
     newer.exploration.current_activity.purpose.text =
       'Check the later retained recipient account.';
-    await act(async () => pending[1](Response.json(newer)));
-    await act(async () => pending[0](Response.json(value)));
+    await act(async () => pending[0](Response.json(newer)));
     assert.match(text(tree), /later retained recipient account/);
     assert.doesNotMatch(text(tree), /earlier discrepancy/);
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
-    await act(async () => pending[3](Response.json({}, { status: 403 })));
-    await act(async () => pending[2](Response.json(newer)));
+    assert.equal(pending.length, 2);
+    await act(async () => pending[1](Response.json({}, { status: 403 })));
     assert.doesNotMatch(
       text(tree),
       /why this check|later retained recipient account|earlier record reports/,
@@ -3280,7 +3280,7 @@ for (const mode of [
   });
 }
 
-test('late saved-check reads cannot revive a removed or denied answer link', async (t) => {
+test('saved-check polling coalesces slow reads and removes revoked answer links', async (t) => {
   t.mock.timers.enable({ apis: ['setInterval'] });
   const value = answerLinkedEpisode();
   serve(value, () => {
@@ -3302,17 +3302,17 @@ test('late saved-check reads cannot revive a removed or denied answer link', asy
     defer = true;
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
+    assert.equal(pending.length, 1);
     const changed = structuredClone(value);
     changed.revision++;
     changed.exploration.next_check = null;
-    await act(async () => pending[1](Response.json(changed)));
-    await act(async () => pending[0](Response.json(value)));
+    await act(async () => pending[0](Response.json(changed)));
     assert.doesNotMatch(text(tree), /AI · connection to your answer/);
     assert.equal(findButton(tree, 'Continue this check'), undefined);
     await act(async () => t.mock.timers.tick(10000));
     await act(async () => t.mock.timers.tick(10000));
-    await act(async () => pending[3](Response.json({}, { status: 403 })));
-    await act(async () => pending[2](Response.json(value)));
+    assert.equal(pending.length, 2);
+    await act(async () => pending[1](Response.json({}, { status: 403 })));
     assert.doesNotMatch(
       text(tree),
       /AI · connection to your answer|Independent recipient records/,
