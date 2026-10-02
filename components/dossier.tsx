@@ -16,6 +16,7 @@ import {
 } from './dossier-overview-details';
 import { DossierCoveragePanel } from './dossier-coverage';
 import { ReferenceLibrary } from '@/components/reference-library';
+import { DossierResearchSources } from './dossier-research-sources';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -672,6 +673,8 @@ export function Dossier({
               Original pages, captured excerpts and attached documents. Source
               material is kept separate from the interpretations it supports.
             </p>
+
+            <DossierResearchSources key={`originals:${d.id}:${userId || ''}`} dossierId={d.id} onOpen={openInvestigation} />
 
             <DossierCoveragePanel
               key={`coverage:${d.id}:${userId || ''}`}

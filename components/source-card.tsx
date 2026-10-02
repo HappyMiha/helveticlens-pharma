@@ -142,15 +142,19 @@ export function SourcePreview({ source }: { source: Source }) {
 export function SourceCard({
   source,
   value,
+  idPrefix = 'source',
+  onClaim,
 }: {
   source: Source;
   value: Investigation;
+  idPrefix?: string;
+  onClaim?: (id: string) => void;
 }) {
   const reference = sourceReference(source.url);
   const href = reference?.href;
   const used = sourceUsage(value, source.id);
   return (
-    <article id={`source-${source.id}`} className="investigation-source">
+    <article id={`${idPrefix}-${source.id}`} className="investigation-source">
       <div className="eyebrow">{readable(source.kind)}</div>
       <h4>{source.title}</h4>
       <SourceMetadata source={source} />
@@ -176,7 +180,9 @@ export function SourceCard({
           {used.contradictions} {used.contradictions === 1 ? 'claim' : 'claims'}{' '}
           with contradicting evidence in this investigation
         </span>
-        {used.claims.map((id, i) => (
+        {used.claims.map((id, i) => onClaim ? (
+          <Button variant="link" key={id} onClick={() => onClaim(id)}>Claim {i + 1}</Button>
+        ) : (
           <a href={`#claim-${id}`} key={id}>
             Claim {i + 1}
           </a>

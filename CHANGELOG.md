@@ -1,3 +1,7 @@
+## Research source access
+
+Sources & files now opens the same captured originals used by research, including retained passages and provenance. Users can switch recent episodes and return to their findings; permission failures hide stale captures.
+
 # Changes
 
 ## 1.89.0
