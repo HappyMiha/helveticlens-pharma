@@ -53,6 +53,7 @@ export type EvidenceLink = {
   mentions?: (EvidenceLink & { name: string })[];
 };
 export type Investigation = InvestigationSummary & {
+  retry?: { available: boolean };
   coverage_manifest?: ResearchCoverage | null;
   outcome?: MonitoringOutcome | null;
   exploration?: ExplorationState | null;
@@ -120,6 +121,7 @@ export type Investigation = InvestigationSummary & {
       duplicate_of?: string;
       independence?: string;
       unchanged_from?: string | null;
+      retained_origin?: { source_id?: string; captured_at?: string | null };
       scope: string;
       excerpts: { text: string; passage: string }[];
     };
@@ -176,6 +178,30 @@ export type Investigation = InvestigationSummary & {
 };
 export const isRunning = (value: InvestigationSummary | null) =>
   !!value && ['queued', 'running'].includes(value.status);
+export function researchDeliveryLabel(
+  value: InvestigationSummary & { exploration?: ExplorationState | null },
+) {
+  const state = value.exploration;
+  if (state?.status === 'evidence_changed' || state?.mission?.stage === 'evidence_changed')
+    return 'Evidence changed';
+  if (['completed', 'failed'].includes(value.status)) {
+    const answer = state?.mission?.answer;
+    if (answer?.status === 'not_found') return 'Answer not established';
+    if (answer?.points.length) {
+      if (value.status === 'failed' || answer.status === 'partial') return 'Partial answer saved';
+      if (answer.status === 'conflicting') return 'Conflicting evidence';
+      return 'Answer saved';
+    }
+    return value.status === 'failed' ? 'Research incomplete' : 'Research saved';
+  }
+  return readable(value.status);
+}
+export function canRetryResearch(value: Investigation) {
+  return ['completed', 'failed'].includes(value.status) &&
+    value.retry?.available === true && !value.exploration?.continued_by &&
+    value.exploration?.status !== 'evidence_changed' &&
+    value.exploration?.mission?.stage !== 'evidence_changed';
+}
 export function readable(value: string) {
   const text = value.toLowerCase().replaceAll('_', ' ');
   return text.charAt(0).toUpperCase() + text.slice(1);

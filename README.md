@@ -592,3 +592,13 @@ retained versus newly captured passages, unavailable search channels, unread can
 and open questions. It describes an actual bounded episode, never exhaustive coverage.
 The shared knowledge API resolves claims, contrary evidence, source versions and human
 review under versioned domain policies. Existing review and monitoring controls remain.
+
+
+Partial research retains the canonical answer and exact citations beside named gaps.
+A failed execution no longer labels an already saved answer simply “Failed”; a
+`not_found` answer remains explicitly unestablished even when context is cited.
+Retry appears only for server-confirmed unfinished operations, under the existing
+member/revision controls. Source-backed follow-up and paused-run resume remain
+separate actions. OCR pages are labelled processed until reading is complete.
+Reused captures retain their original timestamp and describe prior passage analysis
+without claiming a new source check or a complete whole-document review.

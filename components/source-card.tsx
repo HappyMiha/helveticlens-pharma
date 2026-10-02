@@ -22,7 +22,8 @@ type Source = Investigation['sources'][number];
 export function SourceMetadata({ source }: { source: Source }) {
   const reference = sourceReference(source.url);
   const href = reference?.href;
-  const captured = sourceTimestamp(source.created_at);
+  const retained = source.snapshot?.retained_origin;
+  const captured = sourceTimestamp(retained ? retained.captured_at : source.created_at);
   return (
     <dl className="source-metadata">
       <div>
@@ -36,7 +37,7 @@ export function SourceMetadata({ source }: { source: Source }) {
         </div>
       )}
       <div>
-        <dt>Captured</dt>
+        <dt>{retained ? 'Original capture' : 'Captured'}</dt>
         <dd>
           {captured ? (
             <time dateTime={captured}>{date(captured)}</time>
@@ -45,6 +46,12 @@ export function SourceMetadata({ source }: { source: Source }) {
           )}
         </dd>
       </div>
+      {retained && (
+        <div>
+          <dt>Use in this research</dt>
+          <dd>Reused from earlier research; not checked again.</dd>
+        </div>
+      )}
       <div>
         <dt>Source classification</dt>
         <dd>

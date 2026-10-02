@@ -6,6 +6,7 @@ import { api, ApiError, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import type { Investigation, InvestigationSummary } from '@/lib/investigation';
+import { researchDeliveryLabel, canRetryResearch } from '@/lib/investigation';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { WebPolicyForm } from './web-research';
@@ -279,7 +280,7 @@ function ExplorationEpisode({
   return (
     <section className="exploration" aria-label="Developing your research">
       <p className="chapter-kicker">
-        {active ? 'Research in progress' : 'Research checkpoint'}
+        {active ? 'Research in progress' : page ? researchDeliveryLabel(page) : 'Research checkpoint'}
       </p>
       <h2>
         {brief
@@ -350,10 +351,9 @@ function ExplorationEpisode({
                   Resume research
                 </Button>
               )}
-              {['completed', 'failed'].includes(page.status) &&
-                page.branches.some((branch) => branch.status === 'failed') && (
+              {canRetryResearch(page) && (
                   <Button disabled={busy} onClick={() => void control('retry')}>
-                    Continue saved research
+                    Retry unfinished steps
                   </Button>
                 )}
               {(active || page.status === 'paused') && (
@@ -375,7 +375,7 @@ function ExplorationEpisode({
                   ? page.stop_reason ||
                     'Research is paused. Saved sources remain below.'
                   : page.status === 'failed'
-                    ? 'The research could not finish. Your sources and reading progress are saved; continue when you are ready.'
+                    ? 'The research could not finish. Your sources and completed work are saved below.'
                     : 'There is not enough validated evidence for an answer yet. Saved passages remain below.'}
             </output>
           )}

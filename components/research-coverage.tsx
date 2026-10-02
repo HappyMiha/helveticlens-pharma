@@ -22,7 +22,7 @@ export function ResearchCoverageReading({ value }: { value?: ResearchCoverage | 
               {' · '}{date(source.captured_at)}
               {source.extraction_methods?.includes('tesseract-ocr') && ' · OCR text — check against the original'}
               {source.text_truncated && ' · Partial document'}
-              {source.analysis_status === 'failed' ? ' · Analysis unavailable' : source.analysis_status === 'analysed' ? ' · Analysed' : ''}
+              {source.analysis_status === 'failed' ? ' · Analysis unavailable' : source.analysis_status === 'analysed' ? ' · Analysed' : source.analysis_status === 'retained_analysis' ? ' · Previously analysed passages' : source.read_status === 'reused' && source.analysis_status === 'not_started' ? ' · Prior analysis not recorded' : ''}
             </p>
             {!!source.extraction_warnings?.length && <p className="coverage-caption">{source.extraction_warnings.join(' ')}</p>}
           </li>;

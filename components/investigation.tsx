@@ -11,7 +11,7 @@ import type { ResearchLimits } from '@/lib/research-engine';
 import { Pause, Play, Square } from 'lucide-react';
 import { api, uid } from '@/lib/api';
 import { product } from '@/lib/product';
-import { isRunning, readable } from '@/lib/investigation';
+import { isRunning, readable, researchDeliveryLabel, canRetryResearch } from '@/lib/investigation';
 import type { Investigation, InvestigationSummary } from '@/lib/investigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -420,7 +420,7 @@ export function DossierInvestigation({
           >
             {history.map((row) => (
               <option key={row.id} value={row.id}>
-                {readable(row.status)} · {row.question}
+                {researchDeliveryLabel(row)} · {row.question}
               </option>
             ))}
           </select>
@@ -443,7 +443,7 @@ export function DossierInvestigation({
           >
             <div>
               <span className="investigation-status" data-status={value.status}>
-                {readable(value.status)}
+                {researchDeliveryLabel(value)}
               </span>
               <p className="eyebrow">
                 {value.trigger_entry_id
@@ -453,15 +453,13 @@ export function DossierInvestigation({
               <h2>{value.question}</h2>
             </div>
             <div className="investigation-controls">
-              {canControl &&
-                ['completed', 'failed'].includes(value.status) &&
-                value.branches.some((branch) => branch.status === 'failed') && (
+              {canControl && canRetryResearch(value) && (
                   <Button
                     variant="outline"
-                    disabled={busy}
+                    disabled={busy || (activeElsewhere && !value.trigger_entry_id)}
                     onClick={() => void control('retry')}
                   >
-                    Retry unavailable steps
+                    Retry unfinished steps
                   </Button>
                 )}
 
@@ -502,7 +500,9 @@ export function DossierInvestigation({
           <output aria-live="polite" className="investigation-muted">
             {running
               ? connection || 'Waiting for the next saved checkpoint…'
-              : value.stop_reason}
+              : value.retry?.available === false && value.exploration?.mission?.stop === 'documents_incomplete'
+                ? 'Some documents could not be fully read or analysed. Saved evidence and the specific gaps are shown below.'
+                : value.stop_reason}
           </output>
           {value.web_research_trigger && (
             <aside className="monitoring-research-status">

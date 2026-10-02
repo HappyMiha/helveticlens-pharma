@@ -2577,3 +2577,36 @@ test('unavailable monitoring result hides retained source coverage and unknown c
   assert.doesNotMatch(html, /Sources in this check|Captured registry/);
   assert.equal(renderCoverage({ ...checkCoverage, contract: 'unknown/v2' }), '');
 });
+
+
+test('reused source metadata keeps the original capture date or an explicit unknown', () => {
+  for (const captured_at of ['2026-09-01T10:00:00Z', null]) {
+    const html = renderToStaticMarkup(React.createElement(SourceMetadata, { source: {
+      url: 'https://example.org/document', created_at: '2026-10-02T10:00:00Z',
+      snapshot: { retained_origin: { source_id: 'original', captured_at } },
+    } }));
+    assert.match(html, /Original capture/);
+    assert.match(html, /Reused from earlier research; not checked again/);
+    assert.doesNotMatch(html, /2026-10-02/);
+    if (captured_at) assert.match(html, /dateTime="2026-09-01T10:00:00Z"/);
+    else assert.match(html, /Original capture<\/dt><dd>Not established/);
+  }
+});
+
+test('delivery state and retry availability do not turn completed work into a failed dossier', () => {
+  const { researchDeliveryLabel, canRetryResearch } = require(resolve('lib/investigation.ts'));
+  const value = { status: 'failed', retry: { available: true }, exploration: { status: 'ready',
+    mission: { stage: 'incomplete', answer: { status: 'partial', points: [{ statement: 'Saved answer' }] } } } };
+  assert.equal(researchDeliveryLabel(value), 'Partial answer saved');
+  assert.equal(canRetryResearch(value), true);
+  assert.equal(researchDeliveryLabel({ status: 'failed' }), 'Research incomplete');
+  for (const status of ['completed', 'failed'])
+    assert.equal(researchDeliveryLabel({ ...value, status, exploration: { ...value.exploration,
+      mission: { ...value.exploration.mission, answer: { status: 'not_found', points: [{ statement: 'Context only' }] } } } }), 'Answer not established');
+  assert.equal(researchDeliveryLabel({ ...value, status: 'paused' }), 'Paused');
+  assert.equal(canRetryResearch({ ...value, retry: undefined }), false);
+  assert.equal(canRetryResearch({ ...value, exploration: { ...value.exploration, continued_by: 'next' } }), false);
+  const withdrawn = { ...value, exploration: { ...value.exploration, status: 'evidence_changed' } };
+  assert.equal(researchDeliveryLabel(withdrawn), 'Evidence changed');
+  assert.equal(canRetryResearch(withdrawn), false);
+});

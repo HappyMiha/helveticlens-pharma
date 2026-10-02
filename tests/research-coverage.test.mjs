@@ -99,3 +99,14 @@ test('shared monitoring reading distinguishes a human review from machine suppor
   assert.match(html, /page-1-ocr/);
   assert.doesNotMatch(html, /<script>/);
 });
+
+
+test('retained analysis describes previous passages without claiming a fresh read', () => {
+  for (const status of ['retained_analysis', 'not_started']) {
+    const current = { ...value, sources: [{ ...value.sources[0], analysis_status: status }] };
+    const html = renderToStaticMarkup(React.createElement(ResearchCoverageReading, { value: current }));
+    assert.match(html, status === 'retained_analysis' ? /Previously analysed passages/ : /Prior analysis not recorded/);
+    assert.match(html, /Reusing it does not mean the source was checked again/);
+    assert.doesNotMatch(html, / · Analysed|Full text read/);
+  }
+});

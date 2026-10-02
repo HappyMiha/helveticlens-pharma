@@ -3585,3 +3585,49 @@ test('mission reader separates the answer, counterevidence and named gaps withou
     assert.equal(tree.toJSON(), null);
   } finally { if (tree) await act(async () => tree.unmount()); }
 });
+
+
+test('partial research keeps its cited answer and labels processed OCR pages honestly', async () => {
+  const value = episode({ status: 'failed', retry: { available: false }, branches: [{ id: 'b', query: 'Read original', status: 'failed', steps: [] }] });
+  value.exploration.mission = { contract: 'research-mission/v1', stage: 'incomplete', round: 1,
+    question: value.question, stop: 'documents_incomplete', checkpoints: [],
+    answer: { status: 'partial', points: [{ statement: 'The retained record identifies the entity.',
+      evidence: [{ source_id: 's', quote: 'The source passage is here.', locator: 'p1', role: 'support' }] }],
+      limitations: ['One scanned page could not be read.'] },
+    documents: [{ title: 'Scanned original', url: 'https://example.org/record', portions: 3,
+      page_count: 400, pages_read: 400, complete: false, read_complete: false,
+      unread_reason: 'One scanned page could not be read.', warnings: ['OCR returned no text on page 217.'] }] };
+  let tree, writes = 0;
+  serve(value, () => { writes++; return Response.json({}); });
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, props)); });
+    assert.match(text(tree), /Partial answer saved/);
+    assert.match(text(tree), /The retained record identifies the entity/);
+    assert.match(text(tree), /The source passage is here/);
+    assert.match(text(tree), /400 of 400 pages processed/);
+    assert.match(text(tree), /OCR returned no text on page 217/);
+    assert.doesNotMatch(text(tree), /400 of 400 pages read|saved progress can be resumed|Retry unfinished steps/);
+    assert.equal(writes, 0);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
+test('retry requires a server-confirmed unfinished operation and uses the native revision fence', async () => {
+  for (const available of [undefined, false, true]) {
+    const value = episode({ status: 'failed', branches: [{ id: 'b', query: 'Read original', status: 'failed', steps: [] }],
+      ...(available === undefined ? {} : { retry: { available } }) });
+    let tree; const writes = [];
+    serve(value, (url, init) => { writes.push({ url, body: JSON.parse(init.body) }); return Response.json(value); });
+    try {
+      await act(async () => { tree = create(React.createElement(Exploration, props)); });
+      const button = findButton(tree, 'Retry unfinished steps');
+      assert.equal(!!button, available === true);
+      assert.equal(writes.length, 0);
+      if (button) {
+        await act(async () => button.props.onClick());
+        assert.deepEqual(writes, [{ url: `${base}/r/control`, body: { action: 'retry', expected_revision: 20 } }]);
+      }
+      await act(async () => tree.update(React.createElement(Exploration, { ...props, canEdit: false })));
+      assert.equal(findButton(tree, 'Retry unfinished steps'), undefined);
+    } finally { if (tree) await act(async () => tree.unmount()); }
+  }
+});

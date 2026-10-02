@@ -33,8 +33,11 @@ export function InvestigationFindings({ value }: { value: Investigation }) {
         <p className="investigation-muted">{value.evidence_basis}</p>
         {!value.claims.length && (
           <div className="investigation-empty">
-            No validated findings yet. Captured sources and completed steps stay
-            here even when a branch cannot finish.
+            {value.exploration?.mission?.answer?.points.length &&
+            value.exploration.status !== 'evidence_changed' &&
+            value.exploration.mission.stage !== 'evidence_changed'
+              ? 'No separate source-level findings were saved. The research answer and its citations are shown above.'
+              : 'No validated findings yet. Captured sources and completed steps stay here even when a branch cannot finish.'}
           </div>
         )}
         {value.claims.map((claim) => (

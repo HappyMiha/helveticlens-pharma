@@ -12,7 +12,7 @@ const stages = {
 };
 const stops: Record<string, string> = {
   documents_incomplete:
-    'This research is incomplete. The unread or unanalysed material is listed below; saved progress can be resumed.',
+    'The unread or unanalysed material is listed below. Sources and completed work are saved.',
   available_checks_complete:
     'The useful checks available in this research have been completed. The remaining gaps are named below.',
   needs_direction:
@@ -47,7 +47,7 @@ export function MissionProgress({
           <p className="muted" key={index}>
             {doc.title || 'Document'} ·{' '}
             {doc.page_count
-              ? `${doc.pages_read || 0} of ${doc.page_count} pages read`
+              ? `${doc.pages_read || 0} of ${doc.page_count} pages ${doc.read_complete ? 'read' : 'processed'}`
               : 'Reading source material'}
             {doc.read_complete
               ? doc.review_progress
@@ -56,7 +56,7 @@ export function MissionProgress({
                   : ' · Checking sections and citations across the document'
                 : ' · Analysing sections and checking the whole document'
               : ''}
-            {doc.error ? ` · ${doc.error}` : ''}
+            {doc.error ? ` · ${doc.error}` : !doc.read_complete && doc.unread_reason ? ` · ${doc.unread_reason}` : ''}
           </p>
         ))}
     </div>
@@ -203,14 +203,14 @@ export function MissionReading({ state }: { state: ExplorationState }) {
               <li key={i}>
                 {doc.url ? (
                   <a href={doc.url} target="_blank" rel="noreferrer">
-                    Original document
+                    {doc.title || 'Original document'}
                   </a>
                 ) : (
                   'Contributed document'
                 )}
                 <p>
                   {doc.page_count
-                    ? `${doc.pages_read || 0} of ${doc.page_count} pages read`
+                    ? `${doc.pages_read || 0} of ${doc.page_count} pages ${(doc.read_complete ?? doc.complete) ? 'read' : 'processed'}`
                     : `${doc.portions} saved portions`}
                   {doc.page_count
                     ? ` · ${doc.page_count} pages in the original`
