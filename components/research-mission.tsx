@@ -27,6 +27,8 @@ const stops: Record<string, string> = {
     'This research has reached its saved checkpoint. Further work remains possible; coverage is not exhaustive.',
   answer_unavailable:
     'The latest attempt did not produce a new answer. Your sources and completed work are saved.',
+  review_unavailable:
+    'Your checked answer is saved. Some verification is pending and can be retried.',
 };
 
 export function MissionProgress({
@@ -42,7 +44,9 @@ export function MissionProgress({
   return (
     <div>
       <output className="mission-progress">
-        {mission.stop === 'answer_unavailable' ? 'Latest attempt stopped' : stages[mission.stage]}
+        {mission.stop === 'answer_unavailable' ? 'Latest attempt stopped'
+          : mission.stop === 'review_unavailable' ? 'Answer saved · verification pending'
+          : stages[mission.stage]}
         {mission.round && mission.round > 1 ? ` · Round ${mission.round}` : ''}
       </output>
       {mission.documents
@@ -78,6 +82,11 @@ export function MissionReading({ state }: { state: ExplorationState }) {
   )
     return null;
   const answer = mission.answer;
+  const verification = mission.stop === 'review_unavailable' && mission.verification?.status === 'partial'
+    ? mission.verification : null;
+  const limitations = verification
+    ? answer.limitations.filter((gap) => gap !== verification.basis)
+    : answer.limitations;
   const knowledge = mission.knowledge;
   const sourceList = [
     ...state.sources,
@@ -127,13 +136,20 @@ export function MissionReading({ state }: { state: ExplorationState }) {
         <p className="muted"><strong>Last saved answer.</strong> This answer comes from an earlier round; the latest attempt has not replaced it.</p>
       )}
       <p className="exploration-question">{mission.question}</p>
+      {verification && (
+        <aside className="banner warning" aria-label="Verification pending">
+          <strong>Some checks are still pending</strong>
+          <p>{verification.basis}</p>
+          <p>You can retry the remaining checks. Your sources and checked findings are saved.</p>
+        </aside>
+      )}
       {answer.status === 'not_found' && (
         <p>
           No answer was established in the material read. This does not
           establish that no answer exists.
         </p>
       )}
-      {answer.status === 'partial' && (
+      {answer.status === 'partial' && !verification && (
         <p className="muted">
           This is a partial answer. Important gaps remain.
         </p>
@@ -166,18 +182,18 @@ export function MissionReading({ state }: { state: ExplorationState }) {
           ))}
         </section>
       )}
-      {!!answer.limitations.length && (
+      {!!limitations.length && (
         <section id="answer-gaps" aria-label="Unresolved gaps">
           <h4>What we still do not know</h4>
           <ul>
-            {answer.limitations.map((gap, i) => (
+            {limitations.map((gap, i) => (
               <li key={i}>{gap}</li>
             ))}
           </ul>
         </section>
       )}
       <MissionProgress mission={mission} status={state.status} />
-      {mission.stop && (
+      {mission.stop && !verification && (
         <p className="muted">
           {stops[mission.stop] || 'The current research is saved.'}
         </p>

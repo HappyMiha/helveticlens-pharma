@@ -3653,3 +3653,25 @@ test('failed later round keeps the saved answer and reports pending analysis wit
     assert.equal(tree.root.findByType('blockquote').props.children, 'Original evidence.');
   } finally { if (tree) await act(async () => tree.unmount()); }
 });
+
+test('pending verification is separate from genuine source gaps in the saved answer', async () => {
+  const { MissionReading } = require(resolve('components/research-mission.tsx'));
+  const notice = 'Some proposed conclusions are withheld while their checks are unavailable.';
+  const state = { status: 'ready', sources: [{ id: 's', title: 'Original register', url: 'https://example.org/original' }],
+    mission: { contract: 'research-mission/v1', stage: 'incomplete', stop: 'review_unavailable', question: 'Who operates the registry?', checkpoints: [],
+      verification: { status: 'partial', pending_checks: 1, reasons: ['model_upstream_timeout'], basis: notice },
+      answer: { status: 'partial', points: [{ statement: 'North Survey operates the registry.',
+        evidence: [{ source_id: 's', quote: 'North Survey operates the registry.', locator: 'p1', role: 'support' }] }],
+        limitations: [notice, 'The transfer date is not stated in the register.'] } } };
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(MissionReading, { state })); });
+    const pending = tree.root.findByProps({ 'aria-label': 'Verification pending' });
+    assert.match(pending.findAllByType('p').map((p) => p.props.children).join(' '), /checks are unavailable/);
+    assert.match(text(tree), /Answer saved · verification pending/);
+    assert.match(text(tree), /North Survey operates the registry/);
+    const gaps = tree.root.findByProps({ id: 'answer-gaps' }).findAllByType('li');
+    assert.deepEqual(gaps.map((gap) => gap.props.children), ['The transfer date is not stated in the register.']);
+    assert.doesNotMatch(text(tree), /Some documents still need reading|model_upstream_timeout|Latest attempt stopped/);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});

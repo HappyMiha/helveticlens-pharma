@@ -29,6 +29,12 @@ export type ResearchMission = {
   stop?: string | null;
   question?: string;
   answer: MissionAnswer | null;
+  verification?: {
+    status: 'partial';
+    pending_checks: number;
+    reasons: string[];
+    basis: string;
+  };
   checkpoints: {
     round: number;
     answer: MissionAnswer;
