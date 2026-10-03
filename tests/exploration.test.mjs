@@ -3563,6 +3563,72 @@ for (const phase of ['queued', 'failed', 'completed'])
     }
   });
 
+
+for (const phase of ['queued', 'failed'])
+  test(`earlier typed answer stays open with citations during ${phase} continuation`, async () => {
+    const earlier = episode();
+    earlier.exploration.mission = {
+      contract: 'research-mission/v1', stage: 'finished', round: 1,
+      question: 'Who received the earlier grant?', stop: 'available_checks_complete',
+      checkpoints: [],
+      answer: { status: 'partial', points: [
+        { statement: 'The saved original identifies the recipient.', evidence: [
+          { source_id: 's', quote: 'The source passage is here.', locator: 'p1', role: 'support' },
+        ] },
+        { statement: 'A second checked point survives beyond the legacy briefing.', evidence: [
+          { source_id: 's', quote: 'The source passage is here.', locator: 'p1', role: 'context' },
+        ] },
+      ], limitations: ['The original does not reconcile the reported amounts.'] },
+    };
+    const current = episode();
+    current.status = phase;
+    current.question = 'Continue checking the recipient.';
+    current.exploration.status = phase === 'queued' ? 'exploring' : 'unavailable';
+    current.exploration.briefing = null;
+    // New orientation must not close the earlier complete typed reading.
+    current.exploration.orientation = { status: 'ready', briefing: {
+      interpretations: [], uncertainties: ['The current continuation remains unfinished.'],
+    } };
+    current.exploration.retained_research = {
+      investigation_id: 'prior', question: earlier.exploration.mission.question,
+      updated_at: '2026-10-01T01:00:00Z', exploration: earlier.exploration,
+    };
+    let writes = 0, tree;
+    serve(current, () => { writes++; throw new Error('Reading must not start work'); });
+    try {
+      await act(async () => { tree = create(React.createElement(Exploration, { ...props, canEdit: false })); });
+      const saved = tree.root.findAllByType('details').find((n) =>
+        n.findAllByType('summary').some((s) => s.props.children === 'Earlier saved answer'));
+      assert.ok(saved?.props.open);
+      assert.match(text(tree), /Who received the earlier grant/);
+      assert.match(text(tree), /A second checked point survives beyond the legacy briefing/);
+      assert.match(text(tree), /The original does not reconcile the reported amounts/);
+      assert.match(text(tree), phase === 'failed'
+        ? /latest continuation stopped before saving a replacement/
+        : /current continuation has not yet saved a replacement/);
+      assert.ok(saved.findAllByType('blockquote').some((q) => q.props.children === 'The source passage is here.'));
+      assert.ok(saved.findAllByType('a').some((a) => a.props.href === 'https://example.org/record'));
+      assert.match(text(tree), /Keeping this research available does not recheck its sources/);
+      assert.equal(writes, 0);
+      // A changed current evidence scope suppresses even an old response's fallback.
+      const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+      await act(async () => tree.update(React.createElement(ExplorationBrief, {
+        state: { ...current.exploration, status: 'evidence_changed' },
+      })));
+      assert.doesNotMatch(text(tree), /Earlier saved answer|second checked point survives/);
+      // A newly delivered typed answer replaces the fallback in the main reading.
+      await act(async () => tree.update(React.createElement(ExplorationBrief, {
+        state: { ...current.exploration, status: 'ready', mission: {
+          ...earlier.exploration.mission, question: current.question,
+          answer: { status: 'possible_answer', points: [{ statement: 'The new checked answer.',
+            evidence: earlier.exploration.mission.answer.points[0].evidence }], limitations: [] },
+        } },
+      })));
+      assert.match(text(tree), /The new checked answer/);
+      assert.doesNotMatch(text(tree), /Earlier saved answer|second checked point survives/);
+    } finally { if (tree) await act(async () => tree.unmount()); }
+  });
+
 test('mission reader separates the answer, counterevidence and named gaps without setup fields', async () => {
   const { MissionReading } = require(resolve('components/research-mission.tsx'));
   const ref = { source_id: 'source-one', quote: 'The two reported amounts differ.', locator: 'page-25-text-1-char-1' };

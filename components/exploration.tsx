@@ -858,8 +858,10 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
     state.status !== 'evidence_changed' && state.retained_research ? (
       <RetainedResearch
         value={state.retained_research}
+        continuationUnavailable={state.status === 'unavailable'}
         collapsed={Boolean(
-          brief || promotedAssessment || state.orientation?.status === 'ready',
+          !state.retained_research.exploration.mission?.answer &&
+            (brief || promotedAssessment || state.orientation?.status === 'ready'),
         )}
       />
     ) : null;
@@ -1087,21 +1089,28 @@ export function ExplorationBrief({ state }: { state: ExplorationState }) {
 function RetainedResearch({
   value,
   collapsed,
+  continuationUnavailable,
 }: {
   value: NonNullable<ExplorationState['retained_research']>;
   collapsed: boolean;
+  continuationUnavailable: boolean;
 }) {
+  const hasAnswer = Boolean(value.exploration.mission?.answer);
   return (
     <details className="dossier-secondary" open={!collapsed || undefined}>
-      <summary>Findings kept from earlier research</summary>
+      <summary>{hasAnswer ? 'Earlier saved answer' : 'Findings kept from earlier research'}</summary>
       <p className="muted">
-        These saved findings address the earlier question below. Continuing the
-        research keeps them available; it does not recheck their sources.
+        {hasAnswer
+          ? continuationUnavailable
+            ? 'The latest continuation stopped before saving a replacement. This answer belongs to the earlier research below.'
+            : 'The current continuation has not yet saved a replacement. This answer belongs to the earlier research below.'
+          : 'These saved findings address the earlier question below.'}
+        {' '}Keeping this research available does not recheck its sources.
       </p>
       <p className="source-meta">
         Earlier research updated {date(value.updated_at)}
       </p>
-      {!value.exploration.briefing?.assessment && (
+      {!hasAnswer && !value.exploration.briefing?.assessment && (
         <p className="exploration-question">{value.question}</p>
       )}
       <ExplorationBrief state={value.exploration} />
