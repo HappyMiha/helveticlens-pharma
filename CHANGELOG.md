@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.90.0 — Read the answer, then inspect its evidence
+
+Each finding has one compact Sources and context disclosure. Opening it shows every supporting, contextual and contrary passage directly, with its captured source identity, original link and locator. Source and passage counts describe only evidence available to the reader. Findings, conflicts and unresolved gaps retain their existing content.
+
 ## 1.89.0
 
 - One dossier surface for the public monitoring question, schedule, personal in-app updates and separately opted-in email.

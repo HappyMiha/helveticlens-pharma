@@ -120,6 +120,47 @@ export function MissionReading({ state }: { state: ExplorationState }) {
       </details>
     );
   };
+  const evidence = (refs: (ExplorationCitation & { role?: string })[]) => {
+    const passages = refs.flatMap((ref) => {
+      const source = sourceFor(ref.source_id);
+      return source ? [{ ref, source }] : [];
+    });
+    if (!passages.length) return null;
+    const sourceCount = new Set(passages.map(({ ref }) => ref.source_id)).size;
+    return (
+      <details className="mission-evidence">
+        <summary>
+          Sources and context{' '}
+          <span className="muted">
+            · {sourceCount} {sourceCount === 1 ? 'source' : 'sources'} ·{' '}
+            {passages.length} {passages.length === 1 ? 'passage' : 'passages'}
+          </span>
+        </summary>
+        <div className="mission-evidence-passages">
+          {passages.map(({ ref, source }, index) => (
+            <div
+              className="exploration-citation"
+              key={`${ref.source_id}:${ref.locator}:${index}`}
+            >
+              <p className="mission-evidence-source">
+                {source.title} ·{' '}
+                {ref.role === 'counterevidence'
+                  ? 'counterevidence'
+                  : ref.role === 'context'
+                    ? 'context'
+                    : 'supporting passage'}
+              </p>
+              <blockquote>{ref.quote}</blockquote>
+              <a href={source.url} target="_blank" rel="noreferrer">
+                Open original source
+              </a>
+              <p className="muted">{ref.locator}</p>
+            </div>
+          ))}
+        </div>
+      </details>
+    );
+  };
   const points = answer.points.filter(
     (p) => !p.evidence.some((e) => e.role === 'counterevidence'),
   );
@@ -157,7 +198,7 @@ export function MissionReading({ state }: { state: ExplorationState }) {
       {points.map((point, i) => (
         <section key={i}>
           <p>{point.statement}</p>
-          {point.evidence.map(quote)}
+          {evidence(point.evidence)}
         </section>
       ))}
       {!!conflicts.length && (
@@ -166,18 +207,7 @@ export function MissionReading({ state }: { state: ExplorationState }) {
           {conflicts.map((point, i) => (
             <div key={i}>
               <p>{point.statement}</p>
-              {point.evidence.map((ref, j) => (
-                <div key={j}>
-                  <span className="content-origin">
-                    {ref.role === 'counterevidence'
-                      ? 'Counterevidence'
-                      : ref.role === 'support'
-                        ? 'Supporting evidence'
-                        : 'Context'}
-                  </span>
-                  {quote(ref, j)}
-                </div>
-              ))}
+              {evidence(point.evidence)}
             </div>
           ))}
         </section>

@@ -2721,6 +2721,12 @@ code {
 .research-mission dl > div { padding-block: .7rem; border-bottom: 1px solid var(--border); }
 .research-mission dt { text-transform: capitalize; font-weight: 600; }
 .research-mission dd { margin-inline: 0; }
+.mission-evidence { margin-block: .5rem 1rem; }
+.mission-evidence > summary { min-height: 44px; box-sizing: border-box; padding-block: .6rem; cursor: pointer; line-height: 1.5; overflow-wrap: anywhere; }
+.mission-evidence > summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.mission-evidence-passages { display: grid; gap: 1.25rem; padding-block: .5rem 1rem; }
+.mission-evidence-source { margin-block: 0 .5rem; font-weight: 600; }
+.mission-evidence-passages blockquote { margin: .5rem 0; white-space: pre-wrap; }
 .mission-progress { display: block; padding-block: .75rem; font-size: .9rem; border-bottom: 1px solid var(--border); }
 .research-delivery-choice { display: grid; gap: .5rem; margin-block: 1rem; max-width: 34rem; }
 .research-delivery-choice select { width: 100%; min-height: 44px; padding: .65rem; border: 1px solid var(--border); border-radius: .5rem; color: inherit; background: var(--background); }

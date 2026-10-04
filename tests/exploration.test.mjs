@@ -3653,6 +3653,64 @@ test('mission reader separates the answer, counterevidence and named gaps withou
 });
 
 
+test('mission reader groups each point into one disclosure without losing source context', async () => {
+  const { MissionReading } = require(resolve('components/research-mission.tsx'));
+  const sources = [
+    { id: 'first', title: 'Same original title', url: 'https://example.org/original' },
+    { id: 'second', title: 'Same original title', url: 'https://example.org/original' },
+    { id: 'retained', title: 'Retained original', url: 'https://example.org/retained' },
+  ];
+  const ref = (source_id, role, locator, quote) => ({ source_id, role, locator, quote });
+  const points = [
+    { statement: 'The first finding has a qualification.', evidence: [
+      ref('first', 'support', 'p1', 'The exact supporting passage.'),
+      ref('first', 'context', 'p2', 'Only in these circumstances.\nThis exception also applies.'),
+      ref('second', 'support', 'p3', 'A distinct capture with the same URL and title.'),
+      ref('missing', 'context', 'unresolved-locator', 'Unresolved source text must stay hidden.'),
+    ] },
+    { statement: 'A second finding uses retained evidence.', evidence: [
+      ref('retained', 'support', 'p4', 'A source from the retained document origins.'),
+    ] },
+    { statement: 'The third finding remains contested.', evidence: [
+      ref('second', 'support', 'p5', 'The source supporting the contested finding.'),
+      ref('retained', 'counterevidence', 'p6', 'The exact contrary passage.'),
+      ref('retained', 'context', 'p7', 'The scope of the disagreement.'),
+    ] },
+  ];
+  const state = { status: 'ready', sources: sources.slice(0, 2),
+    mission: { contract: 'research-mission/v1', stage: 'finished', question: 'What is established?',
+      checkpoints: [], answer: { status: 'conflicting', points, limitations: ['One question remains open.'] },
+      knowledge: { document_origins: [{ sources: [sources[2]] }], professional_context: { facts: [] },
+        scope: { note: 'Retained source context.' }, identities: [], claims: [], relationships: [],
+        events: [], comparisons: [] } } };
+  const before = structuredClone(state);
+  const content = (node) => typeof node === 'string' ? node : node.children.map(content).join('');
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(MissionReading, { state })); });
+    const disclosures = tree.root.findAllByProps({ className: 'mission-evidence' });
+    assert.equal(disclosures.length, points.length);
+    assert.deepEqual(disclosures.map((node) => content(node.findByType('summary'))), [
+      'Sources and context · 2 sources · 3 passages',
+      'Sources and context · 1 source · 1 passage',
+      'Sources and context · 2 sources · 3 passages',
+    ]);
+    for (const [index, disclosure] of disclosures.entries()) {
+      const visible = points[index].evidence.filter((item) => sources.some((source) => source.id === item.source_id));
+      assert.equal(disclosure.findAll((node) => node.type === 'details' && node !== disclosure).length, 0);
+      assert.equal(disclosure.parent.findAllByType('p')[0].props.children, points[index].statement);
+      assert.deepEqual(disclosure.findAllByType('blockquote').map((node) => node.props.children), visible.map((item) => item.quote));
+      assert.deepEqual(disclosure.findAllByType('a').map((node) => node.props.href), visible.map((item) => sources.find((source) => source.id === item.source_id).url));
+      assert.deepEqual(disclosure.findAllByProps({ className: 'muted' }).filter((node) => node.type === 'p').map((node) => node.props.children), visible.map((item) => item.locator));
+      assert.deepEqual(disclosure.findAllByProps({ className: 'mission-evidence-source' }).map(content), visible.map((item) => `${sources.find((source) => source.id === item.source_id).title} · ${item.role === 'support' ? 'supporting passage' : item.role}`));
+    }
+    assert.match(text(tree), /Where the evidence conflicts/);
+    assert.match(text(tree), /One question remains open/);
+    assert.doesNotMatch(text(tree), /Unresolved source text|unresolved-locator/);
+    assert.deepEqual(state, before);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
 test('partial research keeps its cited answer and labels processed OCR pages honestly', async () => {
   const value = episode({ status: 'failed', retry: { available: false }, branches: [{ id: 'b', query: 'Read original', status: 'failed', steps: [] }] });
   value.exploration.mission = { contract: 'research-mission/v1', stage: 'incomplete', round: 1,
