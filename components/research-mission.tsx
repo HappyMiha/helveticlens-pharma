@@ -1,5 +1,5 @@
 import type { ExplorationCitation, ExplorationState } from '@/lib/exploration';
-import type { ResearchMission } from '@/lib/research-mission';
+import type { ResearchMission, ResearchSourceCheck } from '@/lib/research-mission';
 
 const stages = {
   mapping: 'Understanding the question and finding evidence',
@@ -14,7 +14,7 @@ const stops: Record<string, string> = {
   documents_incomplete:
     'The unread or unanalysed material is listed below. Sources and completed work are saved.',
   available_checks_complete:
-    'The useful checks available in this research have been completed. The remaining gaps are named below.',
+    'The useful checks available in this research have been completed.',
   needs_direction:
     'The evidence points to different possible directions. Choose below when you are ready; the research is saved.',
   no_new_evidence:
@@ -29,6 +29,14 @@ const stops: Record<string, string> = {
     'The latest attempt did not produce a new answer. Your sources and completed work are saved.',
   review_unavailable:
     'Your checked answer is saved. Some verification is pending and can be retried.',
+};
+
+const sourceCheckStatuses: Record<ResearchSourceCheck['status'], string> = {
+  matched_read: 'Original identified, read and analysed',
+  not_identified: 'Not identified in the material checked',
+  acquisition_unavailable: 'Could not retrieve the original',
+  reading_incomplete: 'Reading is incomplete',
+  analysis_incomplete: 'Read; analysis is incomplete',
 };
 
 export function MissionProgress({
@@ -250,6 +258,33 @@ export function MissionReading({ state }: { state: ExplorationState }) {
           ))}
         </ol>
       </details>
+      {!!mission.requested_sources?.length && (
+        <details className="dossier-secondary" aria-label="Source checks">
+          <summary>Source checks</summary>
+          <p className="muted">
+            Sources named in your question or research plan. A source that was
+            not found may be a search lead; any resulting gap in the answer is
+            explained above.
+          </p>
+          <ul>
+            {mission.requested_sources.map((source) => (
+              <li key={source.id}>
+                <strong>{source.requested_source}</strong>
+                <p className="muted">
+                  {source.origin === 'planner_interpretation'
+                    ? 'Named in the research plan'
+                    : source.origin === 'submitted_url'
+                      ? 'Link from your question'
+                      : source.origin === 'literal_request'
+                        ? 'Named in your question'
+                        : 'Source check'}
+                  {' · '}{sourceCheckStatuses[source.status] || source.reason}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {!!mission.documents?.length && (
         <details className="dossier-secondary">
           <summary>Document reading and analysis</summary>

@@ -15,6 +15,14 @@ export type Materiality = {
   reasons: string[];
   scope: string;
 };
+export type ResearchSourceCheck = {
+  id: string;
+  question_id: string;
+  requested_source: string;
+  origin?: 'planner_interpretation' | 'literal_request' | 'submitted_url';
+  status: 'matched_read' | 'not_identified' | 'acquisition_unavailable' | 'reading_incomplete' | 'analysis_incomplete';
+  reason: string;
+};
 export type ResearchMission = {
   contract: 'research-mission/v1';
   stage:
@@ -29,6 +37,7 @@ export type ResearchMission = {
   stop?: string | null;
   question?: string;
   answer: MissionAnswer | null;
+  requested_sources?: ResearchSourceCheck[];
   verification?: {
     status: 'partial';
     pending_checks: number;

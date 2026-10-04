@@ -3711,6 +3711,59 @@ test('mission reader groups each point into one disclosure without losing source
   } finally { if (tree) await act(async () => tree.unmount()); }
 });
 
+test('source checks stay collapsed and separate from actual answer gaps', async () => {
+  const { MissionReading } = require(resolve('components/research-mission.tsx'));
+  const checks = [
+    { id: 'lead', question_id: 'q', requested_source: 'Catalogue lead', origin: 'planner_interpretation', status: 'not_identified' },
+    { id: 'original', question_id: 'q', requested_source: 'Requested full report', origin: 'planner_interpretation', status: 'matched_read' },
+    { id: 'literal', question_id: 'q', requested_source: 'Named report', origin: 'literal_request', status: 'reading_incomplete' },
+    { id: 'submitted', question_id: 'q', requested_source: 'https://example.org/submitted', origin: 'submitted_url', status: 'acquisition_unavailable' },
+    { id: 'analysis', question_id: 'q', requested_source: 'Another original', origin: 'planner_interpretation', status: 'analysis_incomplete' },
+  ].map((item) => ({ ...item, reason: 'Recorded source work.' }));
+  const state = { status: 'ready', sources: [], mission: {
+    contract: 'research-mission/v1', stage: 'finished', stop: 'available_checks_complete',
+    question: 'What does the full report establish?', checkpoints: [],
+    answer: { status: 'possible_answer', points: [], limitations: [] },
+    requested_sources: checks.slice(0, 2),
+  } };
+  const before = structuredClone(state);
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(MissionReading, { state })); });
+    const disclosure = tree.root.findByProps({ 'aria-label': 'Source checks' });
+    assert.equal(disclosure.type, 'details');
+    assert.ok(!disclosure.props.open);
+    assert.equal(disclosure.findAllByType('li').length, 2);
+    assert.equal(disclosure.findAllByType('a').length, 0); // A name is not a captured source link.
+    assert.match(text(tree), /Catalogue lead/);
+    assert.match(text(tree), /Named in the research plan/);
+    assert.match(text(tree), /Not identified in the material checked/);
+    assert.match(text(tree), /Original identified, read and analysed/);
+    assert.doesNotMatch(text(tree), /Important gaps remain|What we still do not know|remaining gaps are named below/);
+    assert.deepEqual(state, before);
+    const partial = { ...state, mission: { ...state.mission, requested_sources: checks,
+      answer: { status: 'partial', points: [], limitations: ['The requested report is not fully read.'] } } };
+    await act(async () => tree.update(React.createElement(MissionReading, { state: partial })));
+    const gaps = tree.root.findByProps({ 'aria-label': 'Unresolved gaps' });
+    assert.equal(gaps.findAllByType('li').length, 1);
+    assert.equal(gaps.findByType('li').props.children, partial.mission.answer.limitations[0]);
+    assert.match(text(tree), /Important gaps remain/);
+    assert.match(text(tree), /Named in your question/);
+    assert.match(text(tree), /Link from your question/);
+    assert.match(text(tree), /Reading is incomplete/);
+    assert.match(text(tree), /Could not retrieve the original/);
+    assert.match(text(tree), /Read; analysis is incomplete/);
+    await act(async () => tree.update(React.createElement(MissionReading, { state: {
+      ...state, mission: { ...state.mission, requested_sources: undefined },
+    } })));
+    assert.equal(tree.root.findAllByProps({ 'aria-label': 'Source checks' }).length, 0);
+    await act(async () => tree.update(React.createElement(MissionReading, { state: {
+      ...state, mission: { ...state.mission, stage: 'evidence_changed' },
+    } })));
+    assert.equal(tree.toJSON(), null);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
 test('partial research keeps its cited answer and labels processed OCR pages honestly', async () => {
   const value = episode({ status: 'failed', retry: { available: false }, branches: [{ id: 'b', query: 'Read original', status: 'failed', steps: [] }] });
   value.exploration.mission = { contract: 'research-mission/v1', stage: 'incomplete', round: 1,
