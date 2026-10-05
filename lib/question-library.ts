@@ -42,18 +42,26 @@ export function questionPage(
 /** A superseded read cannot reopen a question or replace its current error. */
 export function questionReads() {
   let sequence = 0;
+  let pending: number | null = null;
   return {
     cancel() {
       sequence++;
+      pending = null;
     },
-    async read<T>(fetch: () => Promise<T>): Promise<T | null> {
+    async read<T>(fetch: () => Promise<T>, { background = false } = {}): Promise<T | null> {
+      // A timer or focus event must let the current read finish. Explicit
+      // navigation and refresh keep their existing superseding behavior.
+      if (background && pending !== null) return null;
       const attempt = ++sequence;
+      pending = attempt;
       try {
         const result = await fetch();
         return attempt === sequence ? result : null;
       } catch (error) {
         if (attempt === sequence) throw error;
         return null;
+      } finally {
+        if (pending === attempt) pending = null;
       }
     },
   };

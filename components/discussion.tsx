@@ -302,12 +302,13 @@ export function Discussion({
     refresh: load,
   } = useResource<ThreadPage>(url);
   const fetchQuestion = useCallback(
-    async (id: string, page = 0) => {
+    async (id: string, page = 0, background = false) => {
       try {
         const thread = await reads.current.read(() =>
           api<ThreadDetail>(
             `${root}/discussion/${encodeURIComponent(id)}?offset=${page}`,
           ),
+          { background },
         );
         if (!thread) return;
         setSelected(thread);
@@ -355,7 +356,7 @@ export function Discussion({
   useEffect(() => {
     if (!claimQuestionId || openingQuestion || busy) return;
     const refreshEvidence = () => {
-      void fetchQuestion(claimQuestionId, postOffset);
+      void fetchQuestion(claimQuestionId, postOffset, true);
     };
     const timer = setInterval(refreshEvidence, 15000);
     window.addEventListener('focus', refreshEvidence);

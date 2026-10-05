@@ -90,6 +90,20 @@ function pending() {
   });
   return { promise, resolve, reject };
 }
+test('background reads wait for the current owner even when superseded work settles', async () => {
+  const reads = questionReads();
+  const old = pending(), current = pending();
+  const first = reads.read(() => old.promise, { background: true });
+  const next = reads.read(() => current.promise);
+  old.resolve({ id: 'old' });
+  assert.equal(await first, null);
+  let polled = 0;
+  assert.equal(await reads.read(async () => { polled++; return {}; }, { background: true }), null);
+  assert.equal(polled, 0);
+  current.resolve({ id: 'current' });
+  assert.deepEqual(await next, { id: 'current' });
+  assert.deepEqual(await reads.read(async () => ({ id: 'fresh' }), { background: true }), { id: 'fresh' });
+});
 test('a late question read cannot reopen a view after leaving or replace a newer question', async () => {
   const reads = questionReads();
   const first = pending();
