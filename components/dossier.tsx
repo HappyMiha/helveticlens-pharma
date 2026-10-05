@@ -4,6 +4,7 @@ import { researchFocus } from '@/lib/research-following';
 import { DossierTeamPanel } from './dossier-team';
 import { PublicCopyOrigin } from './public-origin';
 import { DossierContributions } from './dossier-contributions';
+import { DossierFileUpload } from './dossier-file-upload';
 import { DossierInvestigation } from './investigation';
 import { MonitoringResearchPanel } from './monitoring-research';
 import { WebResearchPanel } from './web-research';
@@ -39,7 +40,6 @@ import {
   Sparkles,
   ThumbsDown,
   ThumbsUp,
-  Upload,
   Users,
 } from 'lucide-react';
 import type {
@@ -89,6 +89,16 @@ export function Dossier({
 }: DossierProps) {
   const isMobile = useIsMobile();
   const dossierElement = useRef<HTMLElement>(null);
+  const pendingEntries = useRef(
+    new Map<
+      string,
+      {
+        requestKey: string;
+        saved: boolean;
+        writing?: Promise<unknown>;
+      }
+    >(),
+  );
   const p = d.profile,
     c = p.config;
   const canContribute = d.access?.can_contribute ?? canEdit;
@@ -193,14 +203,38 @@ export function Dossier({
     kind: string,
     body: string,
     values: Record<string, unknown> = {},
+    onSaved?: () => void,
   ) {
-    await api(`${ROOT}/${d.id}/entries`, {
-      request_key: uid(),
-      kind,
-      body,
-      ...values,
-    });
-    await reload();
+    const fingerprint = JSON.stringify([d.id, userId, kind, body, values]);
+    let attempt = pendingEntries.current.get(fingerprint);
+    if (!attempt) {
+      attempt = { requestKey: uid(), saved: false };
+      pendingEntries.current.set(fingerprint, attempt);
+    }
+    if (!attempt.saved) {
+      attempt.writing ??= api(`${ROOT}/${d.id}/entries`, {
+        request_key: attempt.requestKey,
+        kind,
+        body,
+        ...values,
+      });
+      try {
+        await attempt.writing;
+        attempt.saved = true;
+      } finally {
+        attempt.writing = undefined;
+      }
+    }
+    onSaved?.();
+    try {
+      await reload();
+      if (pendingEntries.current.get(fingerprint) === attempt)
+        pendingEntries.current.delete(fingerprint);
+    } catch {
+      throw new Error(
+        'Your contribution was saved, but the dossier could not be refreshed. Reopen the dossier to see it.',
+      );
+    }
   }
   async function refreshed() {
     await reload();
@@ -466,9 +500,12 @@ export function Dossier({
                       onSubmit={(e) => {
                         e.preventDefault();
                         void run('Saving relevance feedback', async () => {
-                          await add('feedback', feedback, { relevance });
-                          setFeedback('');
-                          notify('Feedback saved to this dossier.');
+                          await add('feedback', feedback, { relevance }, () => {
+                            setFeedback((current) =>
+                              current === feedback ? '' : current,
+                            );
+                            notify('Feedback saved to this dossier.');
+                          });
                         });
                       }}
                     >
@@ -674,7 +711,11 @@ export function Dossier({
               material is kept separate from the interpretations it supports.
             </p>
 
-            <DossierResearchSources key={`originals:${d.id}:${userId || ''}`} dossierId={d.id} onOpen={openInvestigation} />
+            <DossierResearchSources
+              key={`originals:${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              onOpen={openInvestigation}
+            />
 
             <DossierCoveragePanel
               key={`coverage:${d.id}:${userId || ''}`}
@@ -810,11 +851,21 @@ export function Dossier({
                 onSubmit={(e) => {
                   e.preventDefault();
                   void run('Saving source reference', async () => {
-                    await add('reference', reference.body, {
-                      title: reference.title,
-                      url: reference.url,
-                    });
-                    setReference({ title: '', url: '', body: '' });
+                    await add(
+                      'reference',
+                      reference.body,
+                      {
+                        title: reference.title,
+                        url: reference.url,
+                      },
+                      () => {
+                        setReference((current) =>
+                          current === reference
+                            ? { title: '', url: '', body: '' }
+                            : current,
+                        );
+                      },
+                    );
                   });
                 }}
               >
@@ -875,34 +926,14 @@ export function Dossier({
                 </div>
               </div>
               {canEdit && (
-                <div className="upload-zone">
-                  <Upload size={30} />
-                  <h3>Attach evidence or working documents</h3>
-                  <p>
-                    Save-only attachment. For automatic analysis, open AI
-                    research → Submit material for AI review. Maximum 50 files
-                    per dossier.
-                  </p>
-                  <input
-                    aria-label="Upload a dossier file"
-                    type="file"
-                    disabled={!!busy}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      void run('Uploading attachment', async () => {
-                        if (file.size > 10 * 1024 * 1024)
-                          throw new Error('Choose a file of at most 10 MB.');
-                        const form = new FormData();
-                        form.append('file', file);
-                        await api(`${ROOT}/${d.id}/files`, form);
-                        await reload();
-                        notify('File saved to the dossier.');
-                      });
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
+                <DossierFileUpload
+                  key={`${d.id}:${userId || ''}`}
+                  dossierId={d.id}
+                  busy={busy}
+                  run={run}
+                  reload={reload}
+                  notify={notify}
+                />
               )}
               <div className="files-list">
                 {files.map((f) => (
@@ -977,8 +1008,11 @@ export function Dossier({
                     onSubmit={(e) => {
                       e.preventDefault();
                       void run('Saving comment', async () => {
-                        await add('note', note);
-                        setNote('');
+                        await add('note', note, {}, () => {
+                          setNote((current) =>
+                            current === note ? '' : current,
+                          );
+                        });
                       });
                     }}
                   >
