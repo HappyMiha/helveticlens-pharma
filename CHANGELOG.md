@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.95.0 — Open the earlier captured source
+
+Duplicate-source links open the correct earlier capture in the current reader, reveal its retained excerpts and move reading focus there. Following the link from the source sheet closes the sheet first. Unavailable captures keep their provenance without a broken link.
+
 ## 1.94.0 — Keep the selected research in view
 
 Switching investigations keeps the latest choice in view. Delayed reads, source jumps and control errors cannot reopen an older selection. Newly started research remains saved in history when the user moves to another answer while it is starting.

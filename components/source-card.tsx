@@ -1,5 +1,7 @@
 'use client';
+import { useRef, useState } from 'react';
 import type { Investigation } from '@/lib/investigation';
+import { revealResearchTarget } from '@/lib/research-target';
 import { readable } from '@/lib/investigation';
 import { sourceUsage } from '@/lib/lens';
 import {
@@ -19,6 +21,18 @@ import {
 } from '@/components/ui/sheet';
 
 type Source = Investigation['sources'][number];
+type EarlierCapture = { target: string; open: () => void };
+
+function revealCapture(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return null;
+  revealResearchTarget(target);
+  const excerpts = target.querySelector<HTMLDetailsElement>('details[data-source-excerpts]');
+  if (excerpts) excerpts.open = true;
+  target.setAttribute('tabindex', '-1');
+  target.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  return target;
+}
 export function SourceMetadata({ source }: { source: Source }) {
   const reference = sourceReference(source.url);
   const href = reference?.href;
@@ -77,7 +91,10 @@ export function SourceMetadata({ source }: { source: Source }) {
     </dl>
   );
 }
-export function SourcePreview({ source }: { source: Source }) {
+export function SourcePreview({ source, earlierCapture }: {
+  source: Source;
+  earlierCapture?: EarlierCapture;
+}) {
   const fingerprint = sourceFingerprint(source.sha256);
   return (
     <div
@@ -101,7 +118,10 @@ export function SourcePreview({ source }: { source: Source }) {
       )}
       {source.snapshot.duplicate_of && <aside className="investigation-muted">
         <p>This capture contains the same document bytes as an earlier source. It was not counted as new supporting evidence.</p>
-        <a href={`#source-${source.snapshot.duplicate_of}`}>Read the earlier capture</a>
+        {earlierCapture ? <a href={`#${earlierCapture.target}`} onClick={(event) => {
+          event.preventDefault();
+          earlierCapture.open();
+        }}>Read the earlier capture</a> : <p>The earlier capture is not available in this view.</p>}
       </aside>}
       {source.snapshot.unchanged_from && (
         <p className="investigation-muted">
@@ -153,6 +173,23 @@ export function SourceCard({
   const reference = sourceReference(source.url);
   const href = reference?.href;
   const used = sourceUsage(value, source.id);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const pendingCapture = useRef<string | null>(null);
+  const earlierId = source.snapshot.duplicate_of;
+  const earlierTarget = earlierId && earlierId !== source.id &&
+    value.sources?.some(item => item.id === earlierId)
+      ? `${idPrefix}-${earlierId}` : null;
+  const earlierCapture = earlierTarget ? {
+    target: earlierTarget,
+    open: () => {
+      if (sheetOpen) {
+        pendingCapture.current = earlierTarget;
+        setSheetOpen(false);
+      } else {
+        revealCapture(earlierTarget)?.focus({ preventScroll: true });
+      }
+    },
+  } : undefined;
   return (
     <article id={`${idPrefix}-${source.id}`} className="investigation-source">
       <div className="eyebrow">{readable(source.kind)}</div>
@@ -194,11 +231,20 @@ export function SourceCard({
             Open original source ↗
           </a>
         )}
-        <Sheet>
+        <Sheet open={sheetOpen} onOpenChange={(open) => {
+          if (open) pendingCapture.current = null;
+          setSheetOpen(open);
+        }}>
           <SheetTrigger render={<Button variant="outline" />}>
             Read captured source
           </SheetTrigger>
-          <SheetContent className="source-reader-sheet">
+          <SheetContent className="source-reader-sheet" finalFocus={() => {
+            const target = pendingCapture.current;
+            pendingCapture.current = null;
+            // The dialog owns the closing focus handoff. Recheck that the
+            // destination still belongs to this authorized source collection.
+            return target && target === earlierTarget ? revealCapture(target) || true : true;
+          }}>
             <SheetHeader>
               <SheetTitle>{source.title}</SheetTitle>
               <SheetDescription>
@@ -206,7 +252,7 @@ export function SourceCard({
               </SheetDescription>
             </SheetHeader>
             <SourceMetadata source={source} />
-            <SourcePreview source={source} />
+            <SourcePreview source={source} earlierCapture={earlierCapture} />
             {href && (
               <a
                 href={href}
@@ -219,9 +265,9 @@ export function SourceCard({
           </SheetContent>
         </Sheet>
       </div>
-      <details>
+      <details data-source-excerpts>
         <summary>Preserved excerpts & provenance</summary>
-        <SourcePreview source={source} />
+        <SourcePreview source={source} earlierCapture={earlierCapture} />
       </details>
     </article>
   );

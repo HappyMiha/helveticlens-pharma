@@ -205,3 +205,28 @@ test('source cards expose exact retained counts and unique claim use, preserving
   });
   assert.doesNotMatch(unsafe, /href="http:/);
 });
+
+for (const idPrefix of ['source', 'dossier-original']) test(`earlier capture links identify a card in the ${idPrefix} reader`, () => {
+  const duplicate = { ...source, id: 'duplicate', snapshot: { ...source.snapshot, duplicate_of: source.id } };
+  const value = { sources: [source, duplicate], evidence: [] };
+  const html = renderToStaticMarkup(React.createElement('main', null,
+    value.sources.map((item) => React.createElement(SourceCard, { key: item.id, source: item, value, idPrefix })),
+  ));
+  assert.match(html, new RegExp(`id="${idPrefix}-${source.id}"`));
+  assert.match(html, new RegExp(`href="#${idPrefix}-${source.id}"`));
+  assert.match(html, /same document bytes as an earlier source/);
+  assert.match(html, /Original &lt;script&gt;quoted/);
+  assert.ok(html.includes(source.sha256));
+  if (idPrefix !== 'source') assert.doesNotMatch(html, /href="#source-/);
+});
+
+test('missing and self-referential earlier captures keep provenance without a broken jump', () => {
+  for (const duplicate_of of ['unavailable', source.id]) {
+    const duplicate = { ...source, snapshot: { ...source.snapshot, duplicate_of } };
+    const html = render(SourceCard, { source: duplicate, value: { sources: [duplicate], evidence: [] } });
+    assert.doesNotMatch(html, /Read the earlier capture|href="#source-/);
+    assert.match(html, /earlier capture is not available in this view/);
+    assert.match(html, /same document bytes/);
+    assert.match(html, /Original &lt;script&gt;quoted/);
+  }
+});
