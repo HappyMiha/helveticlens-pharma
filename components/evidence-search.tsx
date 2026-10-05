@@ -12,7 +12,7 @@ import {
   type Ref,
 } from 'react';
 import { Search } from 'lucide-react';
-import { api, date } from '@/lib/api';
+import { api, ApiError, date } from '@/lib/api';
 import { product } from '@/lib/product';
 import { readable, sourceHref } from '@/lib/investigation';
 import { claimDecisionLabels } from '@/lib/claim-review';
@@ -25,6 +25,7 @@ import type {
   EvidenceSearchItem,
   EvidenceSearchMode,
   EvidenceSearchPage,
+  EvidenceSearchRequest,
 } from '@/lib/evidence-search';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -53,6 +54,10 @@ export function EvidenceSearch({
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<EvidenceSearchPage | null>(null);
   const [notice, setNotice] = useState('');
+  const [failedPage, setFailedPage] = useState<{
+    dossierId: string;
+    request: EvidenceSearchRequest;
+  } | null>(null);
   const controller = useRef<AbortController | null>(null);
   const epoch = useRef({ value: 0 });
   const base = `/products/${product.id}/dossiers/${dossierId}/evidence-search`;
@@ -73,16 +78,12 @@ export function EvidenceSearch({
       setError('');
       setNotice('');
       setProgress(null);
+      setFailedPage(null);
       setBusy(true);
+      const request = { query: question.trim(), mode: method, offset, as_of: asOf, fingerprint: fence };
       try {
         const value = await completeEvidenceSearch(
-          {
-            query: question.trim(),
-            mode: method,
-            offset,
-            as_of: asOf,
-            fingerprint: fence,
-          },
+          request,
           (body) =>
             api<EvidenceSearchPage>(
               base,
@@ -95,17 +96,21 @@ export function EvidenceSearch({
         );
         if (epoch.current.value === attempt) setStored(value);
       } catch (failure) {
-        if (epoch.current.value === attempt)
+        if (epoch.current.value === attempt) {
           setError(
             failure instanceof Error
               ? failure.message
               : 'Search could not finish. Try again.',
           );
+          if (offset > 0 && failure instanceof ApiError &&
+              (failure.status === null || failure.status >= 500 || [408, 429].includes(failure.status)))
+            setFailedPage({ dossierId, request });
+        }
       } finally {
         if (epoch.current.value === attempt) setBusy(false);
       }
     },
-    [base],
+    [base, dossierId],
   );
   useEffect(() => {
     const counter = epoch.current;
@@ -118,6 +123,7 @@ export function EvidenceSearch({
       setQuery('');
       setBusy(false);
       setError('');
+      setFailedPage(null);
     };
     window.addEventListener('helvetic-session-changed', clear);
     return () => {
@@ -136,6 +142,7 @@ export function EvidenceSearch({
         setProgress(null);
         setBusy(false);
         setError('');
+        setFailedPage(null);
         setNotice(
           'Finding review changed. Search again to see current decisions and evidence.',
         );
@@ -222,6 +229,7 @@ export function EvidenceSearch({
               setQuery(event.target.value);
               setStored(null);
               setError('');
+              setFailedPage(null);
             }}
           />
         </label>
@@ -235,6 +243,7 @@ export function EvidenceSearch({
               setMode(event.target.value as EvidenceSearchMode);
               setStored(null);
               setError('');
+              setFailedPage(null);
             }}
           >
             <NativeSelectOption value="corpus">
@@ -282,6 +291,7 @@ export function EvidenceSearch({
             controller.current?.abort();
             setBusy(false);
             setProgress(null);
+            setFailedPage(null);
             setNotice(
               'Search stopped. Prepared evidence is retained; search again to continue.',
             );
@@ -294,6 +304,13 @@ export function EvidenceSearch({
       {error && (
         <p role="alert" className="investigation-error">
           {error}
+          {failedPage?.dossierId === dossierId &&
+            failedPage.request.query === query.trim() && failedPage.request.mode === mode && (
+            <Button variant="ghost" disabled={busy} onClick={() => {
+              const request = failedPage.request;
+              void search(request.query, request.mode, request.offset, request.as_of, request.fingerprint);
+            }}>Retry this page</Button>
+          )}
         </p>
       )}
       {page && (

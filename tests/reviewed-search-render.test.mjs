@@ -52,6 +52,7 @@ globalThis.window = {
   removeEventListener() {},
 };
 const { EvidenceSearch } = require(resolve('components/evidence-search.tsx'));
+const { Input } = require(resolve('components/ui/input.tsx'));
 const listeners = new Map();
 globalThis.window.addEventListener = (key, fn) => { if (!listeners.has(key)) listeners.set(key, new Set()); listeners.get(key).add(fn); };
 globalThis.window.removeEventListener = (key, fn) => listeners.get(key)?.delete(fn);
@@ -145,4 +146,73 @@ test('review save invalidates only its dossier and late search response cannot r
     assert.match(JSON.stringify(tree.toJSON()), /Finding review changed/);
     assert.ok(tree.root.findAllByType('input').every(input => input.props.value === 'Fictional'));
   } finally { if(tree) await act(async () => tree.unmount()); }
+});
+
+const retryPage = (tree) => tree.root.findAllByType('button').find((button) => button.props.children === 'Retry this page');
+async function failedNextPage(t, status = 503, mode = 'corpus') {
+  const calls = [];
+  let fail = true;
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push({ url, body });
+    if (body.offset && fail) {
+      if (status === null) throw new Error('Lost transport');
+      return new Response('', { status });
+    }
+    return Response.json({ ...page(), mode, offset: body.offset, next_offset: body.offset ? null : 12, total_records: 24 });
+  };
+  const ref = React.createRef();
+  let tree;
+  await act(async () => { tree = create(React.createElement(EvidenceSearch, { dossierId: 'dossier', ref, onOpen() {} })); });
+  t.after(async () => { await act(async () => tree.unmount()); });
+  await act(async () => ref.current.start('Fictional'));
+  if (mode !== 'corpus') {
+    await act(async () => tree.root.findByType('select').props.onChange({ target: { value: mode } }));
+    await act(async () => tree.root.findByType('form').props.onSubmit({ preventDefault() {} }));
+  }
+  // Exercise the actual result reader's next-page action for every search mode.
+  const next = tree.root.findAllByType('button').find((button) => {
+    const children = button.props.children;
+    return children === 'More ranked results' || (React.isValidElement(children) && children.type === React.Fragment && children.props.children[0] === 'Search older ');
+  });
+  assert.ok(next);
+  await act(async () => next.props.onClick());
+  assert.equal(calls.at(-1).body.offset, 12);
+  assert.doesNotMatch(JSON.stringify(tree.toJSON()), /Retained contradictory quotation/);
+  return { tree, calls, ref, recover: () => { fail = false; } };
+}
+
+for (const [mode, status] of [['corpus', 503], ['semantic', null], ['literal', 429]]) test(`explicit ${mode} page retry preserves its saved position after ${status ?? 'network failure'}`, async (t) => {
+  const search = await failedNextPage(t, status, mode);
+  const failed = search.calls.at(-1);
+  assert.ok(retryPage(search.tree));
+  assert.equal(failed.body.as_of, page().as_of);
+  if (mode === 'corpus') assert.equal(failed.body.fingerprint, page().fingerprint);
+  const count = search.calls.length;
+  search.recover();
+  await act(async () => retryPage(search.tree).props.onClick());
+  assert.equal(search.calls.length, count + 1);
+  assert.deepEqual(search.calls.at(-1), failed);
+  assert.match(JSON.stringify(search.tree.toJSON()), /Retained contradictory quotation/);
+  assert.equal(retryPage(search.tree), undefined);
+});
+
+for (const status of [403, 409]) test(`search ${status} requires a fresh search rather than replaying the old page`, async (t) => {
+  const search = await failedNextPage(t, status);
+  assert.equal(retryPage(search.tree), undefined);
+  assert.equal(search.calls.length, 2);
+});
+
+for (const boundary of ['query', 'mode', 'session', 'review']) test(`changing ${boundary} discards an obsolete search-page retry`, async (t) => {
+  const search = await failedNextPage(t);
+  assert.ok(retryPage(search.tree));
+  const count = search.calls.length;
+  await act(async () => {
+    if (boundary === 'query') search.tree.root.findByType(Input).props.onChange({ target: { value: 'A different question' } });
+    if (boundary === 'mode') search.tree.root.findByType('select').props.onChange({ target: { value: 'literal' } });
+    if (boundary === 'session') for (const fn of listeners.get('helvetic-session-changed') || []) fn();
+    if (boundary === 'review') search.ref.current.invalidate();
+  });
+  assert.equal(retryPage(search.tree), undefined);
+  assert.equal(search.calls.length, count, 'Changing context never resubmits a page');
 });

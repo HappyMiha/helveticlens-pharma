@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.96.0 — Recover your draft and search position
+
+A failed background history read no longer discards a draft refinement or an uncertain reply. Once the same episode is available again, its input returns after access is checked. Failed search pages now offer an explicit retry from the same saved position; changed input, sessions, evidence or access still require current authorization and results.
+
 ## 1.95.0 — Open the earlier captured source
 
 Duplicate-source links open the correct earlier capture in the current reader, reveal its retained excerpts and move reading focus there. Following the link from the source sheet closes the sheet first. Unavailable captures keep their provenance without a broken link.

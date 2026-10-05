@@ -133,6 +133,64 @@ const findButton = (tree, label) =>
   tree.root
     .findAllByType('button')
     .find((button) => button.props.children === label);
+
+for (const sessionChanged of [false, true]) test(`history-read recovery ${sessionChanged ? 'clears old-session' : 'preserves same-session'} draft and uncertain reply`, async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const originalWindow = globalThis.window;
+  const listeners = new Map();
+  globalThis.window = {
+    addEventListener(key, fn) { if (!listeners.has(key)) listeners.set(key, new Set()); listeners.get(key).add(fn); },
+    removeEventListener(key, fn) { listeners.get(key)?.delete(fn); },
+  };
+  const value = episode({ id: 'later-than-initial' });
+  const writes = [];
+  let unavailable = false, latest = value, tree;
+  globalThis.fetch = async (url, init) => {
+    if (init.method === 'POST') {
+      writes.push({ url, body: init.body });
+      throw new Error('Uncertain reply');
+    }
+    if (url === base) return unavailable ? new Response('', { status: 503 })
+      : Response.json({ items: [{ id: latest.id, exploratory: true }] });
+    if (url === `${base}/${latest.id}` || url === `${base}/r`) return Response.json(latest);
+    if (url.endsWith('/web-research')) return Response.json({ dossier_id: 'd', can_manage: false, policy: {}, items: [] });
+    throw new Error('Unexpected read');
+  };
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, props)); });
+    await act(async () => tree.root.findByType('textarea').props.onChange({ target: { value: 'My carefully written refinement' } }));
+    await act(async () => findButton(tree, 'Check the entity in the register.').props.onClick());
+    assert.equal(writes.length, 1);
+    assert.ok(findButton(tree, 'Retry this direction safely'));
+    unavailable = true;
+    await act(async () => t.mock.timers.tick(10000));
+    assert.doesNotMatch(text(tree), /My carefully written refinement|The source passage is here/);
+    assert.equal(tree.root.findAllByType('form').length, 0);
+    assert.equal(writes.length, 1, 'Read failure never retries work automatically');
+    if (sessionChanged) await act(async () => {
+      for (const fn of listeners.get('helvetic-session-changed') || []) fn();
+    });
+    unavailable = false;
+    await act(async () => findButton(tree, 'Refresh research').props.onClick());
+    assert.equal(tree.root.findByType('textarea').props.value, sessionChanged ? '' : 'My carefully written refinement');
+    if (sessionChanged) {
+      assert.equal(findButton(tree, 'Retry this direction safely'), undefined);
+      assert.equal(writes.length, 1);
+    } else {
+      await act(async () => findButton(tree, 'Retry this direction safely').props.onClick());
+      assert.deepEqual(writes[1], writes[0], 'Retry retains the exact episode, request key and command');
+      assert.ok(writes[1].url.includes('/later-than-initial/'));
+      latest = episode({ id: 'accepted-new-head' });
+      await act(async () => t.mock.timers.tick(10000));
+      assert.equal(tree.root.findByType('textarea').props.value, '');
+      assert.equal(findButton(tree, 'Retry this direction safely'), undefined);
+    }
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+    globalThis.window = originalWindow;
+  }
+});
+
 function serve(value, writes) {
   globalThis.fetch = async (url, init = {}) => {
     if (init.method === 'POST') return writes(url, init);

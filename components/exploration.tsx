@@ -47,20 +47,14 @@ type Episodes = { items: InvestigationSummary[] };
 export function Exploration(props: ExplorationProps) {
   const root = `/products/${product.id}/dossiers/${props.dossierId}/investigations`;
   const list = useResource<Episodes>(root);
-  if (list.error)
-    return (
-      <section aria-label="Developing your research">
-        <p role="alert">
-          {list.error} Saved research is hidden until access is checked again.
-        </p>
-        <Button variant="ghost" onClick={() => void list.refresh()}>
-          Refresh research
-        </Button>
-      </section>
-    );
-  const id =
-    list.data?.items.find((item) => item.exploratory)?.id || props.initialId;
-  return <ExplorationEpisode key={id} {...props} id={id} list={list} />;
+  const [selection, setSelection] = useState({ root, id: props.initialId });
+  // Failed reads hide content below, but must not discard a draft or the
+  // idempotency key of a reply whose result is still uncertain.
+  const id = list.data
+    ? list.data.items.find((item) => item.exploratory)?.id || props.initialId
+    : selection.root === root ? selection.id : props.initialId;
+  if (selection.root !== root || selection.id !== id) setSelection({ root, id });
+  return <ExplorationEpisode key={`${root}:${id}`} {...props} id={id} list={list} />;
 }
 function ExplorationEpisode({
   dossierId,
