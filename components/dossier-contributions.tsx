@@ -4,6 +4,7 @@ import { FilePlus2, ArrowDownToLine } from 'lucide-react';
 import { api, date, uid } from '@/lib/api';
 import { product } from '@/lib/product';
 import { readable } from '@/lib/investigation';
+import { sourceReference } from '@/lib/source-reading';
 import type { ContributionOriginal } from '@/lib/investigation';
 import type { Entry } from '@/lib/contracts';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ export function OriginalContribution({
   original: ContributionOriginal;
   dossierId: string;
 }) {
+  const reference = sourceReference(original.url);
   const safeIds = [original.id, dossierId].every((id) =>
     /^[0-9a-f-]{36}$/.test(id),
   );
@@ -39,6 +41,28 @@ export function OriginalContribution({
       </p>
       {original.title && <h4>{original.title}</h4>}
       {original.body && <blockquote>{original.body}</blockquote>}
+      {reference ? (
+        <div>
+          <p>
+            <a
+              className="break-all"
+              href={reference.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Submitted source URL · {reference.href}
+            </a>
+          </p>
+          <p className="investigation-muted">
+            Opens the current webpage. Research reading status and saved
+            passages are shown separately.
+          </p>
+        </div>
+      ) : original.url ? (
+        <p className="investigation-muted">
+          The submitted source URL cannot be opened here.
+        </p>
+      ) : null}
       {original.kind === 'file' && safeIds && (
         <a
           href={`/api/products/${product.id}/dossiers/${dossierId}/files/${original.id}`}
@@ -208,7 +232,8 @@ export function DossierContributions({
                   Save up to 100 MB. Automatic reading: TXT, Markdown, CSV, HTML
                   PDF, DOCX, XLSX, PPTX, JSON and email (.eml) up to 100 MB.
                   Scanned PDFs use local OCR for up to four pages. Check
-                  quotations against the original when layout or recognition matters.
+                  quotations against the original when layout or recognition
+                  matters.
                 </small>
               </label>
             ) : (

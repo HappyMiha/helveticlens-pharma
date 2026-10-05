@@ -749,6 +749,36 @@ test('original contributions preserve literal text, authorship and scoped downlo
   );
   assert.doesNotMatch(html, /<script>/);
   assert.doesNotMatch(render('../another-dossier'), /href=/);
+  // The original URL stays inspectable even when no successful capture exists.
+  Object.assign(original, {
+    kind: 'reference',
+    body: '',
+    url: 'https://example.org/report?edition=2026&lang=en#section-4',
+  });
+  const reference = render('11111111-1111-4111-8111-111111111111');
+  assert.match(reference, /Submitted source URL/);
+  assert.match(
+    reference,
+    /href="https:\/\/example\.org\/report\?edition=2026&amp;lang=en#section-4"/,
+  );
+  assert.match(reference, /rel="noopener noreferrer"/);
+  assert.match(reference, /Opens the current webpage/);
+  assert.doesNotMatch(reference, /Download original/);
+  for (const url of [
+    'javascript:alert(1)',
+    'https://name:secret@example.org/report',
+    '//example.org/report',
+  ]) {
+    original.url = url;
+    const blocked = render('11111111-1111-4111-8111-111111111111');
+    assert.doesNotMatch(blocked, /href=|secret|javascript:/);
+    assert.match(blocked, /source URL cannot be opened here/);
+  }
+  original.url = '';
+  assert.doesNotMatch(
+    render('11111111-1111-4111-8111-111111111111'),
+    /Submitted source URL|source URL cannot/,
+  );
 });
 
 test('dossier audiences distinguish invited drafts, private monitoring and shared monitoring', () => {
