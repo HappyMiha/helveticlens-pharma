@@ -80,10 +80,7 @@ export function Discovery(props: DiscoveryProps) {
 export function monitoringSeed(query: string, hit?: SearchHit): Preset {
   return {
     name: query.slice(0, 120),
-    goal: `Monitor developments related to: ${query}${hit ? `. Starting source: ${hit.title}` : ''}`.slice(
-      0,
-      3000,
-    ),
+    goal: query,
     sector: product.id === 'pharma' ? 'Pharmaceuticals' : 'Legal services',
     ...(hit?.url
       ? {
@@ -509,7 +506,7 @@ function CatalogueDiscovery({
                         }
                       >
                         <Plus size={14} />
-                        Monitor this subject
+                        Research this topic
                       </Button>
                     )}
                   </div>
@@ -609,14 +606,14 @@ function CatalogueDiscovery({
           {onCreate && (
             <div className="discovery-next">
               <div>
-                <h3>Keep following this question.</h3>
+                <h3>Investigate this question.</h3>
                 <p>
-                  Turn “{result.query}” into a topic your team can develop and
-                  monitor.
+                  Explore “{result.query}” in a research dossier, with sources,
+                  findings and open questions.
                 </p>
               </div>
               <Button onClick={() => onCreate(monitoringSeed(result.query))}>
-                Create monitoring topic <ArrowRight size={16} />
+                Start research <ArrowRight size={16} />
               </Button>
             </div>
           )}

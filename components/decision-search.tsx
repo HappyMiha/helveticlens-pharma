@@ -557,7 +557,7 @@ export function DecisionDiscovery({
                       onClick={() =>
                         onCreate({
                           name: result.query.slice(0, 120),
-                          goal: `Monitor developments related to: ${result.query}`,
+                          goal: result.query,
                           sector:
                             product.id === 'pharma'
                               ? 'Pharmaceuticals'
@@ -574,7 +574,7 @@ export function DecisionDiscovery({
                         })
                       }
                     >
-                      Monitor from this source
+                      Research this topic
                     </Button>
                   )}
                 </div>

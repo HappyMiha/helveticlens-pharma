@@ -2,7 +2,7 @@ import { product } from './product';
 // Server configuration only; never accept an upstream origin from browser input.
 const CORE = process.env.HELVETICLENS_API_ORIGIN || 'https://helveticlens.ch';
 const allowed =
-  /^(auth\/(session(?:\/organization)?|login|logout|register|email-verification\/request|password-reset\/request)|source-packs|monitoring-profiles(?:\/[\w-]+(?:\/(suggest|preview|activate|status))?)?|monitoring-topics(?:\/[\w-]+(?:\/matches)?)?|organization\/(members|invitations)|laws(?:\/[\w-]+)?|scans(?:\/[\w-]+)?|digests\/preferences|connectors\/status)$/;
+  /^(auth\/(session(?:\/organization)?|login|logout|register|email-verification\/request|password-reset\/request)|source-packs|monitoring-profiles(?:\/[\w-]+(?:\/(suggest|suggestions|preview|activate|status))?)?|monitoring-topics(?:\/[\w-]+(?:\/matches)?)?|organization\/(members|invitations)|laws(?:\/[\w-]+)?|scans(?:\/[\w-]+)?|digests\/preferences|connectors\/status)$/;
 export async function proxy(
   request: Request,
   context: { params: Promise<{ path: string[] }> },

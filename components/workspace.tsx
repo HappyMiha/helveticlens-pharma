@@ -248,6 +248,10 @@ export default function Workspace() {
     [search, setSearch] = useState(''),
     [filter, setFilter] = useState('all'),
     [seed, setSeed] = useState<Preset | null>(null),
+    [creationMode, setCreationMode] = useState<'research' | 'monitoring'>(
+      'research',
+    ),
+    [wizardSession, setWizardSession] = useState(0),
     [emailAvailable, setEmailAvailable] = useState(false);
   const navigation = useRef({ value: 0 });
   const canEdit = identity?.role === 'organization_admin';
@@ -390,7 +394,12 @@ export default function Workspace() {
       next === 'research' ? '/' : `/?view=${next}`,
     );
   }
-  function start(example?: Preset) {
+  function start(
+    example?: Preset,
+    mode: 'research' | 'monitoring' = 'research',
+  ) {
+    setCreationMode(mode);
+    setWizardSession((value) => value + 1);
     setCreating(true);
     setSeed(example || null);
     if (!identity) {
@@ -887,6 +896,8 @@ export default function Workspace() {
               )}
               {view === 'wizard' && identity && (
                 <Wizard
+                  key={wizardSession}
+                  creationMode={creationMode}
                   initial={selected}
                   seed={seed}
                   packs={packs}
@@ -927,10 +938,12 @@ export default function Workspace() {
                   dossier={selected}
                   userId={identity?.user.id}
                   onSetup={() => {
+                    setWizardSession((value) => value + 1);
                     navigation.current.value++;
                     setView('wizard');
                     if (
-                      readDossierLink(window.location.search)?.id !== selected.id
+                      readDossierLink(window.location.search)?.id !==
+                      selected.id
                     )
                       recordDossierNavigation(
                         window.history,

@@ -1,5 +1,6 @@
 'use client';
 import { ResearchStart } from './research-start';
+import { TopicSuggestionsRequest } from './topic-suggestions';
 import { TemplatePicker, TemplateGuidance } from './dossier-template';
 import {
   templateReference,
@@ -8,7 +9,7 @@ import {
 } from '@/lib/dossier-templates';
 import { PublicCopyOrigin } from './public-origin';
 import { DomainContext } from './domain-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -30,7 +31,6 @@ import type {
   ProfileConfig,
   SourceAdvice,
   TopicCard,
-  TopicSuggestions,
   WizardProps,
 } from '@/lib/contracts';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,7 @@ const STEPS = [
 export function Wizard({
   initial,
   seed,
+  creationMode = 'research',
   packs,
   emailAvailable,
   identity,
@@ -63,7 +64,7 @@ export function Wizard({
   onOpenDraft,
 }: WizardProps) {
   const [mode, setMode] = useState<'research' | 'monitoring'>(
-    initial || seed ? 'monitoring' : 'research',
+    initial ? 'monitoring' : creationMode,
   );
   const [doc, setDoc] = useState<DossierRecord | null>(initial),
     [config, setConfig] = useState<ProfileConfig>(
@@ -74,6 +75,9 @@ export function Wizard({
     [dirty, setDirty] = useState(false),
     [suggestions, setSuggestions] = useState<TopicCard[]>([]),
     [model, setModel] = useState(''),
+    [suggestionConfig, setSuggestionConfig] = useState<ProfileConfig | null>(
+      null,
+    ),
     [preview, setPreview] = useState<Preview | null>(null),
     [sourceUrl, setSourceUrl] = useState(''),
     [sourceName, setSourceName] = useState(''),
@@ -92,12 +96,15 @@ export function Wizard({
     window.addEventListener('beforeunload', before);
     return () => window.removeEventListener('beforeunload', before);
   }, [dirty]);
+  const editGeneration = useRef(0);
   function change(values: Partial<ProfileConfig>) {
+    editGeneration.current++;
     setConfig((c: ProfileConfig) => ({ ...c, ...values }));
     setDirty(true);
     setPreview(null);
   }
   async function save(next = step) {
+    const savedGeneration = editGeneration.current;
     const clean = {
       ...config,
       topics: config.topics.map((t: TopicCard) => ({
@@ -124,7 +131,7 @@ export function Wizard({
       setDoc(d);
     }
     setStep(next);
-    setDirty(false);
+    if (editGeneration.current === savedGeneration) setDirty(false);
     window.history.replaceState({}, '', `/?dossier=${d.id}`);
     await onSaved(d);
     return d;
@@ -157,6 +164,18 @@ export function Wizard({
         'Confirm the change to your personal digest preferences.',
       );
   }
+  const suggestionsChanged =
+    suggestionConfig &&
+    (
+      [
+        'name',
+        'sector',
+        'goal',
+        'requested_jurisdictions',
+        'audience',
+        'feedback',
+      ] as const
+    ).some((field) => suggestionConfig[field] !== config[field]);
   function choosePack(id: string) {
     change({
       source_pack_ids: config.source_pack_ids.includes(id)
@@ -186,22 +205,6 @@ export function Wizard({
     change({
       topics: config.topics.map((t, n) => (n === i ? { ...t, ...values } : t)),
     });
-  }
-  async function suggest() {
-    const d = await save();
-    const result = await api<TopicSuggestions>(
-      `/monitoring-profiles/${d.profile.id}/suggest`,
-      {
-        expected_revision: d.profile.revision,
-        feedback: config.feedback,
-        locale: 'en-CH',
-      },
-    );
-    setDoc({ ...d, profile: result.profile });
-    setConfig(result.profile.config);
-    setSuggestions(result.suggestions);
-    setModel(`${result.provider} · ${result.model}`);
-    await onSaved({ ...d, profile: result.profile });
   }
   async function activate() {
     const d = await save(4);
@@ -256,8 +259,12 @@ export function Wizard({
   if (mode === 'research')
     return (
       <ResearchStart
+        initialQuestion={seed?.goal || ''}
         onCancel={onCancel}
-        onMonitoring={() => setMode('monitoring')}
+        onMonitoring={(question) => {
+          change({ goal: question });
+          setMode('monitoring');
+        }}
       />
     );
   return (
@@ -333,6 +340,7 @@ export function Wizard({
                     disabled={!!busy}
                     onChange={(value) => {
                       setTemplate(value);
+                      editGeneration.current++;
                       setDirty(true);
                     }}
                   />
@@ -429,17 +437,30 @@ export function Wizard({
                     AI uses your question and the available source catalogue. It
                     proposes search interests, not legal or medical conclusions.
                   </p>
-                  <Button
+                  <TopicSuggestionsRequest
+                    profile={doc?.profile || null}
+                    feedback={config.feedback}
+                    save={() => save()}
+                    onReload={() => {
+                      if (doc)
+                        void run('Loading saved dossier', () =>
+                          onOpenDraft(doc.id),
+                        );
+                    }}
                     disabled={!!busy}
-                    onClick={() =>
-                      run('Asking your configured AI provider', suggest)
-                    }
-                  >
-                    <Sparkles size={16} />
-                    {suggestions.length
-                      ? 'Refine suggestions'
-                      : 'Suggest topics'}
-                  </Button>
+                    onResult={(result) => {
+                      if (
+                        !doc ||
+                        result.profile.id !== doc.profile.id ||
+                        result.profile.revision < doc.profile.revision
+                      )
+                        return;
+                      setDoc({ ...doc, profile: result.profile });
+                      setSuggestions(result.suggestions);
+                      setSuggestionConfig(result.profile.config);
+                      setModel(`${result.provider} · ${result.model}`);
+                    }}
+                  />
                 </div>
               </div>
               <Field label="What should AI focus on or leave out?">
@@ -454,6 +475,13 @@ export function Wizard({
               {suggestions.length > 0 && (
                 <div className="suggestion-list">
                   <div className="section-label">AI suggestions · {model}</div>
+                  {suggestionsChanged && (
+                    <output>
+                      You edited the question or its context after these
+                      suggestions were requested. Request fresh suggestions
+                      before accepting topics.
+                    </output>
+                  )}
                   {suggestions.map((s) => (
                     <div className="suggestion-card" key={s.id}>
                       <div>
@@ -468,6 +496,7 @@ export function Wizard({
                       <Button
                         variant="outline"
                         disabled={
+                          !!suggestionsChanged ||
                           config.topics.some((x: TopicCard) => x.id === s.id) ||
                           config.topics.length >= 6
                         }

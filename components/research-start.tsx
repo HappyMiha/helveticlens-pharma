@@ -8,19 +8,21 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 
 export function ResearchStart({
+  initialQuestion = '',
   onMonitoring,
   onCancel,
   signedIn = true,
   canCreate = true,
   onSignIn,
 }: {
-  onMonitoring?: () => void;
+  initialQuestion?: string;
+  onMonitoring?: (question: string) => void;
   onCancel?: () => void;
   signedIn?: boolean;
   canCreate?: boolean;
   onSignIn?: () => void;
 }) {
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState(initialQuestion);
   const [busy, setBusy] = useState(false);
   const [frozen, setFrozen] = useState(false);
   const [error, setError] = useState('');
@@ -56,6 +58,12 @@ export function ResearchStart({
   } | null>(null);
   async function start() {
     if (sending.current || question.trim().length < 5) return;
+    if (question.trim().length > 300) {
+      setError(
+        'Keep the starting question within 300 characters. You can add details as research develops.',
+      );
+      return;
+    }
     if (!signedIn) {
       onSignIn?.();
       return;
@@ -211,8 +219,8 @@ export function ResearchStart({
           <Button
             type="button"
             variant="ghost"
-            disabled={busy}
-            onClick={onMonitoring}
+            disabled={busy || frozen}
+            onClick={() => onMonitoring(question)}
           >
             Set up topics and sources manually
           </Button>

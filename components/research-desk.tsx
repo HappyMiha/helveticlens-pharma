@@ -26,7 +26,7 @@ export function ResearchDesk({
   total: number;
   busy: string;
   run: Run;
-  onStart: (seed?: Preset) => void;
+  onStart: (seed?: Preset, mode?: 'research' | 'monitoring') => void;
   onSignIn: () => void;
   onOpen: (
     id: string,
@@ -49,7 +49,9 @@ export function ResearchDesk({
         signedIn={!!identity}
         canCreate={identity?.role === 'organization_admin'}
         onSignIn={onSignIn}
-        onMonitoring={() => onStart({ name: '', goal: '', sector: '' })}
+        onMonitoring={(question) =>
+          onStart({ name: '', goal: question, sector: '' }, 'monitoring')
+        }
       />
       <details className="source-tools research-search surface">
         <summary>Search existing knowledge</summary>

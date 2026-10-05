@@ -442,6 +442,7 @@ export type NavigationItem = [string, string, LucideIcon];
 export interface WizardProps {
   initial: DossierRecord | null;
   seed: Preset | null;
+  creationMode?: 'research' | 'monitoring';
   packs: SourcePack[];
   emailAvailable: boolean;
   identity: Identity;
