@@ -88,7 +88,7 @@ export function DossierWork({
   async function saved() {
     await reload();
     await load();
-    notify('Action saved. The work queue and decision history are up to date.');
+    notify('Action saved.');
   }
   return (
     <>

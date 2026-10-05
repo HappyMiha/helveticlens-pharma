@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Check, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,6 +100,18 @@ export function ActionDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const acknowledged = useRef(false);
+  const saving = useRef(false);
+  const active = useRef(true);
+  const [saved, setSaved] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
+  const locked = !canEdit || !!busy || saved;
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const [members, setMembers] = useState<Member[]>([]),
     [membersError, setMembersError] = useState(''),
     [creationKey] = useState(uid),
@@ -144,7 +156,7 @@ export function ActionDialog({
       live = false;
     };
   }, [dossierId]);
-  async function save() {
+  async function writeAction() {
     const shared = {
       title: form.title,
       detail: form.detail,
@@ -172,8 +184,32 @@ export function ActionDialog({
         evaluation_fingerprint: evidence?.evaluation_fingerprint || '',
         ...(research ? { research_origin: research.origin } : {}),
       });
-    await onSaved();
-    onClose();
+  }
+  async function save() {
+    if (busy || saving.current || (!acknowledged.current && !canEdit)) return;
+    saving.current = true;
+    try {
+      if (!acknowledged.current) {
+        await writeAction();
+        acknowledged.current = true;
+      }
+      if (!active.current) return;
+      setSaved(true);
+      setRefreshError('');
+      try {
+        await onSaved();
+        if (active.current) onClose();
+      } catch {
+        if (active.current)
+          setRefreshError(
+            'The updated view could not be loaded. Try refreshing it again.',
+          );
+      }
+    } catch (failure) {
+      if (active.current) throw failure;
+    } finally {
+      saving.current = false;
+    }
   }
   return (
     <Dialog
@@ -218,10 +254,16 @@ export function ActionDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void run('Saving action', save);
+            void run(saved ? 'Refreshing saved action' : 'Saving action', save);
           }}
           className="work-form"
         >
+          {saved && <output>Action saved.</output>}
+          {refreshError && (
+            <p role="alert" className="banner error">
+              {refreshError}
+            </p>
+          )}
           <WorkField label="Action">
             <Input
               value={form.title}
@@ -229,7 +271,7 @@ export function ActionDialog({
               maxLength={240}
               minLength={3}
               required
-              disabled={!canEdit || !!busy}
+              disabled={locked}
               placeholder={
                 product.id === 'pharma'
                   ? 'Assess impact on the medicine safety plan'
@@ -243,7 +285,7 @@ export function ActionDialog({
               onChange={(e) => setForm({ ...form, detail: e.target.value })}
               maxLength={4000}
               rows={3}
-              disabled={!canEdit || !!busy}
+              disabled={locked}
             />
           </WorkField>
           <div className="work-form-grid">
@@ -252,7 +294,7 @@ export function ActionDialog({
                 members={members}
                 value={form.assignee}
                 onChange={(assignee) => setForm({ ...form, assignee })}
-                disabled={!canEdit || !!busy || !!membersError}
+                disabled={locked || !!membersError}
               />
             </WorkField>
             <WorkField label="Team deadline">
@@ -260,7 +302,7 @@ export function ActionDialog({
                 type="date"
                 value={form.due}
                 onChange={(e) => setForm({ ...form, due: e.target.value })}
-                disabled={!canEdit || !!busy}
+                disabled={locked}
               />
             </WorkField>
             <WorkField label="Priority">
@@ -269,7 +311,7 @@ export function ActionDialog({
                 onChange={(e) =>
                   setForm({ ...form, priority: e.target.value as Priority })
                 }
-                disabled={!canEdit || !!busy}
+                disabled={locked}
               >
                 {priorities.map((p) => (
                   <NativeSelectOption key={p} value={p}>
@@ -285,7 +327,7 @@ export function ActionDialog({
                   onChange={(e) =>
                     setForm({ ...form, status: e.target.value as ActionStatus })
                   }
-                  disabled={!canEdit || !!busy}
+                  disabled={locked}
                 >
                   {actionStatuses.map((s) => (
                     <NativeSelectOption key={s} value={s}>
@@ -309,7 +351,7 @@ export function ActionDialog({
                 value={form.source}
                 onChange={(e) => setForm({ ...form, source: e.target.value })}
                 maxLength={2000}
-                disabled={!canEdit || !!busy}
+                disabled={locked}
               />
             </WorkField>
           )}
@@ -334,7 +376,7 @@ export function ActionDialog({
                   ['done', 'cancelled'].includes(form.status) ? 3 : undefined
                 }
                 required={['done', 'cancelled'].includes(form.status)}
-                disabled={!canEdit || !!busy}
+                disabled={locked}
                 placeholder="Record what was decided, why, and any follow-up. Required when completing or dismissing."
               />
             </WorkField>
@@ -348,14 +390,17 @@ export function ActionDialog({
             >
               Close
             </Button>
-            {canEdit && (
-              <Button type="submit" disabled={!!busy || !!membersError}>
+            {(canEdit || saved) && (
+              <Button
+                type="submit"
+                disabled={!!busy || (!saved && !!membersError)}
+              >
                 {busy ? (
                   <LoaderCircle size={16} className="spin" />
                 ) : (
                   <Check size={16} />
                 )}
-                Save action
+                {saved ? 'Refresh saved action' : 'Save action'}
               </Button>
             )}
           </div>
