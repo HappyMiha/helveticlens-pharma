@@ -246,3 +246,140 @@ test('late focus response cannot replace a newer paused notebook or renew its ac
     globalThis.EventSource = previousEvents;
   }
 });
+
+function savedEpisode(id, revision = 5) {
+  const value = researchReceiptFixture('paused', revision);
+  value.id = id;
+  value.question = `${id} question`;
+  value.exploration.current_activity = { contract: 'research-activity/v1', status: 'paused' };
+  value.exploration.mission.answer.points[0].statement = `${id} saved answer`;
+  return value;
+}
+
+async function navigationNotebook(t, props = {}) {
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  const previousWindow = globalThis.window, previousEvents = globalThis.EventSource;
+  const previousDocument = globalThis.document;
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  globalThis.EventSource = class { addEventListener() {} close() {} };
+  const requests = [], anchors = [];
+  const fakeDocument = { cookie: '', getElementById: (id) => ({
+    querySelector: () => null, scrollIntoView() {}, setAttribute() {},
+    focus() { anchors.push(id); },
+  }) };
+  globalThis.document = fakeDocument;
+  globalThis.fetch = (url, init) => new Promise((resolve) => requests.push({ url, init, resolve }));
+  const properties = { dossierId: 'fixture', canEdit: false, onOpen() {}, ...props };
+  let tree;
+  t.after(async () => {
+    if (tree) await act(async () => tree.unmount());
+    globalThis.window = previousWindow;
+    globalThis.EventSource = previousEvents;
+    globalThis.document = previousDocument;
+  });
+  await act(async () => { tree = create(React.createElement(DossierInvestigation, properties)); });
+  const detail = (id) => requests.filter((r) => r.url.endsWith(`/investigations/${id}`)).at(-1);
+  await act(async () => requests.find((r) => r.url.endsWith('/investigations')).resolve(
+    Response.json({ items: [savedEpisode('a'), savedEpisode('b')], total: 2 }),
+  ));
+  // Accept the ordinary selection read while a separate explicit focus may wait.
+  await act(async () => requests.find((r) => r.url.endsWith('/investigations/a')).resolve(Response.json(savedEpisode('a'))));
+  return {
+    tree, requests, anchors, detail,
+    select: async (id) => {
+      await act(async () => tree.root.findByProps({ id: 'history-fixture' }).props.onChange({ target: { value: id } }));
+      await act(async () => detail(id).resolve(Response.json(savedEpisode(id))));
+    },
+    click: async (label) => {
+      const button = tree.root.findAllByType('button').find((node) => node.children.filter((c) => typeof c === 'string').join('').trim() === label);
+      assert.ok(button, label);
+      await act(async () => button.props.onClick());
+    },
+    focus: async (request) => { await act(async () => tree.update(React.createElement(DossierInvestigation, { ...properties, focusRequest: request }))); },
+    expect: (id) => {
+      assert.equal(tree.root.findByProps({ id: 'history-fixture' }).props.value, id);
+      assert.match(JSON.stringify(tree.toJSON()), new RegExp(`${id} saved answer`));
+      assert.equal(tree.root.findAll((node) => node.props.role === 'alert').length, 0);
+    },
+  };
+}
+
+for (const outcome of ['success', 'failure']) test(`manual selection owns the notebook after late focus ${outcome}, with fresh source links still usable`, async (t) => {
+  const book = await navigationNotebook(t, { focusRequest: { id: 'a', tick: 1, anchor: 'source-old' } });
+  const oldFocus = book.detail('a');
+  const revealed = book.anchors.length;
+  assert.equal(revealed, 1);
+  await book.select('b');
+  await act(async () => oldFocus.resolve(outcome === 'success'
+    ? Response.json(savedEpisode('a', 9)) : new Response('', { status: 503 })));
+  book.expect('b');
+  await book.select('a');
+  book.expect('a');
+  assert.equal(book.anchors.length, revealed, 'Manual return does not replay the old source jump');
+  await book.select('b');
+  await book.focus({ id: 'a', tick: 2, anchor: 'source-new' });
+  await act(async () => book.detail('a').resolve(Response.json(savedEpisode('a', 6))));
+  book.expect('a');
+  assert.equal(book.anchors.at(-1), 'source-new');
+  assert.equal(book.anchors.length, revealed + 1);
+});
+
+for (const duringRecovery of [false, true]) test(`control failure cannot annotate another episode (${duringRecovery ? 'during recovery read' : 'before recovery read'})`, async (t) => {
+  const book = await navigationNotebook(t, { canEdit: true });
+  await book.click('Resume');
+  const control = book.requests.find((r) => r.url.endsWith('/a/control'));
+  assert.ok(control);
+  let recovery;
+  if (duringRecovery) {
+    await act(async () => control.resolve(new Response('', { status: 503 })));
+    recovery = book.detail('a');
+  }
+  await book.select('b');
+  const requestCount = book.requests.length;
+  await act(async () => duringRecovery
+    ? recovery.resolve(Response.json(savedEpisode('a', 6)))
+    : control.resolve(new Response('', { status: 503 })));
+  book.expect('b');
+  assert.equal(book.requests.length, requestCount, 'Obsolete control does not initiate another read');
+});
+
+test('background failure from an earlier visit cannot erase the answer after A → B → A', async (t) => {
+  const book = await navigationNotebook(t);
+  await act(async () => t.mock.timers.tick(15000));
+  const earlierRead = book.detail('a');
+  await book.select('b');
+  await book.select('a');
+  await act(async () => earlierRead.resolve(new Response('', { status: 503 })));
+  book.expect('a');
+});
+
+test('reloading saved research respects a newer manual history selection', async (t) => {
+  const book = await navigationNotebook(t);
+  await act(async () => t.mock.timers.tick(15000));
+  await act(async () => book.detail('a').resolve(new Response('', { status: 503 })));
+  await book.click('Reload saved research');
+  const reload = book.requests.filter((r) => r.url.endsWith('/investigations')).at(-1);
+  await book.select('b');
+  await act(async () => reload.resolve(Response.json({ items: [savedEpisode('a'), savedEpisode('b')], total: 2 })));
+  book.expect('b');
+});
+
+test('accepted new research remains in history without overriding a later selection', async (t) => {
+  const ask = require(resolve('components/universal-ask-search.tsx'));
+  let registered;
+  const register = (scope) => { registered = scope; return () => {}; };
+  t.mock.method(ask, 'useAskSearch', () => ({ register }));
+  const book = await navigationNotebook(t, { canEdit: true, focusRequest: { id: 'a', tick: 1 } });
+  const oldFocus = book.detail('a');
+  let result = Promise.resolve(false);
+  await act(async () => { result = registered.investigate('A new research question'); });
+  const submitted = book.requests.find((r) => r.init.method === 'POST' && r.url.endsWith('/investigations'));
+  assert.ok(submitted);
+  await book.select('b');
+  await act(async () => submitted.resolve(Response.json(savedEpisode('c'))));
+  assert.equal(await result, true, 'Accepted server work remains acknowledged');
+  await act(async () => oldFocus.resolve(Response.json(savedEpisode('a'))));
+  book.expect('b');
+  assert.ok(book.tree.root.findAllByType('option').some((node) => node.props.value === 'c'));
+  assert.equal(book.requests.filter((r) => r.init.method === 'POST').length, 1);
+});

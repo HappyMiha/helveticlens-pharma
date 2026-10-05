@@ -82,20 +82,33 @@ export function DossierInvestigation({
     null,
   );
   const currentSelection = useRef(selected);
-  useEffect(() => {
-    currentSelection.current = selected;
-  }, [selected]);
+  const selectionIntent = useRef(0);
+  const focusedIntent = useRef<{
+    request: NonNullable<typeof focusRequest>;
+    intent: number;
+    epoch: number;
+  } | null>(null);
+  const beginNavigation = useCallback(() => {
+    focusedIntent.current = null;
+    return ++selectionIntent.current;
+  }, []);
+  const selectInvestigation = useCallback((id: string) => {
+    currentSelection.current = id;
+    setSelected(id);
+  }, []);
   const refreshPending = useRef(false);
   const refresh = useCallback(async () => {
     if (!selected || refreshPending.current) return;
     refreshPending.current = true;
     const epoch = accessEpoch.current;
+    const intent = selectionIntent.current;
     const readStartedAt = performance.now();
     try {
       const next = await api<Investigation>(`${base}/${selected}`);
       if (
         currentSelection.current !== selected ||
-        epoch !== accessEpoch.current
+        epoch !== accessEpoch.current ||
+        intent !== selectionIntent.current
       )
         return;
       setValue((old) =>
@@ -106,7 +119,8 @@ export function DossierInvestigation({
     } catch (e) {
       if (
         currentSelection.current !== selected ||
-        epoch !== accessEpoch.current
+        epoch !== accessEpoch.current ||
+        intent !== selectionIntent.current
       )
         return;
       setValue(null);
@@ -129,7 +143,7 @@ export function DossierInvestigation({
           ),
         ]);
         setTotal(page.total);
-        setSelected((old) => old || page.items[0]?.id || '');
+        if (!currentSelection.current) selectInvestigation(page.items[0]?.id || '');
         setLoading(false);
       })
       .catch((e) => {
@@ -141,7 +155,7 @@ export function DossierInvestigation({
     return () => {
       active = false;
     };
-  }, [base]);
+  }, [base, selectInvestigation]);
   useEffect(() => {
     if (!selected) return;
     let active = true;
@@ -176,18 +190,20 @@ export function DossierInvestigation({
     if (!focus) return;
     let active = true;
     const epoch = accessEpoch.current;
+    const intent = beginNavigation();
+    focusedIntent.current = { request: focus, intent, epoch };
     const readStartedAt = performance.now();
     api<Investigation>(`${base}/${focus.id}`)
       .then((next) => {
-        if (!active || epoch !== accessEpoch.current) return;
+        if (!active || epoch !== accessEpoch.current || intent !== selectionIntent.current) return;
         setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
-        setSelected(next.id);
+        selectInvestigation(next.id);
         setValue((old) => old && old.data.id === next.id && old.data.revision > next.revision
           ? old : { data: next, readStartedAt });
         setError('');
       })
       .catch((failure) => {
-        if (active && epoch === accessEpoch.current)
+        if (active && epoch === accessEpoch.current && intent === selectionIntent.current)
           setError(
             failure instanceof Error
               ? failure.message
@@ -197,9 +213,12 @@ export function DossierInvestigation({
     return () => {
       active = false;
     };
-  }, [base, focusRequest]);
+  }, [base, focusRequest, beginNavigation, selectInvestigation]);
   useEffect(() => {
-    if (focusRequest && focusRequest.id === value?.id) {
+    const focus = focusedIntent.current;
+    if (focusRequest && focus?.request === focusRequest &&
+        focus.intent === selectionIntent.current && focus.epoch === accessEpoch.current &&
+        focusRequest.id === value?.id) {
       const target = document.getElementById(
         focusRequest?.anchor || `investigation-${value?.id}`,
       );
@@ -267,6 +286,7 @@ export function DossierInvestigation({
       setError('');
       const readStartedAt = performance.now();
       const epoch = accessEpoch.current;
+      const intent = beginNavigation();
       try {
         const next = await api<Investigation>(base, {
           ...pending.current,
@@ -277,19 +297,22 @@ export function DossierInvestigation({
         pending.current = null;
         setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
         setTotal((old) => old + 1);
-        setSelected(next.id);
-        setValue({ data: next, readStartedAt });
+        if (intent === selectionIntent.current) {
+          selectInvestigation(next.id);
+          setValue({ data: next, readStartedAt });
+        }
         return true;
       } catch (e) {
-        setError(
-          e instanceof Error ? e.message : 'Could not start the investigation.',
-        );
+        if (epoch === accessEpoch.current && intent === selectionIntent.current)
+          setError(
+            e instanceof Error ? e.message : 'Could not start the investigation.',
+          );
         return false;
       } finally {
         setBusy(false);
       }
     },
-    [base, busy, canEdit, onReveal],
+    [base, busy, canEdit, onReveal, beginNavigation, selectInvestigation],
   );
   async function control(
     action: 'pause' | 'resume' | 'cancel' | 'retry' | 'deepen',
@@ -300,18 +323,23 @@ export function DossierInvestigation({
     setError('');
     const readStartedAt = performance.now();
     const epoch = accessEpoch.current;
+    const intent = selectionIntent.current;
+    const stillSelected = () => epoch === accessEpoch.current &&
+      intent === selectionIntent.current && currentSelection.current === value.id;
     try {
       const next = await api<Investigation>(`${base}/${value.id}/control`, {
         action,
         ...(limits ? { limits } : {}),
         expected_revision: value.revision,
       });
-      if (epoch !== accessEpoch.current || currentSelection.current !== value.id) return;
+      if (!stillSelected()) return;
       setValue((old) => old && old.data.id === next.id && old.data.revision > next.revision
         ? old : { data: next, readStartedAt });
       setHistory((old) => old.map((row) => (row.id === next.id ? next : row)));
     } catch (e) {
+      if (!stillSelected()) return;
       await refresh();
+      if (!stillSelected()) return;
       setError(
         e instanceof Error
           ? e.message
@@ -324,17 +352,21 @@ export function DossierInvestigation({
   async function reloadLatest() {
     setBusy(true);
     setLoading(true);
+    const epoch = accessEpoch.current;
+    const intent = beginNavigation();
     try {
       const page = await api<{ items: InvestigationSummary[]; total: number }>(
         base,
       );
+      if (epoch !== accessEpoch.current || intent !== selectionIntent.current) return;
       setHistory(page.items);
       setTotal(page.total);
       setError('');
       const latest = page.items.find(isRunning) || page.items[0];
-      setSelected(latest?.id || '');
+      selectInvestigation(latest?.id || '');
       if (latest?.id === selected) await refresh();
     } catch (e) {
+      if (epoch !== accessEpoch.current || intent !== selectionIntent.current) return;
       setValue(null);
       setHistory([]);
       setError(
@@ -433,7 +465,12 @@ export function DossierInvestigation({
           <select
             id={`history-${dossierId}`}
             value={selected}
-            onChange={(event) => setSelected(event.target.value)}
+            onChange={(event) => {
+              beginNavigation();
+              setError('');
+              setConnection('');
+              selectInvestigation(event.target.value);
+            }}
           >
             {history.map((row) => (
               <option key={row.id} value={row.id}>

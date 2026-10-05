@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.94.0 — Keep the selected research in view
+
+Switching investigations keeps the latest choice in view. Delayed reads, source jumps and control errors cannot reopen an older selection. Newly started research remains saved in history when the user moves to another answer while it is starting.
+
 ## 1.93.0 — Finish slow research reads
 
 Background updates let an active read finish before checking again. Public research, finding reviews, entity matches and evidence comparisons remain usable when responses take longer than the polling interval. Explicit reload and access changes still replace stale requests immediately.
