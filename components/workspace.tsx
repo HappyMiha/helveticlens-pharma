@@ -403,6 +403,7 @@ export default function Workspace() {
       );
       return;
     }
+    navigation.current.value++;
     setSelected(null);
     setView('wizard');
     window.history.pushState({}, '', '/?view=new');
@@ -925,7 +926,18 @@ export default function Workspace() {
                   }}
                   dossier={selected}
                   userId={identity?.user.id}
-                  onSetup={() => setView('wizard')}
+                  onSetup={() => {
+                    navigation.current.value++;
+                    setView('wizard');
+                    if (
+                      readDossierLink(window.location.search)?.id !== selected.id
+                    )
+                      recordDossierNavigation(
+                        window.history,
+                        { id: selected.id },
+                        true,
+                      );
+                  }}
                   canEdit={selected.access?.can_edit ?? canEdit}
                   busy={busy}
                   run={run}
