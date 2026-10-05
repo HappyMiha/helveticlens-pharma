@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -72,6 +72,16 @@ export function SourceReviews({
   );
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState('');
+  const [saved, setSaved] = useState(false);
+  const acknowledged = useRef<Entry | null>(null);
+  const sending = useRef(false);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const root = `/products/${product.id}/dossiers/${dossierId}/sources/${reference.id}/reviews`;
   const { data, error, loading, refresh } = useResource<{
     current: Entry | null;
@@ -80,17 +90,30 @@ export function SourceReviews({
   }>(`${root}?offset=${offset}`);
   const conflict = !!data && reviewConflict(draft, data.current);
   async function save() {
-    if (!data || error || conflict || saving || !canEdit) return;
+    if (
+      sending.current ||
+      (!acknowledged.current && (!data || error || conflict || !canEdit))
+    )
+      return;
+    sending.current = true;
     setSaving(true);
     setFailure('');
     try {
-      const saved = await api<Entry>(root, reviewRequest(draft));
-      await onSaved(saved);
-      onClose();
+      acknowledged.current ??= await api<Entry>(root, reviewRequest(draft));
+      if (!active.current) return;
+      setSaved(true);
+      await onSaved(acknowledged.current);
+      if (active.current) onClose();
     } catch (e) {
-      setFailure((e as Error).message);
+      if (active.current)
+        setFailure(
+          acknowledged.current
+            ? 'Your source decision was saved, but the dossier view could not be refreshed. Try refreshing the saved decision.'
+            : (e as Error).message,
+        );
     } finally {
-      setSaving(false);
+      sending.current = false;
+      if (active.current) setSaving(false);
     }
   }
   return (
@@ -128,6 +151,20 @@ export function SourceReviews({
             {error || failure}
           </div>
         )}
+        {saved && (
+          <section aria-label="Saved source decision">
+            <output>Source decision saved.</output>
+            <p>The loaded history may still show the earlier decision.</p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => void save()}
+            >
+              {saving ? 'Refreshing saved decision…' : 'Refresh saved decision'}
+            </Button>
+          </section>
+        )}
         {loading && <output>Loading source reviews…</output>}
         <Button
           variant="outline"
@@ -139,8 +176,8 @@ export function SourceReviews({
         </Button>
         {data && (
           <>
-            <SourceReviewStatus review={data.current} />
-            {canEdit && (
+            {!saved && <SourceReviewStatus review={data.current} />}
+            {canEdit && !saved && (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
