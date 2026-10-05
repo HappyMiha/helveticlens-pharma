@@ -83,6 +83,14 @@ export function PublicResearchView({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const refresh = useCallback(() => setTick((v) => v + 1), []);
+  const { poll: pollResource } = resource;
+  const { poll: pollDetail } = detail;
+  const { poll: pollControls } = controls;
+  const poll = useCallback(() => {
+    void pollResource();
+    void pollDetail();
+    void pollControls();
+  }, [pollResource, pollDetail, pollControls]);
   const select = useCallback(
     (id: string) => {
       setSelected(id);
@@ -95,13 +103,13 @@ export function PublicResearchView({
     [refresh],
   );
   useEffect(() => {
-    const timer = setInterval(refresh, 15000);
+    const timer = setInterval(poll, 15000);
     window.addEventListener('helvetic-public-research-changed', refresh);
     return () => {
       clearInterval(timer);
       window.removeEventListener('helvetic-public-research-changed', refresh);
     };
-  }, [refresh]);
+  }, [poll, refresh]);
   const running = isRunning(value);
   useEffect(() => {
     if (!selected || !running) return;
@@ -109,7 +117,7 @@ export function PublicResearchView({
     let timer: ReturnType<typeof setTimeout> | undefined;
     const changed = () => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(refresh, 250);
+      timer = setTimeout(poll, 250);
     };
     source.addEventListener('activity', changed);
     source.addEventListener('checkpoint', changed);
@@ -126,7 +134,7 @@ export function PublicResearchView({
       source.close();
       if (timer) clearTimeout(timer);
     };
-  }, [base, selected, running, refresh]);
+  }, [base, selected, running, poll, refresh]);
   const hasValue = !!value;
   useEffect(() => {
     if (hasValue && window.location.hash) {

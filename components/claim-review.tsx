@@ -88,10 +88,15 @@ function ReviewReader({
     (publicView
       ? !!accountKey && !controls.error && !!controls.data?.can_review
       : !!page.can_review);
+  const { poll: pollResource } = resource;
+  const { poll: pollControls } = controls;
   useEffect(() => {
-    const timer = setInterval(refresh, 15000);
+    const timer = setInterval(() => {
+      void pollResource();
+      void pollControls();
+    }, 15000);
     return () => clearInterval(timer);
-  }, [refresh]);
+  }, [pollResource, pollControls]);
   return (
     <div>
       <Button variant="ghost" onClick={refresh}>

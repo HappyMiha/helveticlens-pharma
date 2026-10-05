@@ -60,10 +60,15 @@ export function ClaimEvolution({
     (publicView
       ? !!accountKey && !controls.error && !!controls.data?.can_review
       : !!resource.data?.can_review);
+  const { poll: pollResource } = resource;
+  const { poll: pollControls } = controls;
   useEffect(() => {
-    const timer = setInterval(refresh, 15000);
+    const timer = setInterval(() => {
+      void pollResource();
+      void pollControls();
+    }, 15000);
     return () => clearInterval(timer);
-  }, [refresh]);
+  }, [pollResource, pollControls]);
   return (
     <DossierSection id="evidence-changes" number="07" title="Changes over time">
       <p className="investigation-muted">

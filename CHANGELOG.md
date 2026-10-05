@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.93.0 — Finish slow research reads
+
+Background updates let an active read finish before checking again. Public research, finding reviews, entity matches and evidence comparisons remain usable when responses take longer than the polling interval. Explicit reload and access changes still replace stale requests immediately.
+
 ## 1.92.0 — Consistent research activity
 
 The dossier notebook and public research reader use the same confirmed activity as the main research view. Long work and final briefing remain accurately labelled; expired or delayed updates cannot look live. Saved answers stay available while the next update is awaited.
