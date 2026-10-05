@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { Investigation } from '@/lib/investigation';
+import { ResearchActivityReceipt } from './exploration';
 import {
   investigationActivity,
   type LensActivity,
@@ -29,7 +30,17 @@ export function LensProgress({ activity }: { activity: LensActivity }) {
   );
 }
 
-export function LensAnalysisState({ value }: { value: Investigation }) {
+export function LensAnalysisState({ value, readStartedAt = null }: {
+  value: Investigation;
+  readStartedAt?: number | null;
+}) {
+  if (value.exploration) return <ResearchActivityReceipt state={value.exploration}
+    readStartedAt={value.status === 'running' ? readStartedAt : null}
+    originalQuestion={value.question} />;
+  return <LegacyLensAnalysisState value={value} />;
+}
+
+function LegacyLensAnalysisState({ value }: { value: Investigation }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 3000);

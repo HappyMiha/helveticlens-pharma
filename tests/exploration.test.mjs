@@ -3852,3 +3852,52 @@ test('pending verification is separate from genuine source gaps in the saved ans
     assert.doesNotMatch(text(tree), /Some documents still need reading|model_upstream_timeout|Latest attempt stopped/);
   } finally { if (tree) await act(async () => tree.unmount()); }
 });
+
+
+test('dossier activity uses the current receipt for long briefing work and expires without hiding the saved answer', async (t) => {
+  const { LensAnalysisState } = require(resolve('components/lens.tsx'));
+  const { ExplorationBrief } = require(resolve('components/exploration.tsx'));
+  let clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  globalThis.fetch = () => { throw new Error('Activity display cannot fetch'); };
+  const value = episode({ status: 'running', branches: [{ status: 'running', query: 'PRIVATE BRANCH FALLBACK',
+    steps: [{ phase: 'brief', status: 'running', started_at: '2020-01-01T00:00:00Z' }] }] });
+  value.exploration.current_activity = { ...liveActivity(), phase: 'brief' };
+  const render = (readStartedAt = 100) => React.createElement(React.Fragment, null,
+    React.createElement(ExplorationBrief, { state: value.exploration }),
+    React.createElement(LensAnalysisState, { value, readStartedAt }));
+  let tree;
+  try {
+    await act(async () => { tree = create(render()); });
+    assert.match(text(tree), /Preparing the research briefing/);
+    assert.match(text(tree), /An AI interpretation/);
+    assert.doesNotMatch(text(tree), /Waiting for a saved checkpoint|PRIVATE BRANCH/);
+    clock = 151;
+    await act(async () => t.mock.timers.tick(51));
+    assert.match(text(tree), /Current activity is not confirmed/);
+    assert.match(text(tree), /An AI interpretation/);
+    assert.doesNotMatch(text(tree), /Preparing the research briefing|Earlier evidence trigger/);
+    await act(async () => tree.update(render()));
+    assert.doesNotMatch(text(tree), /Preparing the research briefing/);
+    // A response that spent its validity window in transit is already stale.
+    await act(async () => tree.update(render(10)));
+    assert.match(text(tree), /Current activity is not confirmed/);
+    for (const status of ['paused', 'failed', 'cancelled', 'completed', 'queued']) {
+      value.status = status;
+      await act(async () => tree.update(render(clock)));
+      assert.doesNotMatch(text(tree), /Preparing the research briefing|PRIVATE BRANCH/);
+    }
+    value.status = 'running';
+    for (const status of ['stale', 'unknown', 'evidence_changed']) {
+      value.exploration.current_activity = { ...liveActivity(), status };
+      await act(async () => tree.update(render(clock)));
+      assert.doesNotMatch(text(tree), /Preparing the research briefing|PRIVATE BRANCH|Earlier evidence trigger/);
+    }
+    delete value.exploration.current_activity;
+    await act(async () => tree.update(render(clock)));
+    assert.match(text(tree), /Current activity is not confirmed/);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+  }
+});

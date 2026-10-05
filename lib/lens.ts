@@ -39,7 +39,8 @@ export function investigationActivity(
   );
   const step = branch?.steps.find((s) => s.status === 'running');
   const started = step?.started_at ? Date.parse(step.started_at) : NaN;
-  // Native operations have a 90-second maximum; stale snapshots never look live.
+  // Legacy snapshots have no verified live receipt. Keep their conservative
+  // display window; this is not an operation deadline for modern research.
   if (
     !step ||
     !Number.isFinite(started) ||
@@ -53,6 +54,7 @@ export function investigationActivity(
     };
   const phase = {
     plan: { state: 'synthesizing', label: 'Planning research directions' },
+    brief: { state: 'synthesizing', label: 'Preparing the research briefing' },
     gate: { state: 'verifying', label: 'Checking candidate relevance' },
     gate_review: {
       state: 'verifying',

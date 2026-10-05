@@ -554,6 +554,10 @@ test('Lens uses the recorded in-flight step and never fabricates an analysis sta
     'complete',
   );
 });
+test('legacy briefing uses a readable synthesis label', () => {
+  assert.equal(investigationActivity(activityFixture('brief'), now).label, 'Preparing the research briefing');
+});
+
 test('stale, missing and future checkpoint timestamps cannot keep Lens animation active', () => {
   assert.equal(
     investigationActivity(activityFixture(), now + 100_000).state,
@@ -2609,4 +2613,19 @@ test('delivery state and retry availability do not turn completed work into a fa
   const withdrawn = { ...value, exploration: { ...value.exploration, status: 'evidence_changed' } };
   assert.equal(researchDeliveryLabel(withdrawn), 'Evidence changed');
   assert.equal(canRetryResearch(withdrawn), false);
+});
+
+
+test('public initial research never invents a fresh activity receipt before its read completes', () => {
+  const { PublicResearchView } = require('../components/public-research.tsx');
+  const run = { ...activityFixture('brief'), id: 'public-research', question: 'Public research question',
+    revision: 1, claims: [], sources: [], evidence: [], entities: [], relationships: [], plans: [], activity: [],
+    exploration: { status: 'exploring', current_activity: { contract: 'research-activity/v1', status: 'working',
+      phase: 'brief', question: 'Unconfirmed live question', valid_for_ms: 90000 } } };
+  const html = renderToStaticMarkup(React.createElement(PublicResearchView, {
+    publicationId: 'public-dossier', revision: 1, selectedId: run.id, initialValue: run,
+    initial: { items: [run], total: 1, offset: 0, page_size: 20, publication_revision: 1, living_research: true },
+  }));
+  assert.match(html, /Current activity is not confirmed/);
+  assert.doesNotMatch(html, /Preparing the research briefing|Unconfirmed live question|lens-optic/);
 });

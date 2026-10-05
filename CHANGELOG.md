@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.92.0 — Consistent research activity
+
+The dossier notebook and public research reader use the same confirmed activity as the main research view. Long work and final briefing remain accurately labelled; expired or delayed updates cannot look live. Saved answers stay available while the next update is awaited.
+
 ## 1.91.0 — Source checks and answer gaps
 
 The answer keeps its substantive gaps separate from source acquisition history. A collapsed Source checks section shows what was named in the question or research plan and whether it was identified, fully read and analysed. Missing planner leads no longer imply an unanswered question; actual missing requirements and incomplete reading remain visible.

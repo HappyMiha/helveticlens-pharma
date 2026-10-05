@@ -162,3 +162,87 @@ test('failed reads and repeated recovery retain exactly one search, its typed qu
     console.error = originalError;
   }
 });
+
+function researchReceiptFixture(status = 'running', revision = 4) {
+  return {
+    id: 'r', question: 'Saved research question', status, revision, stop_reason: '',
+    sources: [], evidence: [], claims: [], entities: [], relationships: [], plans: [], activity: [],
+    evidence_basis: '', coverage: '',
+    branches: [{ id: 'b', phase: 'brief', status: 'running', query: 'Old branch text', reason: '',
+      steps: [{ id: 's', phase: 'brief', status: 'running', started_at: '2020-01-01T00:00:00Z' }] }],
+    exploration: { status: 'exploring', sources: [], briefing: null,
+      mission: { contract: 'research-mission/v1', checkpoints: [], stage: 'synthesizing', question: 'Saved research question', round: 2, stop: null,
+        answer: { status: 'possible_answer', points: [{ statement: 'Previously checked answer', evidence: [] }], limitations: [] } },
+      current_activity: { contract: 'research-activity/v1', status: 'working', phase: 'brief',
+        question: 'Finish the briefing', observed_at: '2026-10-05T00:00:00Z', valid_for_ms: 50 } },
+  };
+}
+
+for (const delay of [0, 51]) test(`actual notebook binds activity to the request start, including ${delay}ms transport delay`, async (t) => {
+  let clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  const previousWindow = globalThis.window, previousEvents = globalThis.EventSource;
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  globalThis.EventSource = class { addEventListener() {} close() {} };
+  const requests = [];
+  globalThis.fetch = (url) => new Promise((resolve) => requests.push({ url, resolve }));
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(DossierInvestigation, {
+      dossierId: 'fixture', canEdit: false, onOpen() {},
+    })); });
+    await act(async () => requests[0].resolve(Response.json({ items: [researchReceiptFixture()], total: 1 })));
+    const detail = requests.find((r) => r.url.endsWith('/investigations/r'));
+    assert.ok(detail);
+    clock += delay;
+    await act(async () => detail.resolve(Response.json(researchReceiptFixture())));
+    const output = () => JSON.stringify(tree.toJSON());
+    assert.match(output(), /Previously checked answer/);
+    if (delay) assert.doesNotMatch(output(), /Preparing the research briefing/);
+    else assert.match(output(), /Preparing the research briefing/);
+    const count = requests.length;
+    clock = 151;
+    await act(async () => t.mock.timers.tick(51));
+    assert.match(output(), /Current activity is not confirmed/);
+    assert.doesNotMatch(output(), /Preparing the research briefing/);
+    assert.match(output(), /Previously checked answer/);
+    assert.equal(requests.length, count, 'Receipt expiry does not request more work or data');
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+    globalThis.window = previousWindow;
+    globalThis.EventSource = previousEvents;
+  }
+});
+
+test('late focus response cannot replace a newer paused notebook or renew its activity', async (t) => {
+  let clock = 100;
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  const previousWindow = globalThis.window, previousEvents = globalThis.EventSource;
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  globalThis.EventSource = class { addEventListener() {} close() {} };
+  const requests = [];
+  globalThis.fetch = (url) => new Promise((resolve) => requests.push({ url, resolve }));
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(DossierInvestigation, {
+      dossierId: 'fixture', canEdit: false, onOpen() {}, focusRequest: { id: 'r', tick: 1 },
+    })); });
+    const details = requests.filter((r) => r.url.endsWith('/investigations/r'));
+    assert.equal(details.length, 2);
+    const paused = researchReceiptFixture('paused', 5);
+    paused.exploration.current_activity = { contract: 'research-activity/v1', status: 'paused' };
+    await act(async () => details[0].resolve(Response.json(paused)));
+    clock = 110;
+    await act(async () => details[1].resolve(Response.json(researchReceiptFixture('running', 4))));
+    const output = JSON.stringify(tree.toJSON());
+    assert.match(output, /Research is paused/);
+    assert.match(output, /Previously checked answer/);
+    assert.doesNotMatch(output, /Preparing the research briefing/);
+  } finally {
+    if (tree) await act(async () => tree.unmount());
+    globalThis.window = previousWindow;
+    globalThis.EventSource = previousEvents;
+  }
+});

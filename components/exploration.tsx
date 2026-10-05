@@ -647,22 +647,26 @@ export function ResearchActivity({
   readStartedAt: number | null;
   originalQuestion?: string;
 }) {
-  const activity = state.current_activity;
-  const deadline =
-    activity?.status === 'working' && readStartedAt !== null
-      ? readStartedAt + Math.max(0, Math.min(90000, activity.valid_for_ms))
-      : null;
   return (
     <>
       <MissionProgress mission={state.mission} status={state.status} />
-      <CurrentResearchReceipt
-        key={deadline ?? 'unconfirmed'}
-        state={state}
-        deadline={deadline}
-        originalQuestion={originalQuestion}
-      />
+      <ResearchActivityReceipt state={state} readStartedAt={readStartedAt} originalQuestion={originalQuestion} />
     </>
   );
+}
+
+/** Reuse current activity without repeating the saved mission/answer panel. */
+export function ResearchActivityReceipt({ state, readStartedAt, originalQuestion }: {
+  state: ExplorationState;
+  readStartedAt: number | null;
+  originalQuestion?: string;
+}) {
+  const activity = state.current_activity;
+  const deadline = activity?.status === 'working' && readStartedAt !== null
+    ? readStartedAt + Math.max(0, Math.min(90000, activity.valid_for_ms))
+    : null;
+  return <CurrentResearchReceipt key={deadline ?? 'unconfirmed'} state={state}
+    deadline={deadline} originalQuestion={originalQuestion} />;
 }
 
 function CurrentResearchReceipt({

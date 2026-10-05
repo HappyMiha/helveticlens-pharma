@@ -63,8 +63,8 @@ export function DossierInvestigation({
   const [history, setHistory] = useState<InvestigationSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState(focusRequest?.id || '');
-  const [stored, setValue] = useState<Investigation | null>(null);
-  const value = stored?.id === selected ? stored : null;
+  const [stored, setValue] = useState<{ data: Investigation; readStartedAt: number } | null>(null);
+  const value = stored?.data.id === selected ? stored.data : null;
   const canControl =
     canEdit ||
     !!(
@@ -90,6 +90,7 @@ export function DossierInvestigation({
     if (!selected || refreshPending.current) return;
     refreshPending.current = true;
     const epoch = accessEpoch.current;
+    const readStartedAt = performance.now();
     try {
       const next = await api<Investigation>(`${base}/${selected}`);
       if (
@@ -98,7 +99,7 @@ export function DossierInvestigation({
       )
         return;
       setValue((old) =>
-        old && old.id === next.id && old.revision > next.revision ? old : next,
+        old && old.data.id === next.id && old.data.revision > next.revision ? old : { data: next, readStartedAt },
       );
       setHistory((old) => old.map((row) => (row.id === next.id ? next : row)));
       setError('');
@@ -145,13 +146,14 @@ export function DossierInvestigation({
     if (!selected) return;
     let active = true;
     const epoch = accessEpoch.current;
+    const readStartedAt = performance.now();
     api<Investigation>(`${base}/${selected}`)
       .then((next) => {
         if (!active || epoch !== accessEpoch.current) return;
         setValue((old) =>
-          old && old.id === next.id && old.revision > next.revision
+          old && old.data.id === next.id && old.data.revision > next.revision
             ? old
-            : next,
+            : { data: next, readStartedAt },
         );
         setHistory((old) =>
           old.map((row) => (row.id === next.id ? next : row)),
@@ -174,12 +176,14 @@ export function DossierInvestigation({
     if (!focus) return;
     let active = true;
     const epoch = accessEpoch.current;
+    const readStartedAt = performance.now();
     api<Investigation>(`${base}/${focus.id}`)
       .then((next) => {
         if (!active || epoch !== accessEpoch.current) return;
         setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
         setSelected(next.id);
-        setValue(next);
+        setValue((old) => old && old.data.id === next.id && old.data.revision > next.revision
+          ? old : { data: next, readStartedAt });
         setError('');
       })
       .catch((failure) => {
@@ -261,17 +265,20 @@ export function DossierInvestigation({
       onReveal?.();
       setBusy(true);
       setError('');
+      const readStartedAt = performance.now();
+      const epoch = accessEpoch.current;
       try {
         const next = await api<Investigation>(base, {
           ...pending.current,
           public_query_confirmed: true,
           engine: 'iterative-v1',
         });
+        if (epoch !== accessEpoch.current) return false;
         pending.current = null;
         setHistory((old) => [next, ...old.filter((row) => row.id !== next.id)]);
         setTotal((old) => old + 1);
         setSelected(next.id);
-        setValue(next);
+        setValue({ data: next, readStartedAt });
         return true;
       } catch (e) {
         setError(
@@ -291,13 +298,17 @@ export function DossierInvestigation({
     if (!value) return;
     setBusy(true);
     setError('');
+    const readStartedAt = performance.now();
+    const epoch = accessEpoch.current;
     try {
       const next = await api<Investigation>(`${base}/${value.id}/control`, {
         action,
         ...(limits ? { limits } : {}),
         expected_revision: value.revision,
       });
-      setValue(next);
+      if (epoch !== accessEpoch.current || currentSelection.current !== value.id) return;
+      setValue((old) => old && old.data.id === next.id && old.data.revision > next.revision
+        ? old : { data: next, readStartedAt });
       setHistory((old) => old.map((row) => (row.id === next.id ? next : row)));
     } catch (e) {
       await refresh();
@@ -599,7 +610,7 @@ export function DossierInvestigation({
               onContinue={(limits) => control('deepen', limits)}
             />
           )}
-          <LensAnalysisState value={value} />
+          <LensAnalysisState value={value} readStartedAt={stored?.readStartedAt ?? null} />
           {counts && (
             <dl
               className="research-metrics"

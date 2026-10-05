@@ -310,7 +310,7 @@ export function PublicResearchView({
               )}
             </details>
           )}
-          <LensAnalysisState value={value} />
+          <LensAnalysisState value={value} readStartedAt={detail.data === value ? detail.readStartedAt : null} />
           <InvestigationFindings value={value} />
           <section id="research-timeline">
             <h3>Research activity</h3>
