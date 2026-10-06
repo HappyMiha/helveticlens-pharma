@@ -314,19 +314,6 @@ export function Dossier({
       >
         <aside className="dossier-contents" aria-label="Dossier contents">
           <p className="dossier-contents-label">Contents</p>
-          <div className="dossier-mobile-contents">
-            <NativeSelect
-              aria-label="Dossier section"
-              value={tab}
-              onChange={(event) => selectChapter(event.target.value)}
-            >
-              {chapters.map(([value, label], index) => (
-                <NativeSelectOption key={value} value={value}>
-                  {String(index + 1).padStart(2, '0')} / {label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </div>
           <TabsList variant="line" aria-label="Dossier chapters">
             {chapters.map(([value, label, Icon], index) => (
               <TabsTrigger

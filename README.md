@@ -1,6 +1,6 @@
 # HelveticLens Pharma
 
-Dossier navigation 1.104 makes all seven sections available through a sticky mobile selector, scrolls an explicit section change to its content, and strengthens the active desktop chapter.
+Dossier navigation 1.105 restores one numbered, finger-scrollable row on mobile, aligned to the start so the first tabs remain reachable. The selected tab is highlighted; choosing a chapter scrolls to its content.
 
 [Research entry and durable topic suggestions 1.103](RESEARCH_ENTRY_AND_TOPIC_SUGGESTIONS.md) fixes seeded questions entering manual setup and preserves queued topic requests while the model is busy.
 

@@ -2174,9 +2174,6 @@ code {
 .dossier-contents [data-slot='tabs-trigger'] > svg {
   display: none;
 }
-.dossier-mobile-contents {
-  display: none;
-}
 .dossier-contents [data-active] .chapter-number {
   color: inherit;
 }
@@ -2381,21 +2378,24 @@ code {
     margin-bottom: 0.5rem;
   }
   .dossier-contents [data-slot='tabs-list'] {
-    display: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-block: 0.25rem;
   }
-  .dossier-mobile-contents {
-    display: block;
+  .dossier-contents [data-slot='tabs-trigger'] {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
   }
-  .dossier-mobile-contents [data-slot='native-select-wrapper'] {
-    width: 100%;
-  }
-  .dossier-mobile-contents select {
-    min-height: 3rem;
-    font-size: 1rem;
-    font-weight: 600;
-    background: var(--card);
-    color: var(--foreground);
-    border-color: var(--foreground);
+  .dossier-contents
+    [data-slot='tabs-trigger'][data-workspace-tool]:nth-of-type(5) {
+    margin-top: 0;
+    border-top: 0;
+    border-radius: 0.5rem;
   }
   .dossier-paper > [data-slot='tabs-content'] {
     scroll-margin-top: 8rem;

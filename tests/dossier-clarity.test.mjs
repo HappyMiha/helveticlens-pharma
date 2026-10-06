@@ -262,33 +262,20 @@ test('a one-question dossier does not send readers back to the old setup questio
   );
 });
 
-test('mobile contents offers all seven sections and reflects source deep links', () => {
-  for (const [extra, selected] of [
-    [{}, 'overview'],
-    [{ initialReferenceId: question }, 'evidence'],
+test('dossier contents exposes seven numbered tabs and the selected section without a dropdown', () => {
+  for (const [extra, label] of [
+    [{}, 'Dossier'],
+    [{ initialReferenceId: question }, 'Sources &amp; files'],
   ]) {
     const html = render(props(extra));
-    const select = html.match(
-      /<select[^>]*aria-label="Dossier section"[^>]*>([\s\S]*?)<\/select>/,
-    );
-    assert.ok(select, 'mobile section selector is available');
-    const options = [...select[1].matchAll(/<option([^>]*)>(.*?)<\/option>/g)];
-    assert.equal(options.length, 7);
-    assert.deepEqual(
-      options.map((x) => x[2]),
-      [
-        '01 / Dossier',
-        '02 / AI research',
-        '03 / Sources &amp; files',
-        '04 / Discussion',
-        '05 / Actions',
-        '06 / Monitoring',
-        '07 / Sharing',
-      ],
-    );
-    assert.equal(
-      options.find((x) => x[1].includes('selected'))[1].match(/value="([^"]+)"/)[1],
-      selected,
-    );
+    const contents = html.match(/<aside[^>]*class="dossier-contents"[^>]*>([\s\S]*?)<\/aside>/)[1];
+    assert.doesNotMatch(contents, /<select/);
+    const tabs = [...contents.matchAll(/<button([^>]*role="tab"[^>]*)>([\s\S]*?)<\/button>/g)];
+    assert.equal(tabs.length, 7);
+    assert.equal(tabs.filter((tab) => tab[1].includes('aria-selected="true"')).length, 1);
+    assert.ok(tabs.find((tab) => tab[1].includes('aria-selected="true"'))[2].includes(label));
+    for (let i = 0; i < tabs.length; i++) {
+      assert.ok(tabs[i][2].includes(String(i + 1).padStart(2, '0')));
+    }
   }
 });
