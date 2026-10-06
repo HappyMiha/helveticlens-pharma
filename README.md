@@ -1,5 +1,7 @@
 # HelveticLens Pharma
 
+Dossier navigation 1.104 makes all seven sections available through a sticky mobile selector, scrolls an explicit section change to its content, and strengthens the active desktop chapter.
+
 [Research entry and durable topic suggestions 1.103](RESEARCH_ENTRY_AND_TOPIC_SUGGESTIONS.md) fixes seeded questions entering manual setup and preserves queued topic requests while the model is busy.
 
 Answer-linked next check 1.72 connects one existing saved public check to an exact remaining limitation of the selected answer, using the same final request. Its existing button keeps exact query/replay/source boundaries. Invalid optional choices preserve valid answers without inventing a connection or launching work. Verification is recorded in Core `docs/PRODUCT_ANSWER_NEXT_CHECK.md`.

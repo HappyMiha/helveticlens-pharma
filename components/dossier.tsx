@@ -88,6 +88,16 @@ export function Dossier({
   notify,
 }: DossierProps) {
   const isMobile = useIsMobile();
+  const chapterNavigation = useRef(false);
+  const chapters: NavigationItem[] = [
+    ['overview', 'Dossier', FolderOpen],
+    ['research', 'AI research', Sparkles],
+    ['evidence', 'Sources & files', Globe],
+    ['discussion', 'Discussion', MessageSquare],
+    ['work', 'Actions', ClipboardList],
+    ['monitoring', 'Monitoring', Bell],
+    ['publication', 'Sharing', Users],
+  ];
   const dossierElement = useRef<HTMLElement>(null);
   const pendingEntries = useRef(
     new Map<
@@ -198,6 +208,22 @@ export function Dossier({
     });
     return () => observer.disconnect();
   }, [tab, monitoringTarget]);
+  const selectChapter = (value: string) => {
+    chapterNavigation.current = true;
+    setMonitoringTarget('');
+    setTab(value);
+  };
+  useEffect(() => {
+    if (!chapterNavigation.current) return;
+    chapterNavigation.current = false;
+    const frame = requestAnimationFrame(() => {
+      const panel = dossierElement.current?.querySelector<HTMLElement>(
+        '.dossier-paper > [data-slot="tabs-content"]:not([hidden])',
+      );
+      panel?.scrollIntoView({ block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [tab]);
   const sourceUrl = (m: Match) => m.evidence?.source_url || '';
   async function add(
     kind: string,
@@ -282,27 +308,27 @@ export function Dossier({
       </div>
       <Tabs
         value={tab}
-        onValueChange={(value) => {
-          setMonitoringTarget('');
-          setTab(String(value));
-        }}
+        onValueChange={(value) => selectChapter(String(value))}
         orientation={isMobile ? 'horizontal' : 'vertical'}
         className="dossier-reader"
       >
         <aside className="dossier-contents" aria-label="Dossier contents">
           <p className="dossier-contents-label">Contents</p>
+          <div className="dossier-mobile-contents">
+            <NativeSelect
+              aria-label="Dossier section"
+              value={tab}
+              onChange={(event) => selectChapter(event.target.value)}
+            >
+              {chapters.map(([value, label], index) => (
+                <NativeSelectOption key={value} value={value}>
+                  {String(index + 1).padStart(2, '0')} / {label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
           <TabsList variant="line" aria-label="Dossier chapters">
-            {(
-              [
-                ['overview', 'Dossier', FolderOpen],
-                ['research', 'AI research', Sparkles],
-                ['evidence', 'Sources & files', Globe],
-                ['discussion', 'Discussion', MessageSquare],
-                ['work', 'Actions', ClipboardList],
-                ['monitoring', 'Monitoring', Bell],
-                ['publication', 'Sharing', Users],
-              ] as NavigationItem[]
-            ).map(([value, label, Icon], index) => (
+            {chapters.map(([value, label, Icon], index) => (
               <TabsTrigger
                 value={value}
                 key={value}

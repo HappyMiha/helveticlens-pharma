@@ -261,3 +261,34 @@ test('a one-question dossier does not send readers back to the old setup questio
     /Monitoring has not started|Complete monitoring setup|Private draft/,
   );
 });
+
+test('mobile contents offers all seven sections and reflects source deep links', () => {
+  for (const [extra, selected] of [
+    [{}, 'overview'],
+    [{ initialReferenceId: question }, 'evidence'],
+  ]) {
+    const html = render(props(extra));
+    const select = html.match(
+      /<select[^>]*aria-label="Dossier section"[^>]*>([\s\S]*?)<\/select>/,
+    );
+    assert.ok(select, 'mobile section selector is available');
+    const options = [...select[1].matchAll(/<option([^>]*)>(.*?)<\/option>/g)];
+    assert.equal(options.length, 7);
+    assert.deepEqual(
+      options.map((x) => x[2]),
+      [
+        '01 / Dossier',
+        '02 / AI research',
+        '03 / Sources &amp; files',
+        '04 / Discussion',
+        '05 / Actions',
+        '06 / Monitoring',
+        '07 / Sharing',
+      ],
+    );
+    assert.equal(
+      options.find((x) => x[1].includes('selected'))[1].match(/value="([^"]+)"/)[1],
+      selected,
+    );
+  }
+});
