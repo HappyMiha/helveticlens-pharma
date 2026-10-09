@@ -46,7 +46,7 @@ export type ResearchMission = {
   };
   checkpoints: {
     round: number;
-    answer: MissionAnswer;
+    answer?: MissionAnswer;
     reason: string;
     action: string;
     gaps: (ExplorationCitation & { question: string; purpose: string })[];
@@ -69,6 +69,7 @@ export type ResearchMission = {
     unread_reason: string | null;
     warnings: string[];
   }[];
+  knowledge_deferred?: boolean;
   knowledge?: {
     claims: {
       id: string;

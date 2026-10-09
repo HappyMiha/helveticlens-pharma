@@ -22,7 +22,12 @@ import type {
   ExplorationCitation as Citation,
 } from '@/lib/exploration';
 
-type Episode = Investigation & { exploration: ExplorationState };
+type Episode = Pick<Investigation, keyof InvestigationSummary | 'retry' | 'coverage_manifest'> & {
+  exploration: ExplorationState;
+  branches: (Pick<Investigation['branches'][number], 'id' | 'query' | 'status' | 'phase' | 'reason' | 'error'> & {
+    steps: Pick<Investigation['branches'][number]['steps'][number], 'phase' | 'status'>[];
+  })[];
+};
 type Reply = {
   request_key: string;
   expected_revision: number;
@@ -69,7 +74,7 @@ function ExplorationEpisode({
   list: ReturnType<typeof useResource<Episodes>>;
 }) {
   const root = `/products/${product.id}/dossiers/${dossierId}/investigations`;
-  const resource = useResource<Episode>(id ? `${root}/${id}` : null);
+  const resource = useResource<Episode>(id ? `${root}/${id}/reading` : null);
   const page =
     !resource.error && !list.error && resource.data?.id === id
       ? resource.data
@@ -563,6 +568,9 @@ function ExplorationEpisode({
                   </li>
                 ))}
             </ul>
+            {state.mission?.knowledge_deferred && (
+              <p className="muted">Open the full research for professional context and the complete finding history.</p>
+            )}
             <Button variant="outline" onClick={() => onOpen(page.id)}>
               Read all findings and sources
             </Button>

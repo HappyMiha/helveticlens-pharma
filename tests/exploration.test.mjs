@@ -152,7 +152,7 @@ for (const sessionChanged of [false, true]) test(`history-read recovery ${sessio
     }
     if (url === base) return unavailable ? new Response('', { status: 503 })
       : Response.json({ items: [{ id: latest.id, exploratory: true }] });
-    if (url === `${base}/${latest.id}` || url === `${base}/r`) return Response.json(latest);
+    if (url === `${base}/${latest.id}/reading` || url === `${base}/r/reading`) return Response.json(latest);
     if (url.endsWith('/web-research')) return Response.json({ dossier_id: 'd', can_manage: false, policy: {}, items: [] });
     throw new Error('Unexpected read');
   };
@@ -196,7 +196,7 @@ function serve(value, writes) {
     if (init.method === 'POST') return writes(url, init);
     if (url === base)
       return Response.json({ items: [{ id: value.id, exploratory: true }] });
-    if (url === `${base}/${value.id}`) return Response.json(value);
+    if (url === `${base}/${value.id}/reading`) return Response.json(value);
     if (url.endsWith('/web-research'))
       return Response.json({
         dossier_id: 'd',
@@ -722,7 +722,7 @@ test('chosen direction polling coalesces slow reads and removes changed or denie
   let defer = false;
   const pending = [];
   globalThis.fetch = (url, init) =>
-    defer && url === `${base}/r`
+    defer && url === `${base}/r/reading`
       ? new Promise((resolve) => pending.push(resolve))
       : initialFetch(url, init);
   let tree;
@@ -2448,7 +2448,7 @@ test('saved research update polling retains identity and removes outdated or den
   let defer = false;
   const pending = [];
   globalThis.fetch = (url, init) =>
-    defer && url === `${base}/r`
+    defer && url === `${base}/r/reading`
       ? new Promise((resolve) => pending.push(resolve))
       : initialFetch(url, init);
   let tree;
@@ -2609,7 +2609,7 @@ test('current purpose polling coalesces slow reads and removes older or denied e
   let defer = false;
   const pending = [];
   globalThis.fetch = (url, init) =>
-    defer && url === `${base}/r`
+    defer && url === `${base}/r/reading`
       ? new Promise((resolve) => pending.push(resolve))
       : initialFetch(url, init);
   let tree;
@@ -3348,7 +3348,7 @@ test('saved-check polling coalesces slow reads and removes revoked answer links'
   let defer = false;
   const pending = [];
   globalThis.fetch = (url, init) =>
-    defer && url === `${base}/r`
+    defer && url === `${base}/r/reading`
       ? new Promise((resolve) => pending.push(resolve))
       : initialFetch(url, init);
   let tree;
@@ -3958,4 +3958,30 @@ test('dossier activity uses the current receipt for long briefing work and expir
   } finally {
     if (tree) await act(async () => tree.unmount());
   }
+});
+
+
+test('compact saved reading opens immediately without the full ledger and offers the full reader explicitly', async () => {
+  const value = episode();
+  value.exploration.mission = {
+    contract: 'research-mission/v1', stage: 'finished', knowledge_deferred: true,
+    question: value.question, checkpoints: [], documents: [], knowledge: null,
+    answer: { status: 'partial', points: [{ statement: 'A saved conclusion.', evidence: [{ source_id: 's', quote: 'The source passage is here.', locator: 'p1', role: 'support' }] }], limitations: ['A named gap remains.'] },
+  };
+  const opened = [], reads = [];
+  serve(value, () => { throw new Error('Reading must not start research'); });
+  const compactFetch = globalThis.fetch;
+  globalThis.fetch = (url, init) => { reads.push(url); return compactFetch(url, init); };
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, { ...props, onOpen: id => opened.push(id) })); });
+    assert.match(text(tree), /A saved conclusion/);
+    assert.match(text(tree), /A named gap remains/);
+    assert.match(text(tree), /professional context and the complete finding history/);
+    assert.ok(reads.includes(`${base}/r/reading`));
+    assert.ok(!reads.includes(`${base}/r`));
+    assert.equal(opened.length, 0);
+    await act(async () => findButton(tree, 'Read all findings and sources').props.onClick());
+    assert.deepEqual(opened, ['r']);
+  } finally { if (tree) await act(async () => tree.unmount()); }
 });

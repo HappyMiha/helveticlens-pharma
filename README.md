@@ -1,5 +1,7 @@
 # HelveticLens Pharma
 
+Saved research reading 1.106 loads the checked answer, citations, gaps and document progress through a compact Core reader. Raw plans, source snapshots and execution receipts stay in the full research view, opened explicitly. Loading never starts a new investigation. Authorization and evidence withdrawal remain checked on every read.
+
 Dossier navigation 1.105 restores one numbered, finger-scrollable row on mobile, aligned to the start so the first tabs remain reachable. The selected tab is highlighted; choosing a chapter scrolls to its content.
 
 [Research entry and durable topic suggestions 1.103](RESEARCH_ENTRY_AND_TOPIC_SUGGESTIONS.md) fixes seeded questions entering manual setup and preserves queued topic requests while the model is busy.

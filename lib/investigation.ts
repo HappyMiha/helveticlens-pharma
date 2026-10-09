@@ -196,7 +196,7 @@ export function researchDeliveryLabel(
   }
   return readable(value.status);
 }
-export function canRetryResearch(value: Investigation) {
+export function canRetryResearch(value: Pick<Investigation, 'status' | 'retry' | 'exploration'>) {
   return ['completed', 'failed'].includes(value.status) &&
     value.retry?.available === true && !value.exploration?.continued_by &&
     value.exploration?.status !== 'evidence_changed' &&
