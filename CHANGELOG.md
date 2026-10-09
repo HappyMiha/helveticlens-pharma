@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.107.0 — Keep source processing separate from unanswered questions
+
+Source reading and analysis failures have their own Source processing section beside the saved answer. Genuine gaps stay under What we still do not know. A fully read original no longer appears to be waiting for reading, and progress does not repeat the same document issue. Complete document wording covers both a single analysis and longer document review without exposing internal processing steps. The compact saved-research reader and its authorization checks are preserved.
+
 ## 1.96.0 — Recover your draft and search position
 
 A failed background history read no longer discards a draft refinement or an uncertain reply. Once the same episode is available again, its input returns after access is checked. Failed search pages now offer an explicit retry from the same saved position; changed input, sessions, evidence or access still require current authorization and results.

@@ -42,9 +42,11 @@ const sourceCheckStatuses: Record<ResearchSourceCheck['status'], string> = {
 export function MissionProgress({
   mission,
   status,
+  showDocuments = true,
 }: {
   mission?: ResearchMission | null;
   status?: ExplorationState['status'];
+  showDocuments?: boolean;
 }) {
   if (!mission) return null;
   const active = status !== 'unavailable' &&
@@ -57,24 +59,17 @@ export function MissionProgress({
           : stages[mission.stage]}
         {mission.round && mission.round > 1 ? ` · Round ${mission.round}` : ''}
       </output>
-      {mission.documents
+      {showDocuments && mission.documents
         ?.filter((doc) => !doc.complete)
         .map((doc, index) => (
           <p className="muted" key={index}>
             {doc.title || 'Document'} ·{' '}
             {doc.page_count
               ? `${doc.pages_read || 0} of ${doc.page_count} pages ${doc.read_complete ? 'read' : 'processed'}`
-              : active ? 'Reading source material' : 'Source reading is incomplete'}
-            {doc.read_complete
-              ? !active || doc.review_failed
-                ? ' · Analysis is pending'
-                : doc.review_progress
-                ? doc.review_progress.phase === 'synthesis'
-                  ? ' · Bringing the document’s findings together'
-                  : ' · Checking sections and citations across the document'
-                : ' · Analysing sections and checking the whole document'
-              : ''}
-            {doc.error ? ` · ${doc.error}` : (!active || !doc.read_complete || doc.review_failed) && doc.unread_reason ? ` · ${doc.unread_reason}` : ''}
+              : doc.read_complete ? 'Source text read'
+                : active ? 'Reading source material' : 'Source reading is incomplete'}
+            {doc.read_complete ? ' · Analysis pending' : ''}
+            {doc.error ? ` · ${doc.error}` : !doc.read_complete && doc.unread_reason ? ` · ${doc.unread_reason}` : ''}
           </p>
         ))}
     </div>
@@ -95,6 +90,7 @@ export function MissionReading({ state }: { state: ExplorationState }) {
   const limitations = verification
     ? answer.limitations.filter((gap) => gap !== verification.basis)
     : answer.limitations;
+  const processingIssues = mission.processing_issues || [];
   const knowledge = mission.knowledge;
   const sourceList = [
     ...state.sources,
@@ -200,7 +196,8 @@ export function MissionReading({ state }: { state: ExplorationState }) {
       )}
       {answer.status === 'partial' && !verification && (
         <p className="muted">
-          This is a partial answer. Important gaps remain.
+          This is a partial answer.{limitations.length ? ' Important gaps remain.'
+            : processingIssues.length ? ' Some sources still need processing.' : ''}
         </p>
       )}
       {points.map((point, i) => (
@@ -230,7 +227,27 @@ export function MissionReading({ state }: { state: ExplorationState }) {
           </ul>
         </section>
       )}
-      <MissionProgress mission={mission} status={state.status} />
+      {!!processingIssues.length && (
+        <section aria-label="Source processing">
+          <h4>Source processing</h4>
+          <p className="muted">Your saved findings remain available while this work is unfinished.</p>
+          <ul>
+            {processingIssues.map((issue, i) => (
+              <li key={i}>
+                {issue.url ? (
+                  <a href={issue.url} target="_blank" rel="noreferrer">{issue.title}</a>
+                ) : issue.title}
+                <p className="muted">
+                  {issue.kind === 'analysis' ? 'Source text read · Analysis' : 'Reading'}{' '}
+                  {issue.status === 'failed' ? 'failed' : 'pending'}
+                </p>
+                <p>{issue.reason}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <MissionProgress mission={mission} status={state.status} showDocuments={!processingIssues.length} />
       {mission.stop && !verification && (
         <p className="muted">
           {stops[mission.stop] || 'The current research is saved.'}
@@ -301,15 +318,15 @@ export function MissionReading({ state }: { state: ExplorationState }) {
                 <p>
                   {doc.page_count
                     ? `${doc.pages_read || 0} of ${doc.page_count} pages ${(doc.read_complete ?? doc.complete) ? 'read' : 'processed'}`
-                    : `${doc.portions} saved portions`}
+                    : (doc.read_complete ?? doc.complete) ? 'Source text read' : 'Source reading is incomplete'}
                   {doc.page_count
                     ? ` · ${doc.page_count} pages in the original`
                     : ''}
                   .{' '}
                   {doc.complete
-                    ? 'Full text read, all sections analysed and whole-document review saved. AI interpretation remains open to review.'
+                    ? 'Full text read and analysed. AI interpretation remains open to review.'
                     : doc.error ||
-                      doc.unread_reason ||
+                      (doc.read_complete ? 'Analysis remains incomplete.' : doc.unread_reason) ||
                       'Document reading or analysis remains incomplete.'}
                 </p>
                 {doc.warnings.map((warning, j) => (

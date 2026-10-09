@@ -38,6 +38,13 @@ export type ResearchMission = {
   question?: string;
   answer: MissionAnswer | null;
   requested_sources?: ResearchSourceCheck[];
+  processing_issues?: {
+    kind: 'reading' | 'analysis';
+    status: 'pending' | 'failed';
+    title: string;
+    url?: string;
+    reason: string;
+  }[];
   verification?: {
     status: 'partial';
     pending_checks: number;
@@ -62,10 +69,10 @@ export type ResearchMission = {
     sections_analysed?: number;
     review_progress?: { phase: 'sections_and_references' | 'synthesis'; completed: number; complete: boolean };
     error?: string;
-    pages: [number, number] | null;
+    pages?: [number, number] | null;
     page_count: number | null;
     complete: boolean;
-    next_cursor: { page: number; offset: number } | null;
+    next_cursor?: { page: number; offset: number } | null;
     unread_reason: string | null;
     warnings: string[];
   }[];

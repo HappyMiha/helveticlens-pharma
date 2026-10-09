@@ -3881,11 +3881,56 @@ test('failed later round keeps the saved answer and reports pending analysis wit
     assert.match(text(tree), /Last saved answer/);
     assert.match(text(tree), /Latest attempt stopped/);
     assert.match(text(tree), /55 of 55 pages read/);
-    assert.match(text(tree), /Analysis is pending/);
+    assert.match(text(tree), /Analysis pending/);
     assert.doesNotMatch(text(tree), /Checking sections and citations|Bringing the document/);
     assert.equal(tree.root.findByProps({ id: 'research-answer' }).type, 'article');
     assert.equal(tree.root.findByProps({ id: 'answer-gaps' }).type, 'section');
     assert.equal(tree.root.findByType('blockquote').props.children, 'Original evidence.');
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
+test('source processing stays separate from answer gaps and never repeats completed reading as pending', async () => {
+  const { MissionReading, MissionProgress } = require(resolve('components/research-mission.tsx'));
+  const state = { status: 'ready', sources: [], mission: {
+    contract: 'research-mission/v1', stage: 'deepening', round: 2, question: 'What explains the discrepancy?', checkpoints: [],
+    answer: { status: 'partial', points: [], limitations: ['The reason for the discrepancy is unknown.'] },
+    processing_issues: [
+      { kind: 'analysis', status: 'failed', title: 'Fully read original', url: 'https://example.org/original',
+        reason: 'The source text is saved. Its analysis could not be completed.' },
+      { kind: 'reading', status: 'pending', title: 'Scanned supplement', reason: 'Some pages still need to be read.' },
+    ],
+    documents: [{ title: 'Fully read original', url: 'https://example.org/original', portions: 1,
+      page_count: null, read_complete: true, complete: false, review_failed: true,
+      unread_reason: 'Section analysis and whole-document review are pending.', warnings: [] }],
+  } };
+  const before = structuredClone(state);
+  const content = (node) => typeof node === 'string' ? node : node.children.map(content).join('');
+  let tree;
+  try {
+    await act(async () => { tree = create(React.createElement(MissionReading, { state })); });
+    const processing = tree.root.findByProps({ 'aria-label': 'Source processing' });
+    assert.equal(processing.type, 'section');
+    assert.equal(processing.findAllByType('li').length, 2);
+    assert.match(content(processing), /Source text read · Analysis failed/);
+    assert.match(content(processing), /Reading pending/);
+    assert.equal(processing.findByType('a').props.href, state.mission.processing_issues[0].url);
+    assert.doesNotMatch(content(processing), /reason for the discrepancy/);
+    assert.deepEqual(tree.root.findByProps({ id: 'answer-gaps' }).findAllByType('li').map(content),
+      ['The reason for the discrepancy is unknown.']);
+    assert.equal(tree.root.findByType(MissionProgress).findAllByType('p').length, 0);
+    assert.doesNotMatch(text(tree), /Reading source material|sections|whole-document|saved portions/);
+    assert.deepEqual(state, before);
+    await act(async () => tree.update(React.createElement(MissionReading, { state: {
+      ...state, mission: { ...state.mission, answer: { ...state.mission.answer, limitations: [] } },
+    } })));
+    assert.equal(tree.root.findAllByProps({ id: 'answer-gaps' }).length, 0);
+    assert.match(text(tree), /Some sources still need processing/);
+    assert.doesNotMatch(text(tree), /Important gaps remain/);
+    for (const status of ['ready', 'unavailable']) {
+      await act(async () => tree.update(React.createElement(MissionProgress, { mission: state.mission, status })));
+      assert.match(content(tree.root), /Source text read · Analysis pending/);
+      assert.doesNotMatch(text(tree), /Reading source material|Source reading is incomplete|sections|whole-document/);
+    }
   } finally { if (tree) await act(async () => tree.unmount()); }
 });
 
