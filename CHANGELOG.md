@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.108.0 — Clarify your question and continue research
+
+The dossier puts its current research question next to an explicit refinement action. Preview the next public question and continue the existing investigation with earlier findings retained. Empty or unchanged questions cannot submit. Existing private annotations remain in a collapsed reference section; empty forms and the inactive template chooser no longer appear in the reading path. Empty and unchanged annotation saves create no revision or history. An uncertain refinement can be retried safely even after a failed episode.
+
 ## 1.107.0 — Keep source processing separate from unanswered questions
 
 Source reading and analysis failures have their own Source processing section beside the saved answer. Genuine gaps stay under What we still do not know. A fully read original no longer appears to be waiting for reading, and progress does not repeat the same document issue. Complete document wording covers both a single analysis and longer document review without exposing internal processing steps. The compact saved-research reader and its authorization checks are preserved.

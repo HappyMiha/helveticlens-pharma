@@ -392,7 +392,7 @@ test('early understanding is tentative, cited and does not request a direction o
     );
     assert.ok(findButton(tree, 'Pause research'));
     assert.equal(tree.root.findAllByType('form').length, 1);
-    assert.match(text(tree), /Change direction in your own words/);
+    assert.match(text(tree), /Refine research/);
   } finally {
     if (tree) await act(async () => tree.unmount());
   }
@@ -418,7 +418,7 @@ test('pausing before any briefing uses the refreshed checkpoint for a corrected 
       tree = create(React.createElement(Exploration, props));
     });
     await act(async () => findButton(tree, 'Pause research').props.onClick());
-    assert.match(text(tree), /Change direction in your own words/);
+    assert.match(text(tree), /Refine research/);
     await act(async () =>
       tree.root.findByType('textarea').props.onChange({
         target: { value: 'A corrected question for public research.' },
@@ -4028,5 +4028,82 @@ test('compact saved reading opens immediately without the full ledger and offers
     assert.equal(opened.length, 0);
     await act(async () => findButton(tree, 'Read all findings and sources').props.onClick());
     assert.deepEqual(opened, ['r']);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
+
+test('research refinement is explicit, blocks empty or unchanged questions, and previews the sent question', async () => {
+  const value = episode();
+  const writes = [];
+  let tree;
+  serve(value, async (url, init) => {
+    writes.push({ url, body: JSON.parse(init.body) });
+    return Response.json({ message: 'Checkpoint changed' }, { status: 409 });
+  });
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, props)); });
+    assert.match(text(tree), /Current research question/);
+    assert.match(text(tree), /AI · tentative understanding/);
+    assert.equal(writes.length, 0, 'opening a dossier never starts research');
+    const apply = () => findButton(tree, 'Apply and continue research');
+    const input = (value) => tree.root.findByType('textarea').props.onChange({ target: { value } });
+    const submit = () => tree.root.findByType('form').props.onSubmit({ preventDefault() {} });
+    for (const draft of ['', '   ', `  ${value.question}  `]) {
+      await act(async () => input(draft));
+      assert.equal(apply().props.disabled, true);
+      await act(async () => submit());
+    }
+    assert.equal(writes.length, 0, 'empty/unchanged actions cannot start a continuation');
+    const next = 'Which source establishes the identity of this foundation?';
+    await act(async () => input(`  ${next}  `));
+    assert.equal(apply().props.disabled, false);
+    const preview = tree.root.findByProps({ className: 'research-refinement-preview' });
+    assert.equal(preview.findByType('p').children.join(''), next);
+    assert.match(text(tree), /Private reference details are not included/);
+    await act(async () => submit());
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url, `${base}/r/exploration/reply`);
+    assert.equal(writes[0].body.question, next);
+    assert.equal(writes[0].body.continue_research, true);
+    assert.equal(writes[0].body.public_query_confirmed, true);
+    assert.equal(writes[0].body.expected_revision, value.exploration.revision);
+    assert.equal(tree.root.findByType('textarea').props.value, `  ${next}  `);
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
+for (const mode of ['read_only', 'continued']) test(`research refinement respects ${mode} authority`, async () => {
+  const value = episode();
+  if (mode === 'continued') value.exploration.continued_by = 'next';
+  let tree;
+  serve(value, () => { throw new Error('No automatic research'); });
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, { ...props, canEdit: mode !== 'read_only' })); });
+    assert.match(text(tree), /Current research question/);
+    assert.equal(tree.root.findAllByType('textarea').length, 0);
+    assert.ok(!findButton(tree, 'Apply and continue research'));
+  } finally { if (tree) await act(async () => tree.unmount()); }
+});
+
+
+test('failed exploring episode can retry an uncertain refinement without losing its request identity', async () => {
+  const value = episode({ status: 'failed' });
+  value.exploration.status = 'exploring';
+  value.exploration.briefing = null;
+  const writes = [];
+  let tree;
+  serve(value, async (_url, init) => {
+    writes.push(JSON.parse(init.body));
+    throw new Error('Network reply was lost');
+  });
+  try {
+    await act(async () => { tree = create(React.createElement(Exploration, props)); });
+    await act(async () => tree.root.findByType('textarea').props.onChange({ target: { value: 'Investigate the foundation identity first.' } }));
+    await act(async () => tree.root.findByType('form').props.onSubmit({ preventDefault() {} }));
+    assert.equal(writes.length, 1);
+    assert.equal(tree.root.findByType('textarea').props.disabled, true);
+    assert.ok(findButton(tree, 'Retry this direction safely'));
+    await act(async () => findButton(tree, 'Retry this direction safely').props.onClick());
+    assert.equal(writes.length, 2);
+    assert.deepEqual(writes[1], writes[0]);
   } finally { if (tree) await act(async () => tree.unmount()); }
 });

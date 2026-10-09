@@ -64,7 +64,6 @@ import { ActionDialog } from './action-dialog';
 import { PageWatches } from './page-watches';
 import { PublicationEditor } from './publication-editor';
 import { initialDossierSection } from '@/lib/dossier-sections';
-import { DossierTemplateSection } from './dossier-template';
 import { DossierSubject } from './structured-context';
 import {
   DropdownMenu,
@@ -402,25 +401,9 @@ export function Dossier({
                 onCoverage={() => setTab('evidence')}
               />
             )}
-            <details className="dossier-secondary">
-              <summary>Optional dossier details</summary>
-              <p className="muted">
-                These details organise your dossier. The research question and
-                monitoring settings determine what is searched.
-              </p>
-              <DossierTemplateSection
-                key={`template:${d.id}:${userId || ''}`}
-                value={d.template}
-                dossierId={d.id}
-                revision={d.work.revision}
-                entries={entries}
-                canEdit={canEdit}
-                busy={busy}
-                onChanged={reload}
-                notify={notify}
-              />
               <DossierSubject
                 key={`${d.id}:${userId || ''}`}
+                hideWhenEmpty
                 dossierId={d.id}
                 revision={d.work.revision}
                 entries={entries}
@@ -429,7 +412,7 @@ export function Dossier({
                 onChanged={reload}
                 notify={notify}
               />
-            </details>
+
 
             <DossierTopicOverview
               profile={p}

@@ -2748,3 +2748,17 @@ code {
 .mission-progress { display: block; padding-block: .75rem; font-size: .9rem; border-bottom: 1px solid var(--border); }
 .research-delivery-choice { display: grid; gap: .5rem; margin-block: 1rem; max-width: 34rem; }
 .research-delivery-choice select { width: 100%; min-height: 44px; padding: .65rem; border: 1px solid var(--border); border-radius: .5rem; color: inherit; background: var(--background); }
+
+/* The research question is an actionable brief, separate from private notes. */
+.research-focus {
+  margin-block: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+.research-focus-question { margin-block: 0.5rem 1rem; font-weight: 500; overflow-wrap: anywhere; }
+.research-refinement summary { font-weight: 600; cursor: pointer; }
+.research-refinement form { display: grid; gap: 1rem; margin-top: 1rem; }
+.research-refinement form > button { justify-self: start; white-space: normal; }
+.research-refinement-preview { padding: 1rem; background: var(--muted); border-radius: 0.5rem; overflow-wrap: anywhere; }
+.research-refinement-preview p { margin-block: 0.5rem 0; }

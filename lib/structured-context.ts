@@ -81,7 +81,27 @@ export function contextValues(
       .reduce((total, item) => total + item.length, 0) > 12000
   )
     throw new Error(
-      'Keep the combined dossier subject details within 12,000 characters.',
+      'Keep the combined private reference details within 12,000 characters.',
     );
   return result;
+}
+
+/** Empty strings, blank lines and duplicate lines do not create a new revision. */
+export function contextChange(
+  value: StructuredContext,
+  draft: Record<string, string>,
+) {
+  const next = contextValues(value.fields, draft);
+  const before = contextValues(value.fields, contextDraft(value));
+  return JSON.stringify(next) === JSON.stringify(before) ? null : next;
+}
+
+export function hasContextValues(
+  values: Record<string, string | string[]> = {},
+) {
+  return Object.values(values).some((value) =>
+    (Array.isArray(value) ? value : [value]).some(
+      (item) => item.trim().length > 0,
+    ),
+  );
 }

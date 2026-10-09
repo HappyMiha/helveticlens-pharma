@@ -316,11 +316,73 @@ function ExplorationEpisode({
       )}
       {page && state && (
         <>
-          {!brief?.assessment && (
-            <p className="exploration-question">
-              <span className="content-origin">Your question</span>
-              {page.question}
-            </p>
+          {(!brief?.assessment || (canEdit && !state.continued_by)) && (
+          <section className="research-focus" aria-label="Research question">
+            {!brief?.assessment && <>
+              <span className="content-origin">Current research question</span>
+              <p className="research-focus-question">{page.question}</p>
+            </>}
+            {canEdit && !state.continued_by && (
+                <details className="research-refinement">
+                  <summary>Refine research</summary>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (question.trim().length >= 5 && question.trim() !== page.question.trim())
+                        void reply(question);
+                    }}
+                  >
+                    <p className="muted">
+                      {state.status === 'evidence_changed'
+                        ? 'Start a corrected public question. Changed earlier context will not be reused.'
+                        : 'Your words guide the next research. Earlier public searches and sources are kept as context. This question is sent to public research providers.'}
+                    </p>
+                    <label htmlFor="exploration-direction">
+                      What should we investigate next?
+                    </label>
+                    <Textarea
+                      id="exploration-direction"
+                      rows={3}
+                      minLength={5}
+                      maxLength={300}
+                      required
+                      value={question}
+                      disabled={busy || !!pending}
+                      onChange={(event) => setQuestion(event.target.value)}
+                    />
+                    {question.trim() && (
+                      <div className="research-refinement-preview" aria-live="polite">
+                        <span className="content-origin">Next research question</span>
+                        <p>{question.trim()}</p>
+                        {question.trim() === page.question.trim() && (
+                          <p className="muted">This is already the current question. Add what you want to change or investigate further.</p>
+                        )}
+                      </div>
+                    )}
+                    <p className="muted">Applying this starts a research continuation. Earlier findings stay in the research journal. Private reference details are not included.</p>
+                    <Button
+                      disabled={busy || !!pending || question.trim().length < 5 || question.trim() === page.question.trim()}
+                    >
+                      {busy ? 'Starting research…' : 'Apply and continue research'}
+                    </Button>
+                  </form>
+                </details>
+            )}
+            {canEdit && !state.continued_by && (
+              <>
+                {pending && (
+                  <Button
+                    disabled={busy}
+                    onClick={() => void reply(pending.body.question)}
+                  >
+                    {busy
+                      ? 'Starting next episode…'
+                      : 'Retry this direction safely'}
+                  </Button>
+                )}
+              </>
+            )}
+          </section>
           )}
           {(active || page.status === 'paused') && (
             <ResearchActivity
@@ -468,54 +530,6 @@ function ExplorationEpisode({
                     )}
                   </>
                 )}
-                {pending && (
-                  <Button
-                    disabled={busy}
-                    onClick={() => void reply(pending.body.question)}
-                  >
-                    {busy
-                      ? 'Starting next episode…'
-                      : 'Retry this direction safely'}
-                  </Button>
-                )}
-                <details
-                  open={
-                    (!active && !brief && !nextCheck && !earlyChoice) ||
-                    undefined
-                  }
-                >
-                  <summary>Change direction in your own words</summary>
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void reply(question);
-                    }}
-                  >
-                    <p className="muted">
-                      {state.status === 'evidence_changed'
-                        ? 'Start a corrected public question. Changed earlier context will not be reused.'
-                        : 'Your words guide the next research. Earlier public searches and sources are kept as context. This question is sent to public research providers.'}
-                    </p>
-                    <label htmlFor="exploration-direction">
-                      What should this research focus on?
-                    </label>
-                    <Textarea
-                      id="exploration-direction"
-                      rows={3}
-                      minLength={5}
-                      maxLength={300}
-                      required
-                      value={question}
-                      disabled={busy || !!pending}
-                      onChange={(event) => setQuestion(event.target.value)}
-                    />
-                    <Button
-                      disabled={busy || !!pending || question.trim().length < 5}
-                    >
-                      Explore this direction
-                    </Button>
-                  </form>
-                </details>
                 {brief && !pending && !nextCheck && (
                   <Button
                     variant="ghost"

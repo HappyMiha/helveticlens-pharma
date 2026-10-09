@@ -255,7 +255,7 @@ test('a one-question dossier does not send readers back to the old setup questio
   assert.match(text, /Private dossier/);
   assert.match(text, /Research so far/);
   assert.doesNotMatch(text, /Open AI research|Findings and sources/);
-  assert.match(text, /Optional dossier details/);
+  assert.doesNotMatch(text, /Optional dossier details|Choose a template|Research approach/);
   assert.doesNotMatch(
     text,
     /Monitoring has not started|Complete monitoring setup|Private draft/,
