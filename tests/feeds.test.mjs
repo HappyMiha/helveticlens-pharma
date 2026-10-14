@@ -75,6 +75,12 @@ after(() => {
 const { FeedForm, FeedsWorkspace, DossierFeeds } = require(
   resolve('components/feeds.tsx'),
 );
+const {
+  FeedPrecision,
+  FeedRelevance,
+  FeedDossierContext,
+  FeedWatchProposal,
+} = require(resolve('components/feed-intelligence.tsx'));
 const { feedSources } = require(resolve('lib/feeds.ts'));
 const { product } = require(resolve('lib/product.ts'));
 const f1 = '11111111-1111-4111-8111-111111111111',
@@ -93,6 +99,20 @@ const feed = (id = f1) => ({
   job: null,
   update_count: 2,
   can_manage: true,
+  intelligence: {
+    mode: 'semantic',
+    include: [],
+    exclude: [],
+    languages: ['en', 'de'],
+    plan_status: 'pending',
+    understanding: '',
+    concepts: [],
+    synonyms: [],
+    queries: [],
+    feedback_count: 0,
+    context_count: 0,
+    scope: 'Public source meaning',
+  },
   follow: {
     following: true,
     revision: 1,
@@ -127,6 +147,25 @@ const update = (id, sequence) => ({
   published_at: null,
   created_at: '2026-10-14T10:00:00Z',
   reading_complete: false,
+});
+const proposal = (overrides = {}) => ({
+  name: 'My dossier',
+  query: 'Track registry updates',
+  question: 'Track registry updates',
+  basis: 'public_research',
+  proposal_fingerprint: 'reviewed-public-context',
+  findings: [
+    {
+      statement: 'An official change was published.',
+      source_id: 'public-source',
+      url: 'https://example.org/source',
+      quote: 'The official wording.',
+      locator: 'Article 2',
+    },
+  ],
+  gaps: ['When will implementation begin?'],
+  scope: 'Only public research findings and questions are used.',
+  ...overrides,
 });
 const response = (data, status = 200) => Response.json(data, { status });
 const deferred = () => {
@@ -390,25 +429,19 @@ test('creating a feed inside a dossier uses the atomic create-and-link route and
         return response({ id: 'link', feed_id: f1 });
       }
       if (url === '/api/feeds') return response(library());
+      if (url.endsWith('/proposal')) return response(proposal());
       return response(links);
     },
   );
   try {
     assert.equal(writes.length, 0);
     assert.match(shown(h.tree), /own monitoring is unchanged/);
-    await act(async () => button(h.tree, 'Create a feed').props.onClick());
-    assert.equal(
-      h.tree.root.findAllByType('textarea')[0].props.value,
-      'Track registry updates',
-    );
-    const questionSummary = h.tree.root
+    assert.match(content(h.tree.root), /Based on the public findings/);
+    assert.match(content(h.tree.root), /When will implementation begin/);
+    const adjustment = h.tree.root
       .findAllByType('summary')
-      .find((node) => content(node) === 'Change dossier question');
-    assert.equal(questionSummary.parent.props.open, false);
-    assert.match(
-      content(h.tree.root),
-      /For this dossier: Track registry updates/,
-    );
+      .find((node) => content(node) === 'Adjust what to watch');
+    assert.ok(!adjustment.parent.props.open);
     assert.ok(button(h.tree, 'Watch changes'));
     await act(async () => submit(h.tree));
     assert.equal(writes.length, 1);
@@ -418,6 +451,10 @@ test('creating a feed inside a dossier uses the atomic create-and-link route and
     );
     assert.equal(writes[0].body.name, 'My dossier');
     assert.equal(writes[0].body.question, 'Track registry updates');
+    assert.equal(
+      writes[0].body.proposal_fingerprint,
+      'reviewed-public-context',
+    );
     assert.equal(changes, 1);
   } finally {
     await h.close();
@@ -456,6 +493,7 @@ test('linking an existing feed records its revision and shows queued dossier pro
         return response(link);
       }
       if (url === '/api/feeds') return response(library());
+      if (url.endsWith('/proposal')) return response(proposal());
       return response({ items: linked ? [link] : [], can_manage: true });
     },
   );
@@ -576,7 +614,7 @@ test('in-app follow retries the exact desired state without request_key and refl
         return response(saved.follow);
       }
       if (url === '/api/feeds') return response(library([saved]));
-      if (url.endsWith('/updates?order=newest&limit=50'))
+      if (url.endsWith('/updates?order=newest&view=main&limit=50'))
         return response({
           items: [update('one', 1)],
           total: 2,
@@ -693,7 +731,7 @@ test('unchanged feed settings do not create another revision while invalid chang
   }
 });
 
-test('dossier feed picker searches the entire library and explains literal suggestions', async () => {
+test('dossier feed picker searches the entire library without claiming semantic relevance', async () => {
   const reads = [];
   const other = {
     ...feed(f2),
@@ -714,17 +752,19 @@ test('dossier feed picker searches the entire library and explains literal sugge
       reads.push(url);
       if (url.endsWith('/dossier/feeds'))
         return response({ items: [], can_manage: true });
+      if (url.endsWith('/proposal')) return response(proposal());
       if (url.includes('?q=courts')) return response(library([other]));
       return response(library([other, feed()]));
     },
   );
   try {
     await act(async () => button(h.tree, 'Link existing feed').props.onClick());
-    assert.ok(
-      h.tree.root.findByProps({ label: 'Related words in your question' }),
+    assert.doesNotMatch(
+      content(h.tree.root),
+      /Related words|Suggested|semantic match/,
     );
     const options = h.tree.root.findAllByType('option');
-    assert.equal(options[1].props.value, f1);
+    assert.equal(options[1].props.value, f2);
     await act(async () =>
       h.tree.root
         .findByType('input')
@@ -832,7 +872,7 @@ test('malformed publisher dates remain readable and full older history loads wit
     await act(async () => button(h.tree, 'Load older updates').props.onClick());
     assert.ok(
       reads.includes(
-        `/api/feeds/${f1}/updates?order=newest&before_sequence=2&limit=50`,
+        `/api/feeds/${f1}/updates?order=newest&view=main&before_sequence=2&limit=50`,
       ),
     );
     assert.match(content(h.tree.root), /3 of 3 saved updates/);
@@ -871,9 +911,21 @@ test('collection gaps are available on demand without blocking source history', 
                 unchanged: 2,
                 portions: 4,
                 worker_error: null,
+                plan_status: 'ready',
+                query_index: 2,
+                query_count: 4,
+                semantic_counts: {
+                  relevant: 1,
+                  uncertain: 2,
+                  unrelated: 3,
+                  unavailable: 4,
+                },
                 coverage: [
                   {
                     name: 'Official records',
+                    query: 'registry protection update',
+                    language: 'de',
+                    purpose: 'Follow the unresolved scope',
                     status: 'partial',
                     omitted_records: 3,
                   },
@@ -884,6 +936,8 @@ test('collection gaps are available on demand without blocking source history', 
                     url: 'https://example.org/blocked',
                     code: 'source_unavailable',
                   },
+                  { phase: 'gate', code: 'semantic_context_unavailable' },
+                  { phase: 'plan', code: 'semantic_plan_unavailable' },
                 ],
               },
             },
@@ -911,6 +965,21 @@ test('collection gaps are available on demand without blocking source history', 
       summary.parent.props.onToggle({ currentTarget: { open: true } }),
     );
     assert.match(content(h.tree.root), /3 records not collected/);
+    assert.match(content(h.tree.root), /2 of 4 search directions checked/);
+    assert.match(
+      content(h.tree.root),
+      /1 likely relevant · 2 uncertain · 3 outside focus · 4 could not be assessed/,
+    );
+    assert.match(content(h.tree.root), /registry protection update/);
+    assert.match(content(h.tree.root), /Follow the unresolved scope/);
+    assert.match(
+      content(h.tree.root),
+      /Relevance check: semantic context unavailable/,
+    );
+    assert.match(
+      content(h.tree.root),
+      /Search preparation: semantic plan unavailable/,
+    );
     assert.match(content(h.tree.root), /Source reading: source unavailable/);
     assert.match(content(h.tree.root), /Saved source 1/);
   } finally {
@@ -959,6 +1028,423 @@ test('dossier editors can unlink but cannot open or retry another owners private
       false,
     );
     assert.ok(button(h.tree, 'Open impact research'));
+  } finally {
+    await h.close();
+  }
+});
+
+test('optional search refinement preserves languages, validates intent and retries exact normalized criteria', async () => {
+  const writes = [];
+  let attempts = 0,
+    changed = 0;
+  const h = await mount(
+    FeedPrecision,
+    {
+      feed: feed(),
+      onChanged: async () => {
+        changed++;
+      },
+    },
+    async (url, init) => {
+      writes.push({ url, body: JSON.parse(init.body) });
+      if (++attempts === 1) throw Error('Response lost');
+      return response(feed());
+    },
+  );
+  try {
+    assert.equal(button(h.tree, 'Refine search').props.disabled, true);
+    await act(async () => submit(h.tree));
+    assert.equal(writes.length, 0);
+    await act(async () =>
+      h.tree.root.findAllByType('textarea')[0].props.onChange({
+        target: {
+          value: ' Official decisions \nPrimary evidence\nOfficial decisions ',
+        },
+      }),
+    );
+    await act(async () =>
+      h.tree.root
+        .findAllByType('textarea')[1]
+        .props.onChange({ target: { value: 'Advertisements' } }),
+    );
+    await act(async () => submit(h.tree));
+    assert.deepEqual(writes[0].body.include, [
+      'Official decisions',
+      'Primary evidence',
+    ]);
+    assert.deepEqual(writes[0].body.exclude, ['Advertisements']);
+    assert.deepEqual(writes[0].body.languages, ['en', 'de']);
+    assert.equal(writes[0].body.expected_revision, 3);
+    assert.equal(writes[0].url, `/api/feeds/${f1}/intelligence`);
+    assert.equal(h.tree.root.findAllByType('textarea')[0].props.disabled, true);
+    await act(async () => submit(h.tree));
+    assert.deepEqual(writes[1], writes[0]);
+    assert.equal(changed, 1);
+  } finally {
+    await h.close();
+  }
+});
+
+test('relevance feedback acknowledges the exact saved verdict and retains uncertainty rather than claiming verification', async () => {
+  const writes = [];
+  let attempts = 0,
+    changed = 0;
+  const h = await mount(
+    FeedRelevance,
+    {
+      item: {
+        ...update('observation', 4),
+        feedback: null,
+        relevance: { verdict: 'uncertain', scope: 'Source meaning' },
+      },
+      feedId: f1,
+      feedRevision: 3,
+      canManage: true,
+      onChanged: async () => {
+        changed++;
+      },
+    },
+    async (url, init) => {
+      writes.push({ url, body: JSON.parse(init.body) });
+      if (++attempts === 1) throw Error('Response lost');
+      return response({ ...feed(), revision: 4 });
+    },
+  );
+  try {
+    assert.match(content(h.tree.root), /Relevance uncertain/);
+    await act(async () => button(h.tree, 'Not relevant').props.onClick());
+    assert.equal(button(h.tree, 'Relevant').props.disabled, true);
+    await h.update({ feedRevision: 8 });
+    await act(async () =>
+      button(h.tree, 'Retry the same feedback').props.onClick(),
+    );
+    assert.deepEqual(writes[1], writes[0]);
+    assert.equal(writes[0].body.verdict, 'not_relevant');
+    assert.equal(writes[0].body.expected_revision, 3);
+    assert.equal(
+      writes[0].url,
+      `/api/feeds/${f1}/updates/observation/feedback`,
+    );
+    assert.equal(button(h.tree, 'Not relevant').props['aria-pressed'], true);
+    assert.equal(changed, 1);
+    assert.match(content(h.tree.root), /Future searches will use it/);
+    assert.match(content(h.tree.root), /not a verification/);
+  } finally {
+    await h.close();
+  }
+});
+
+test('public dossier context is explicitly previewed and applied with exact fingerprints, never private fields', async () => {
+  const calls = [],
+    root = `/products/${product.id}/dossiers/d/feeds`;
+  let changed = 0;
+  const preview = {
+    context_fingerprint: 'a'.repeat(64),
+    question: 'Which changes matter?',
+    findings: [
+      {
+        statement: 'A sourced finding',
+        source_id: 'source',
+        url: 'https://example.org/source',
+        quote: 'Exact public passage',
+        locator: 'Section 1',
+      },
+    ],
+    gaps: ['The effective date is unresolved.'],
+    investigation_id: 'run',
+    run_revision: 6,
+    link_revision: 2,
+    feed_revision: 3,
+    scope:
+      'Only cited public findings; private comments and files are excluded.',
+    private_notes: 'DO NOT DISPLAY PRIVATE NOTES',
+  };
+  const h = await mount(
+    FeedDossierContext,
+    {
+      root,
+      linkId: 'link',
+      onChanged: async () => {
+        changed++;
+      },
+    },
+    async (url, init) => {
+      calls.push({
+        url,
+        method: init.method,
+        body: init.body ? JSON.parse(init.body) : null,
+      });
+      return response(init.method === 'GET' ? preview : feed());
+    },
+  );
+  try {
+    assert.equal(calls.length, 0);
+    await act(async () =>
+      button(h.tree, 'Use dossier context').props.onClick(),
+    );
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].method, 'GET');
+    assert.match(content(h.tree.root), /A sourced finding/);
+    assert.match(content(h.tree.root), /effective date is unresolved/);
+    assert.doesNotMatch(content(h.tree.root), /DO NOT DISPLAY PRIVATE NOTES/);
+    await act(async () => button(h.tree, 'Use this context').props.onClick());
+    assert.equal(calls[1].url, `/api${root}/link/learn`);
+    assert.deepEqual(Object.keys(calls[1].body).sort(), [
+      'context_fingerprint',
+      'expected_feed_revision',
+      'expected_link_revision',
+      'request_key',
+    ]);
+    assert.equal(
+      calls[1].body.context_fingerprint,
+      preview.context_fingerprint,
+    );
+    assert.equal(calls[1].body.expected_feed_revision, 3);
+    assert.equal(calls[1].body.expected_link_revision, 2);
+    assert.equal(changed, 1);
+    assert.equal(button(h.tree, 'Use this context'), undefined);
+  } finally {
+    await h.close();
+  }
+});
+
+test('semantic stream and unrelated archive use server-scoped cursors while full history remains available', async () => {
+  const reads = [];
+  const h = await mount(
+    FeedsWorkspace,
+    { selectedId: f1, onSelect() {}, onCreated() {} },
+    async (url) => {
+      reads.push(url);
+      if (url === '/api/feeds') return response(library());
+      if (url === `/api/feeds/${f1}`) return response(feed());
+      if (url.includes('view=unrelated'))
+        return response({
+          items: [
+            {
+              ...update('archived', 2),
+              relevance: { verdict: 'unrelated', scope: 'Meaning' },
+            },
+          ],
+          total: 1,
+          total_retained: 3,
+          next_sequence: null,
+        });
+      if (url.includes('view=all'))
+        return response({
+          items: [update('all', 3), update('archived', 2), update('older', 1)],
+          total: 3,
+          total_retained: 3,
+          next_sequence: null,
+        });
+      return response({
+        items: [
+          {
+            ...update('pending', 3),
+            relevance: { verdict: 'unavailable', scope: 'Unavailable' },
+          },
+        ],
+        total: 2,
+        total_retained: 3,
+        next_sequence: 3,
+      });
+    },
+  );
+  try {
+    assert.ok(reads.some((url) => url.includes('view=main')));
+    assert.match(content(h.tree.root), /Relevance could not be assessed/);
+    await act(async () =>
+      button(h.tree, 'Other saved sources').props.onClick(),
+    );
+    assert.ok(reads.some((url) => url.includes('view=unrelated')));
+    assert.match(content(h.tree.root), /Outside this feed/);
+    assert.doesNotMatch(content(h.tree.root), /Saved source 3/);
+    await act(async () => button(h.tree, 'All history').props.onClick());
+    assert.ok(reads.some((url) => url.includes('view=all')));
+    assert.match(content(h.tree.root), /3 of 3 saved updates/);
+    assert.match(content(h.tree.root), /All retained feed history/);
+  } finally {
+    await h.close();
+  }
+});
+
+test('changed dossier context requires a fresh reviewed preview before applying a new fingerprint', async () => {
+  let revision = 3;
+  const writes = [];
+  const h = await mount(
+    FeedDossierContext,
+    {
+      root: `/products/${product.id}/dossiers/d/feeds`,
+      linkId: 'link',
+      onChanged: async () => {},
+    },
+    async (_url, init) => {
+      if (init.method === 'GET')
+        return response({
+          context_fingerprint: (revision === 3 ? 'a' : 'b').repeat(64),
+          question: 'Which public changes matter?',
+          findings: [],
+          gaps: [],
+          feed_revision: revision,
+          link_revision: 2,
+          run_revision: 1,
+          investigation_id: 'run',
+          scope: 'Public sources only',
+        });
+      writes.push(JSON.parse(init.body));
+      if (writes.length === 1) {
+        revision = 4;
+        return response(
+          {
+            detail:
+              'Public dossier context changed. Preview it again before applying.',
+          },
+          409,
+        );
+      }
+      return response(feed());
+    },
+  );
+  try {
+    await act(async () =>
+      button(h.tree, 'Use dossier context').props.onClick(),
+    );
+    await act(async () => button(h.tree, 'Use this context').props.onClick());
+    assert.match(content(h.tree.root), /context changed/);
+    assert.equal(writes.length, 1);
+    await act(async () => button(h.tree, 'Refresh context').props.onClick());
+    assert.equal(writes.length, 1);
+    await act(async () => button(h.tree, 'Use this context').props.onClick());
+    assert.equal(writes[0].context_fingerprint, 'a'.repeat(64));
+    assert.equal(writes[1].context_fingerprint, 'b'.repeat(64));
+    assert.equal(writes[1].expected_feed_revision, 4);
+    assert.notEqual(writes[0].request_key, writes[1].request_key);
+  } finally {
+    await h.close();
+  }
+});
+
+test('research-based watch proposal retries its reviewed context exactly and offers no private metadata fields', async () => {
+  const writes = [];
+  let attempts = 0,
+    saved = 0;
+  const h = await mount(
+    FeedWatchProposal,
+    {
+      root: `/products/${product.id}/dossiers/d/feeds`,
+      onSaved: async () => {
+        saved++;
+      },
+    },
+    async (url, init) => {
+      if (init.method === 'POST') {
+        writes.push({ url, body: JSON.parse(init.body) });
+        if (++attempts === 1) throw Error('Response lost');
+        return response({ id: 'link', feed_id: f1 });
+      }
+      return response({
+        ...proposal(),
+        private_notes: 'DO NOT SHOW PRIVATE NOTES',
+      });
+    },
+  );
+  try {
+    assert.equal(writes.length, 0);
+    assert.doesNotMatch(
+      content(h.tree.root),
+      /DO NOT SHOW PRIVATE NOTES|Jurisdictions|Parties/,
+    );
+    await act(async () => submit(h.tree));
+    assert.equal(
+      button(h.tree, 'Retry the same monitoring').props.disabled,
+      false,
+    );
+    assert.ok(
+      h.tree.root
+        .findAllByType('textarea')
+        .every((node) => node.props.disabled),
+    );
+    await act(async () => submit(h.tree));
+    assert.deepEqual(writes[1], writes[0]);
+    assert.equal(
+      writes[0].body.proposal_fingerprint,
+      'reviewed-public-context',
+    );
+    assert.equal(saved, 1);
+  } finally {
+    await h.close();
+  }
+});
+
+test('question-only watch proposal is honest and a changed public context must be reviewed before applying', async () => {
+  const writes = [];
+  let reads = 0;
+  const h = await mount(
+    FeedWatchProposal,
+    {
+      root: `/products/${product.id}/dossiers/d/feeds`,
+      onSaved: async () => {},
+    },
+    async (url, init) => {
+      if (init.method === 'POST') {
+        writes.push(JSON.parse(init.body));
+        return response(
+          { detail: 'Public research changed. Refresh the suggestion.' },
+          409,
+        );
+      }
+      return response(
+        proposal({
+          basis: 'question_only',
+          findings: [],
+          gaps: [],
+          proposal_fingerprint:
+            ++reads === 1 ? 'first-question' : 'updated-question',
+        }),
+      );
+    },
+  );
+  try {
+    assert.match(content(h.tree.root), /no completed public research findings/);
+    assert.doesNotMatch(content(h.tree.root), /Based on the public findings/);
+    await act(async () => submit(h.tree));
+    assert.match(content(h.tree.root), /Public research changed/);
+    await act(async () => button(h.tree, 'Refresh suggestion').props.onClick());
+    await act(async () => submit(h.tree));
+    assert.equal(writes[0].proposal_fingerprint, 'first-question');
+    assert.equal(writes[1].proposal_fingerprint, 'updated-question');
+    assert.notEqual(writes[0].request_key, writes[1].request_key);
+  } finally {
+    await h.close();
+  }
+});
+
+test('an uncertain suggested monitor cannot switch to another creation path before its exact retry', async () => {
+  let writes = 0;
+  const h = await mount(
+    DossierFeeds,
+    {
+      dossierId: 'd',
+      name: 'Dossier',
+      question: 'Which changes matter?',
+      canEdit: true,
+      onChanged: async () => {},
+      onResearch() {},
+    },
+    async (url, init) => {
+      if (init.method === 'POST') {
+        writes++;
+        throw Error('Lost response');
+      }
+      if (url.endsWith('/proposal')) return response(proposal());
+      if (url === '/api/feeds') return response(library());
+      return response({ items: [], can_manage: true });
+    },
+  );
+  try {
+    await act(async () => submit(h.tree));
+    assert.equal(writes, 1);
+    assert.equal(button(h.tree, 'Link existing feed').props.disabled, true);
+    assert.ok(button(h.tree, 'Retry the same monitoring'));
   } finally {
     await h.close();
   }

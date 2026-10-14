@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.110.0 — Refine feeds by meaning
+
+Watch a question with conceptual and multilingual discovery, local Laya relevance, and retained originals. Refine the search with inclusion/exclusion guidance or result feedback; preview public dossier findings and gaps before using them as search context. Relevant, uncertain and pending material stay distinct from the retained unrelated archive. Independent dossier research still seeks additional evidence.
+
 ## 1.109.0 — Reusable feeds and deeper dossier research
 
 Create an independent feed, follow its new material in the app, and retain the source history. Connect an existing feed to a dossier or create one from the dossier question. Research deeper creates a dossier linked to all retained feed versions and future updates. Each dossier investigates its own question; the feed collects source material once. The separate LegalFeed service is unchanged.

@@ -1569,6 +1569,8 @@ test('shared feed routes forward authenticated reads and exact writes while reta
     `feeds/${id}/updates/${update}/original`,
     `feeds/${id}/follow`,
     `products/${product.id}/dossiers/${id}/feeds`,
+    `products/${product.id}/dossiers/${id}/feeds/proposal`,
+    `products/${product.id}/dossiers/${id}/feeds/${update}/learn`,
   ]) {
     assert.equal((await request(route)).status, 200);
   }
@@ -1577,12 +1579,22 @@ test('shared feed routes forward authenticated reads and exact writes while reta
     `feeds/${id}`,
     `feeds/${id}/check`,
     `feeds/${id}/dossiers`,
+    `feeds/${id}/intelligence`,
+    `feeds/${id}/updates/${update}/feedback`,
+    `products/${product.id}/dossiers/${id}/feeds/${update}/learn`,
     `feeds/${id}/follow`,
     `feeds/${id}/follow/read`,
     `products/${product.id}/dossiers/${id}/feeds/create`,
   ]) {
     assert.equal(
-      (await request(route, route === `feeds/${id}` ? 'PATCH' : 'POST')).status,
+      (
+        await request(
+          route,
+          [`feeds/${id}`, `feeds/${id}/intelligence`].includes(route)
+            ? 'PATCH'
+            : 'POST',
+        )
+      ).status,
       200,
     );
     assert.equal(calls.at(-1).init.headers.get('x-csrf-token'), 'csrf');

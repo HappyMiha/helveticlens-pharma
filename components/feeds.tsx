@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Plus, RefreshCw, Rss } from 'lucide-react';
-import { api, ApiError, date, uid } from '@/lib/api';
+import { api, date } from '@/lib/api';
+import { useFeedCommand } from '@/lib/use-feed-command';
 import { product } from '@/lib/product';
 import { useResource } from '@/lib/use-resource';
 import {
@@ -11,7 +12,6 @@ import {
   feedSourceHref,
   feedSources,
   feedUpdateDate,
-  rankFeeds,
   type DossierFeedList,
   type Feed,
   type FeedDossier,
@@ -29,109 +29,12 @@ import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { NativeSelect, NativeSelectOption } from './ui/native-select';
 import { Field } from './field';
-
-type Command = { path: string; body: unknown; method: string };
-/** Keep an uncertain write's exact identity; acknowledged writes retry only their view callback. */
-function useFeedCommand<T>(onSaved: (value: T) => Promise<void> | void) {
-  const pending = useRef<Command | null>(null);
-  const acknowledged = useRef<{ value: T } | null>(null);
-  const sending = useRef(false);
-  const lifecycle = useRef({ generation: 0 });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [uncertain, setUncertain] = useState(false);
-  const [saved, setSaved] = useState(false);
-  useEffect(() => {
-    const life = lifecycle.current;
-    const reset = () => {
-      life.generation++;
-      pending.current = null;
-      acknowledged.current = null;
-      sending.current = false;
-      setBusy(false);
-      setError('');
-      setUncertain(false);
-      setSaved(false);
-    };
-    window.addEventListener('helvetic-session-changed', reset);
-    return () => {
-      life.generation++;
-      window.removeEventListener('helvetic-session-changed', reset);
-    };
-  }, []);
-  async function execute(
-    path: string,
-    body: Record<string, unknown> | undefined,
-    method = 'POST',
-    requestKey = true,
-  ) {
-    if (sending.current) return;
-    pending.current ??= {
-      path,
-      body:
-        body === undefined
-          ? undefined
-          : requestKey
-            ? { ...body, request_key: uid() }
-            : body,
-      method,
-    };
-    const command = pending.current;
-    sending.current = true;
-    setBusy(true);
-    setError('');
-    const generation = lifecycle.current.generation;
-    const current = () => lifecycle.current.generation === generation;
-    try {
-      if (!acknowledged.current) {
-        const value = await api<T>(command.path, command.body, command.method);
-        if (!current()) return;
-        acknowledged.current = { value };
-        setSaved(true);
-        setUncertain(false);
-      }
-      await onSaved(acknowledged.current.value);
-      if (!current()) return;
-      pending.current = null;
-      acknowledged.current = null;
-      setSaved(false);
-      setUncertain(false);
-    } catch (cause) {
-      if (current()) {
-        const rejected =
-          cause instanceof ApiError &&
-          cause.status !== null &&
-          [400, 401, 403, 404, 409, 422].includes(cause.status);
-        if (rejected && !acknowledged.current) pending.current = null;
-        setUncertain(!acknowledged.current && !rejected);
-        setError(
-          acknowledged.current
-            ? 'The change was saved. Refresh its saved view to continue.'
-            : cause instanceof Error
-              ? cause.message
-              : 'Could not save. Your input is retained.',
-        );
-      }
-    } finally {
-      if (current()) {
-        sending.current = false;
-        setBusy(false);
-      }
-    }
-  }
-  return {
-    execute,
-    retry: () => {
-      const command = pending.current;
-      if (command) return execute(command.path, undefined, command.method);
-    },
-    busy,
-    error,
-    uncertain,
-    saved,
-    locked: busy || uncertain || saved,
-  };
-}
+import {
+  FeedPrecision,
+  FeedRelevance,
+  FeedDossierContext,
+  FeedWatchProposal,
+} from './feed-intelligence';
 
 function ReadFailure({
   error,
@@ -462,15 +365,20 @@ function FeedHistoryReader({
   revision,
   follow,
   onSeen,
+  feedRevision,
+  canManage,
 }: {
+  feedRevision: number;
+  canManage: boolean;
   feedId: string;
   revision: number;
   follow?: FeedFollow;
   onSeen: () => Promise<void>;
 }) {
   const markSeen = useFeedCommand<FeedFollow>(onSeen);
+  const [view, setView] = useState<'main' | 'unrelated' | 'all'>('main');
   const history = useResource<FeedHistory>(
-    `/feeds/${feedId}/updates?order=newest&limit=50`,
+    `/feeds/${feedId}/updates?order=newest&view=${view}&limit=50`,
     revision,
   );
   const [extra, setExtra] = useState<FeedHistory | null>(null);
@@ -493,7 +401,7 @@ function FeedHistoryReader({
       life.value++;
       window.removeEventListener('helvetic-session-changed', clear);
     };
-  }, [feedId, revision]);
+  }, [feedId, revision, view]);
   const rows = history.data
     ? [
         ...history.data.items,
@@ -515,7 +423,7 @@ function FeedHistoryReader({
     const attempt = generation.current.value;
     try {
       const page = await api<FeedHistory>(
-        `/feeds/${feedId}/updates?order=newest&before_sequence=${next}&limit=50`,
+        `/feeds/${feedId}/updates?order=newest&view=${view}&before_sequence=${next}&limit=50`,
       );
       if (attempt !== generation.current.value) return;
       setExtra((old) => ({
@@ -559,6 +467,32 @@ function FeedHistoryReader({
           <RefreshCw size={16} /> Refresh history
         </Button>
       </div>
+      <div
+        className="flex gap-2 overflow-x-auto whitespace-nowrap"
+        aria-label="Source history view"
+      >
+        {(
+          [
+            ['main', 'Updates'],
+            ['unrelated', 'Other saved sources'],
+            ['all', 'All history'],
+          ] as const
+        ).map(([value, label]) => (
+          <Button
+            key={value}
+            variant={view === value ? 'secondary' : 'ghost'}
+            aria-pressed={view === value}
+            onClick={() => setView(value)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+      <p className="muted">
+        Updates include uncertain or pending relevance checks. Other sources
+        stay in the archive; a dossier can still research the full retained
+        history.
+      </p>
       {history.loading && <output>Loading saved updates…</output>}
       {history.error && (
         <ReadFailure
@@ -570,13 +504,13 @@ function FeedHistoryReader({
       {history.data && (
         <>
           <p className="muted">
-            {rows.length} of {history.data.total} saved updates · newest first.
-            Source previews are not research conclusions.
+            {rows.length} of {history.data.total} saved updates in this view ·
+            newest first. Source previews are not research conclusions.
           </p>
           {!rows.length && (
             <p>
-              No source updates saved yet. The next source check may find new
-              material.
+              No saved source updates in this view yet. Check the full history
+              or wait for the next source check.
             </p>
           )}
           {rows.map((item) => (
@@ -587,6 +521,14 @@ function FeedHistoryReader({
               <h3>{item.title}</h3>
               <p className="muted">{feedUpdateDate(item)}</p>
               <p>{item.summary}</p>
+              <FeedRelevance
+                key={`${item.id}:${item.feedback || 'unlabelled'}`}
+                item={item}
+                feedId={feedId}
+                feedRevision={feedRevision}
+                canManage={canManage}
+                onChanged={onSeen}
+              />
               <p className="muted">
                 {item.reading_complete
                   ? 'Source reading recorded as complete.'
@@ -701,6 +643,23 @@ function FeedChecks({ feed }: { feed: Feed }) {
                   {check.progress.captured} new or changed sources saved ·{' '}
                   {check.progress.unchanged} unchanged
                 </p>
+                {check.progress.plan_status && (
+                  <p className="muted">
+                    Search preparation: {check.progress.plan_status}
+                    {check.progress.query_count
+                      ? ` · ${check.progress.query_index || 0} of ${check.progress.query_count} search directions checked`
+                      : ''}
+                  </p>
+                )}
+                {check.progress.semantic_counts && (
+                  <p className="muted">
+                    Relevance checks: {check.progress.semantic_counts.relevant}{' '}
+                    likely relevant · {check.progress.semantic_counts.uncertain}{' '}
+                    uncertain · {check.progress.semantic_counts.unrelated}{' '}
+                    outside focus · {check.progress.semantic_counts.unavailable}{' '}
+                    could not be assessed
+                  </p>
+                )}
                 {check.progress.worker_error && (
                   <p role="alert">
                     Collection interrupted:{' '}
@@ -720,6 +679,14 @@ function FeedChecks({ feed }: { feed: Feed }) {
                         {source.omitted_records
                           ? ` · ${source.omitted_records} records not collected`
                           : ''}
+                        {source.query && <p>{source.query}</p>}
+                        {(source.language || source.purpose) && (
+                          <p className="muted">
+                            {[source.language, source.purpose]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -732,7 +699,11 @@ function FeedChecks({ feed }: { feed: Feed }) {
                         <li className="break-words" key={index}>
                           {failure.phase === 'read'
                             ? 'Source reading'
-                            : 'Source discovery'}
+                            : failure.phase === 'plan'
+                              ? 'Search preparation'
+                              : failure.phase === 'gate'
+                                ? 'Relevance check'
+                                : 'Source discovery'}
                           :{' '}
                           {(failure.code || 'unavailable').replaceAll('_', ' ')}
                           {failure.url ? ` · ${failure.url}` : ''}
@@ -1006,6 +977,11 @@ function FeedReader({
               </Button>
             </div>
           )}
+          <FeedPrecision
+            key={`precision:${feed.id}:${feed.revision}`}
+            feed={feed}
+            onChanged={resource.refresh}
+          />
           <FeedChecks feed={feed} />
           {editing && feed.can_manage && (
             <FeedForm
@@ -1030,7 +1006,9 @@ function FeedReader({
           <FeedHistoryReader
             key={`history:${feed.id}`}
             feedId={feed.id}
-            revision={feed.revision + feed.update_count}
+            revision={feed.update_count + feed.revision}
+            feedRevision={feed.revision}
+            canManage={feed.can_manage}
             follow={feed.follow}
             onSeen={resource.refresh}
           />
@@ -1171,7 +1149,6 @@ export function FeedsWorkspace({
 
 export function DossierFeeds({
   dossierId,
-  name,
   question,
   canEdit,
   onChanged,
@@ -1186,7 +1163,13 @@ export function DossierFeeds({
 }) {
   const root = `/products/${product.id}/dossiers/${dossierId}/feeds`;
   const links = useResource<DossierFeedList>(root);
-  const [mode, setMode] = useState<'attach' | 'create' | null>(null);
+  const [proposalLocked, setProposalLocked] = useState(false);
+  const [choice, setMode] = useState<'attach' | 'create' | null>(null);
+  const mode =
+    choice ||
+    (links.data && !links.data.items.some((link) => link.status === 'active')
+      ? 'create'
+      : null);
   const [researchQuestion, setResearchQuestion] = useState(question);
   const validQuestion =
     researchQuestion.trim().length >= 5 &&
@@ -1194,7 +1177,9 @@ export function DossierFeeds({
   const [search, setSearch] = useState('');
   const [searchDraft, setSearchDraft] = useState('');
   const libraryPath = `/feeds${mode === 'attach' && search ? `?q=${encodeURIComponent(search)}` : ''}`;
-  const library = useResource<FeedList>(mode ? libraryPath : null);
+  const library = useResource<FeedList>(
+    canEdit && links.data?.can_manage && mode ? libraryPath : null,
+  );
   const [selected, setSelected] = useState('');
   const [offset, setOffset] = useState(0);
   const extra = useResource<FeedList>(
@@ -1212,14 +1197,11 @@ export function DossierFeeds({
     );
   });
   const selectedFeed = list.data?.items.find((feed) => feed.id === selected);
-  const ranked = rankFeeds(
-    (list.data?.items || []).filter(
-      (feed) =>
-        !links.data?.items.some(
-          (link) => link.feed_id === feed.id && link.status === 'active',
-        ),
-    ),
-    question,
+  const available = (list.data?.items || []).filter(
+    (feed) =>
+      !links.data?.items.some(
+        (link) => link.feed_id === feed.id && link.status === 'active',
+      ),
   );
   const canManage = canEdit && !!links.data?.can_manage;
   return (
@@ -1275,7 +1257,7 @@ export function DossierFeeds({
             <div className="flex flex-wrap gap-3">
               <Button
                 variant="outline"
-                disabled={action.locked}
+                disabled={action.locked || proposalLocked}
                 onClick={() => {
                   setMode('attach');
                   setOffset(0);
@@ -1284,16 +1266,18 @@ export function DossierFeeds({
               >
                 Link existing feed
               </Button>
-              <Button
-                variant="outline"
-                disabled={action.locked}
-                onClick={() => {
-                  setMode('create');
-                  setOffset(0);
-                }}
-              >
-                Create a feed
-              </Button>
+              {mode !== 'create' && (
+                <Button
+                  variant="outline"
+                  disabled={action.locked || proposalLocked}
+                  onClick={() => {
+                    setMode('create');
+                    setOffset(0);
+                  }}
+                >
+                  Watch another question
+                </Button>
+              )}
             </div>
           )}
           {mode && canManage && (
@@ -1322,18 +1306,14 @@ export function DossierFeeds({
                 !library.error &&
                 mode === 'create' &&
                 library.data.can_create && (
-                  <FeedForm
+                  <FeedWatchProposal
                     key={dossierId}
-                    dossierId={dossierId}
-                    initialName={name}
-                    initialQuery={question}
-                    dossierQuestion={question}
-                    catalog={library.data.sources}
-                    onCancel={() => setMode(null)}
+                    root={root}
+                    onLockChange={setProposalLocked}
                     onSaved={async () => {
                       await Promise.all([links.refresh(), onChanged()]);
                       setMode(null);
-                      setNotice('Feed created and linked.');
+                      setNotice('Monitoring enabled for this dossier.');
                     }}
                   />
                 )}
@@ -1355,11 +1335,14 @@ export function DossierFeeds({
                     <Input
                       maxLength={300}
                       value={searchDraft}
-                      disabled={action.locked}
+                      disabled={action.locked || proposalLocked}
                       onChange={(event) => setSearchDraft(event.target.value)}
                     />
                   </Field>
-                  <Button variant="outline" disabled={action.locked}>
+                  <Button
+                    variant="outline"
+                    disabled={action.locked || proposalLocked}
+                  >
                     Search feeds
                   </Button>
                 </form>
@@ -1385,41 +1368,21 @@ export function DossierFeeds({
                   <Field label="Choose a feed">
                     <NativeSelect
                       value={selected}
-                      disabled={action.locked}
+                      disabled={action.locked || proposalLocked}
                       onChange={(event) => setSelected(event.target.value)}
                     >
                       <NativeSelectOption value="">
                         Choose a saved feed
                       </NativeSelectOption>
-                      {ranked.filter((item) => item.score > 0).length > 0 && (
-                        <optgroup label="Related words in your question">
-                          {ranked
-                            .filter((item) => item.score > 0)
-                            .map(({ feed }) => (
-                              <NativeSelectOption key={feed.id} value={feed.id}>
-                                {feed.name} · {feed.product}
-                              </NativeSelectOption>
-                            ))}
-                        </optgroup>
-                      )}
-                      <optgroup label="Other feeds on this page">
-                        {ranked
-                          .filter((item) => item.score === 0)
-                          .map(({ feed }) => (
-                            <NativeSelectOption key={feed.id} value={feed.id}>
-                              {feed.name} · {feed.product}
-                            </NativeSelectOption>
-                          ))}
-                      </optgroup>
+                      {available.map((feed) => (
+                        <NativeSelectOption key={feed.id} value={feed.id}>
+                          {feed.name} · {feed.product}
+                        </NativeSelectOption>
+                      ))}
                     </NativeSelect>
                   </Field>
-                  <p className="muted">
-                    Related feeds share words with your question; check the
-                    monitoring question before linking. Suggestions cover the
-                    displayed page.
-                  </p>
                   {selectedFeed && <p>{selectedFeed.query}</p>}
-                  {!ranked.length && (
+                  {!available.length && (
                     <p>
                       No unlinked feeds match this page. Search again or create
                       a feed from this dossier.
@@ -1432,7 +1395,7 @@ export function DossierFeeds({
                   </p>
                   <LinkedQuestion
                     value={researchQuestion}
-                    disabled={action.locked}
+                    disabled={action.locked || proposalLocked}
                     onChange={setResearchQuestion}
                   />
                   <Button
@@ -1460,7 +1423,7 @@ export function DossierFeeds({
                       <Button
                         type="button"
                         variant="ghost"
-                        disabled={action.locked}
+                        disabled={action.locked || proposalLocked}
                         onClick={() => {
                           setSelected('');
                           setOffset(Math.max(0, offset - list.data!.page_size));
@@ -1473,7 +1436,7 @@ export function DossierFeeds({
                       <Button
                         type="button"
                         variant="ghost"
-                        disabled={action.locked}
+                        disabled={action.locked || proposalLocked}
                         onClick={() => {
                           setSelected('');
                           setOffset(offset + list.data!.page_size);
@@ -1583,6 +1546,13 @@ function LinkedFeed({
             </Button>
           )}
         </div>
+      )}
+      {link.can_learn && (
+        <FeedDossierContext
+          root={root}
+          linkId={link.id}
+          onChanged={onChanged}
+        />
       )}
       <CommandStatus action={action} />
     </article>

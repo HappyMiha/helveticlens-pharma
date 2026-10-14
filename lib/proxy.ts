@@ -19,7 +19,7 @@ export async function proxy(
   if (
     !(
       allowed.test(route) ||
-      /^feeds(?:\/[0-9a-f-]{36}(?:\/(?:check|checks|dossiers|follow(?:\/read)?|updates(?:\/[0-9a-f-]{36}\/original)?))?)?$/.test(
+      /^feeds(?:\/[0-9a-f-]{36}(?:\/(?:check|checks|intelligence|dossiers|follow(?:\/read)?|updates(?:\/[0-9a-f-]{36}\/(?:original|feedback))?))?)?$/.test(
         route,
       ) ||
       (request.method === 'POST' &&

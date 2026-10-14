@@ -28,6 +28,7 @@ export interface Feed {
   job: { id: string; status: string } | null;
   update_count: number;
   can_manage: boolean;
+  intelligence?: FeedIntelligence;
   follow: FeedFollow;
   unread_count: number;
 }
@@ -50,11 +51,18 @@ export interface FeedUpdate {
   published_at: string | null;
   created_at: string;
   reading_complete: boolean;
+  feedback?: 'relevant' | 'not_relevant' | null;
+  relevance?: {
+    verdict: 'relevant' | 'uncertain' | 'unrelated' | 'unavailable' | 'pending';
+    scope: string;
+    basis?: string;
+  };
 }
 export interface FeedHistory {
   items: FeedUpdate[];
   total: number;
   next_sequence: number | null;
+  total_retained?: number;
 }
 export interface FeedLink {
   id: string;
@@ -66,6 +74,7 @@ export interface FeedLink {
   question?: string;
   can_open_feed?: boolean;
   can_retry?: boolean;
+  can_learn?: boolean;
   pending_count: number;
   feed: Pick<Feed, 'id' | 'name' | 'product' | 'status'>;
   investigation: { id: string; status: string; revision: number } | null;
@@ -121,49 +130,6 @@ export function feedSourceHref(value: FeedUpdate, feedId: string) {
   return `/api/feeds/${encodeURIComponent(feedId)}/updates/${encodeURIComponent(value.id)}/original`;
 }
 
-/** A transparent lexical suggestion, not a claim of semantic relevance. */
-export function rankFeeds(feeds: Feed[], question: string) {
-  const stop = new Set([
-    'the',
-    'and',
-    'for',
-    'this',
-    'that',
-    'with',
-    'from',
-    'what',
-    'which',
-    'when',
-    'where',
-    'how',
-    'are',
-    'does',
-    'about',
-    'want',
-    'watch',
-    'changes',
-    'follow',
-    'monitor',
-    'monitoring',
-  ]);
-  const tokens = (value: string) =>
-    new Set(
-      (value.toLocaleLowerCase().match(/[\p{L}\p{N}]{3,}/gu) || []).filter(
-        (word) => !stop.has(word),
-      ),
-    );
-  const wanted = tokens(question);
-  return feeds
-    .map((feed, index) => ({
-      feed,
-      index,
-      score: [...tokens(`${feed.name} ${feed.query}`)].filter((word) =>
-        wanted.has(word),
-      ).length,
-    }))
-    .sort((a, b) => b.score - a.score || a.index - b.index);
-}
-
 export function feedUpdateDate(update: FeedUpdate) {
   if (
     update.published_at &&
@@ -187,8 +153,20 @@ export interface FeedCheckHistory {
       unchanged: number;
       portions: number;
       worker_error: string | null;
+      semantic_counts?: {
+        relevant: number;
+        uncertain: number;
+        unrelated: number;
+        unavailable: number;
+      };
+      plan_status?: string;
+      query_index?: number;
+      query_count?: number;
       coverage: Array<{
         kind?: string;
+        query?: string;
+        language?: string;
+        purpose?: string;
         name?: string;
         url?: string;
         status?: string;
@@ -206,4 +184,62 @@ export interface FeedCheckHistory {
   total: number;
   offset: number;
   page_size: number;
+}
+
+export interface FeedIntelligence {
+  mode: 'semantic';
+  include: string[];
+  exclude: string[];
+  languages: string[];
+  plan_status: string;
+  understanding: string;
+  concepts: string[];
+  synonyms: string[];
+  queries: Array<{ query: string; language: string; purpose?: string }>;
+  feedback_count: number;
+  context_count: number;
+  scope: string;
+}
+export interface FeedContextPreview {
+  context_fingerprint: string;
+  question: string;
+  findings: Array<{
+    statement: string;
+    source_id: string;
+    url: string;
+    quote?: string;
+    locator?: string;
+  }>;
+  gaps: string[];
+  investigation_id: string;
+  run_revision: number;
+  link_revision: number;
+  feed_revision: number;
+  scope: string;
+}
+export function feedPrecisionLines(value: string) {
+  const lines = [
+    ...new Set(
+      value
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (lines.length > 20 || lines.some((line) => line.length > 300))
+    throw new Error(
+      'Use up to 20 lines, with at most 300 characters on each line.',
+    );
+  return lines;
+}
+
+export interface FeedWatchProposal {
+  name: string;
+  query: string;
+  question: string;
+  basis: 'public_research' | 'question_only';
+  findings: FeedContextPreview['findings'];
+  gaps: string[];
+  scope: string;
+  proposal_fingerprint: string;
 }

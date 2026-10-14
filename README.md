@@ -637,3 +637,5 @@ shared dossier allowance.
 This implementation uses shared Helvetic Lens Core APIs. It does not migrate or
 change the separate LegalFeed repository, service, accounts or data. In-app feed
 updates do not send email.
+
+Semantic feeds expand a public question into concepts and multilingual discovery queries, then use local Laya to assess the meaning of retained source material. Refine search and useful/not-relevant feedback change future checks and reassess saved originals. Relevant, uncertain and pending updates remain distinct from the unrelated archive. Public dossier context is previewed before application and checked again when used; private notes are excluded. Watch changes proposes a feed from available research, while linked dossiers retain independent discovery. Search coverage depends on accessible source connectors and configured web indexes.
