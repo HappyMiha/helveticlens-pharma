@@ -65,6 +65,7 @@ import { PageWatches } from './page-watches';
 import { PublicationEditor } from './publication-editor';
 import { initialDossierSection } from '@/lib/dossier-sections';
 import { DossierSubject } from './structured-context';
+import { DossierFeeds } from './feeds';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -184,10 +185,12 @@ export function Dossier({
       setMonitoringTarget(id);
       setTab('monitoring');
     },
-    [setTab],
+    [setTab, setMonitoringTarget],
   );
   useEffect(() => {
-    if (tab !== 'monitoring' || !monitoringTarget || !dossierElement.current)
+    const targetSection =
+      monitoringTarget === 'dossier-linked-feeds' ? 'evidence' : 'monitoring';
+    if (tab !== targetSection || !monitoringTarget || !dossierElement.current)
       return;
     const focus = () => {
       const target = document.getElementById(monitoringTarget);
@@ -401,18 +404,17 @@ export function Dossier({
                 onCoverage={() => setTab('evidence')}
               />
             )}
-              <DossierSubject
-                key={`${d.id}:${userId || ''}`}
-                hideWhenEmpty
-                dossierId={d.id}
-                revision={d.work.revision}
-                entries={entries}
-                canEdit={canEdit}
-                busy={busy}
-                onChanged={reload}
-                notify={notify}
-              />
-
+            <DossierSubject
+              key={`${d.id}:${userId || ''}`}
+              hideWhenEmpty
+              dossierId={d.id}
+              revision={d.work.revision}
+              entries={entries}
+              canEdit={canEdit}
+              busy={busy}
+              onChanged={reload}
+              notify={notify}
+            />
 
             <DossierTopicOverview
               profile={p}
@@ -706,6 +708,16 @@ export function Dossier({
               Original pages, captured excerpts and attached documents. Source
               material is kept separate from the interpretations it supports.
             </p>
+
+            <DossierFeeds
+              key={`feeds:${d.id}:${userId || ''}`}
+              dossierId={d.id}
+              name={c.name}
+              question={c.goal}
+              canEdit={canEdit}
+              onChanged={reload}
+              onResearch={openInvestigation}
+            />
 
             <DossierResearchSources
               key={`originals:${d.id}:${userId || ''}`}
@@ -1089,6 +1101,21 @@ export function Dossier({
           >
             <p className="chapter-kicker">06 / Monitoring</p>
             <h2>How this dossier stays up to date</h2>
+            <div className="space-y-3 pb-5">
+              <p>
+                Watch source changes in a shared feed, then let this dossier
+                research their impact.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMonitoringTarget('dossier-linked-feeds');
+                  setTab('evidence');
+                }}
+              >
+                Watch changes
+              </Button>
+            </div>
             <DossierControls
               key={`${d.id}:${userId || ''}`}
               dossierId={d.id}

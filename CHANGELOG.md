@@ -6,6 +6,10 @@ Sources & files now opens the same captured originals used by research, includin
 
 # Changes
 
+## 1.109.0 — Reusable feeds and deeper dossier research
+
+Create an independent feed, follow its new material in the app, and retain the source history. Connect an existing feed to a dossier or create one from the dossier question. Research deeper creates a dossier linked to all retained feed versions and future updates. Each dossier investigates its own question; the feed collects source material once. The separate LegalFeed service is unchanged.
+
 ## 1.108.0 — Clarify your question and continue research
 
 The dossier puts its current research question next to an explicit refinement action. Preview the next public question and continue the existing investigation with earlier findings retained. Empty or unchanged questions cannot submit. Existing private annotations remain in a collapsed reference section; empty forms and the inactive template chooser no longer appear in the reading path. Empty and unchanged annotation saves create no revision or history. An uncertain refinement can be retried safely even after a failed episode.

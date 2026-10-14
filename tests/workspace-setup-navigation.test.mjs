@@ -48,6 +48,7 @@ for (const ext of extensions.keys())
 const wrap = ({ children }) => React.createElement('div', null, children);
 const Empty = () => null;
 const ResearchDesk = () => null;
+const FeedsWorkspace = () => null;
 const Dossier = () => null;
 const AuthDialog = () => null;
 function Wizard() {
@@ -75,6 +76,7 @@ Module._load = function (name, parent, ...args) {
     name.startsWith('./')
   ) {
     if (name === './research-desk') return { ResearchDesk };
+    if (name === './feeds') return { FeedsWorkspace };
     if (name === './dossier') return { Dossier };
     if (name === './wizard') return { Wizard };
     if (name === './auth-dialog') return { AuthDialog };
@@ -108,11 +110,11 @@ function deferred() {
   });
   return { promise, resolve };
 }
-async function mounted({ admin = true } = {}) {
+async function mounted({ admin = true, initialSearch = '' } = {}) {
   const handlers = new Map(),
     requests = [],
     reads = [];
-  const location = { search: '' };
+  const location = { search: initialSearch };
   globalThis.window = {
     location,
     history: {
@@ -155,6 +157,11 @@ async function mounted({ admin = true } = {}) {
     requests,
     location,
     desk: () => tree.root.findByType(ResearchDesk),
+    feeds: () => tree.root.findByType(FeedsWorkspace),
+    popView(search) {
+      location.search = search;
+      handlers.get('popstate')();
+    },
     wizard: () => tree.root.findByType(Wizard),
     current: () => tree.root.findByType(Dossier),
     pop(id) {
@@ -248,6 +255,34 @@ test('a denied creation attempt does not invalidate an authorized dossier read',
       await opening;
     });
     assert.equal(h.current().props.dossier.id, 'readable');
+  } finally {
+    await h.close();
+  }
+});
+
+test('feeds are an internal sidebar workspace with deep links and browser-history selection', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const h = await mounted({ initialSearch: `?view=feeds&feed=${id}` });
+  try {
+    assert.equal(h.feeds().props.selectedId, id);
+    await act(async () => h.feeds().props.onSelect(null));
+    assert.equal(h.location.search, '?view=feeds');
+    await act(async () => h.feeds().props.onSelect(id));
+    assert.equal(h.location.search, `?view=feeds&feed=${id}`);
+    await act(async () => h.popView('?view=feeds'));
+    assert.equal(h.feeds().props.selectedId, null);
+    const sidebar = h.tree.root.findByProps({
+      'aria-label': 'Workspace navigation',
+    });
+    const nav = sidebar
+      .findAllByType('button')
+      .find((node) => node.children.includes('Feeds'));
+    assert.match(nav.props.className, /nav-active/);
+    assert.equal(
+      h.requests.some((url) => url.includes('/feeds')),
+      false,
+      'the workspace delegates feed reads to its authorized panel',
+    );
   } finally {
     await h.close();
   }

@@ -619,3 +619,21 @@ Verified with469 existing/affected tests, lint, typecheck and production build.
 The retained real public-source case renders all7 answer points,28 citations,
 1 gap,100 source-level claims and111 claim quotations; these rendering checks
 do not establish the substantive quality or completion of that research.
+
+## Reusable feeds
+
+The Feeds workspace collects public source updates without creating a dossier.
+Create a feed from a question; optionally select public catalogues, HTTPS documents
+or RSS/Atom sources. The platform keeps immutable material versions, source-check
+history and saved originals. New updates can be followed in the app.
+
+In a dossier, Monitoring → Watch changes with feeds opens its linked feeds.
+Connect an existing feed or create one from the dossier question. Research this
+feed creates a Legal or Pharma dossier with every retained feed version linked
+and future updates enabled. Each dossier evaluates changes against its own
+question and can do independent discovery. A feed itself does not consume the
+shared dossier allowance.
+
+This implementation uses shared Helvetic Lens Core APIs. It does not migrate or
+change the separate LegalFeed repository, service, accounts or data. In-app feed
+updates do not send email.

@@ -1490,22 +1490,132 @@ test('original document uploads stream past the former limit without buffering i
   const route = `products/${product.id}/dossiers/11111111-1111-4111-8111-111111111111/files`;
   const chunk = new Uint8Array(1024 * 1024).fill(97);
   let produced = 0;
-  const body = new ReadableStream({ pull(controller) {
-    if (produced++ < 13) controller.enqueue(chunk);
-    else controller.close();
-  } });
+  const body = new ReadableStream({
+    pull(controller) {
+      if (produced++ < 13) controller.enqueue(chunk);
+      else controller.close();
+    },
+  });
   globalThis.fetch = async (_url, init) => {
     assert.ok(init.body instanceof ReadableStream);
-    assert.ok(produced < 13, 'gateway starts forwarding before reading the whole upload');
+    assert.ok(
+      produced < 13,
+      'gateway starts forwarding before reading the whole upload',
+    );
     const reader = init.body.getReader();
     let total = 0;
-    while (true) { const value = await reader.read(); if (value.done) break; total += value.value.length; }
+    while (true) {
+      const value = await reader.read();
+      if (value.done) break;
+      total += value.value.length;
+    }
     assert.equal(total, 13 * 1024 * 1024);
     return Response.json({ retained: true }, { status: 201 });
   };
-  const response = await proxy(new Request(`https://product.test/api/${route}`, {
-    method: 'POST', headers: { origin: 'https://product.test', 'content-type': 'multipart/form-data; boundary=fixture' },
-    body, duplex: 'half',
-  }), context(route));
+  const response = await proxy(
+    new Request(`https://product.test/api/${route}`, {
+      method: 'POST',
+      headers: {
+        origin: 'https://product.test',
+        'content-type': 'multipart/form-data; boundary=fixture',
+      },
+      body,
+      duplex: 'half',
+    }),
+    context(route),
+  );
   assert.equal(response.status, 201);
+});
+
+test('shared feed routes forward authenticated reads and exact writes while retaining origin and route boundaries', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const update = '22222222-2222-4222-8222-222222222222';
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url, init });
+    assert.equal(init.headers.get('cookie'), 'helvetic_lens_session=fixture');
+    return Response.json({ ok: true });
+  };
+  const request = (
+    route,
+    method = 'GET',
+    origin = 'https://product.test',
+    query = '',
+  ) =>
+    proxy(
+      new Request(`https://product.test/api/${route}${query}`, {
+        method,
+        headers: {
+          origin,
+          cookie: 'helvetic_lens_session=fixture; foreign=discard',
+          'x-csrf-token': 'csrf',
+        },
+        ...(method === 'GET'
+          ? {}
+          : {
+              body: JSON.stringify({
+                expected_revision: 2,
+                through_sequence: 10,
+              }),
+            }),
+      }),
+      context(route),
+    );
+  for (const route of [
+    'feeds',
+    `feeds/${id}`,
+    `feeds/${id}/updates`,
+    `feeds/${id}/checks`,
+    `feeds/${id}/updates/${update}/original`,
+    `feeds/${id}/follow`,
+    `products/${product.id}/dossiers/${id}/feeds`,
+  ]) {
+    assert.equal((await request(route)).status, 200);
+  }
+  for (const route of [
+    'feeds',
+    `feeds/${id}`,
+    `feeds/${id}/check`,
+    `feeds/${id}/dossiers`,
+    `feeds/${id}/follow`,
+    `feeds/${id}/follow/read`,
+    `products/${product.id}/dossiers/${id}/feeds/create`,
+  ]) {
+    assert.equal(
+      (await request(route, route === `feeds/${id}` ? 'PATCH' : 'POST')).status,
+      200,
+    );
+    assert.equal(calls.at(-1).init.headers.get('x-csrf-token'), 'csrf');
+    assert.deepEqual(
+      JSON.parse(new TextDecoder().decode(calls.at(-1).init.body)),
+      { expected_revision: 2, through_sequence: 10 },
+    );
+  }
+  assert.equal(
+    (
+      await request(
+        `feeds/${id}/updates`,
+        'GET',
+        undefined,
+        '?after_sequence=10&limit=50',
+      )
+    ).status,
+    200,
+  );
+  assert.match(calls.at(-1).url, /after_sequence=10&limit=50$/);
+  const forwarded = calls.length;
+  assert.equal(
+    (await request(`feeds/${id}/follow`, 'POST', 'https://foreign.test'))
+      .status,
+    403,
+  );
+  for (const route of [
+    `feeds/${id}/export`,
+    `feeds/${id}/follow/read/extra`,
+    `feeds/${id}/updates/${update}/private`,
+    'feeds/not-an-id',
+    `products/foreign/dossiers/${id}/feeds`,
+  ])
+    assert.equal((await request(route)).status, 404);
+  assert.equal(calls.length, forwarded);
 });

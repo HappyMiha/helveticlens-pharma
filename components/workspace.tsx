@@ -2,6 +2,8 @@
 import { dossierStatus } from '@/lib/dossier-status';
 import { DossierInvitationInbox } from './dossier-team';
 import { SharedDossiers } from './shared-dossiers';
+import { FeedsWorkspace } from './feeds';
+import { feedDossierHref } from '@/lib/feeds';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -20,6 +22,7 @@ import {
   LogOut,
   Plus,
   RefreshCw,
+  Rss,
   Search,
   ShieldCheck,
   Sparkles,
@@ -235,6 +238,7 @@ export default function Workspace() {
     [total, setTotal] = useState(0),
     [packs, setPacks] = useState<SourcePack[]>([]),
     [view, setView] = useState('research'),
+    [feedId, setFeedId] = useState<string | null>(null),
     [questionId, setQuestionId] = useState<string | null>(null),
     [referenceId, setReferenceId] = useState<string | null>(null),
     [navigationVersion, setNavigationVersion] = useState(0),
@@ -333,14 +337,20 @@ export default function Workspace() {
               false,
             );
           else {
+            setFeedId(new URLSearchParams(window.location.search).get('feed'));
             const page = new URLSearchParams(window.location.search).get(
               'view',
             );
             if (
               page &&
-              ['research', 'today', 'dossiers', 'sources', 'team'].includes(
-                page,
-              )
+              [
+                'research',
+                'today',
+                'dossiers',
+                'feeds',
+                'sources',
+                'team',
+              ].includes(page)
             )
               setView(page);
           }
@@ -364,9 +374,17 @@ export default function Workspace() {
       else {
         navigation.current.value++;
         const page = new URLSearchParams(window.location.search).get('view');
+        setFeedId(new URLSearchParams(window.location.search).get('feed'));
         setView(
           page &&
-            ['research', 'today', 'dossiers', 'sources', 'team'].includes(page)
+            [
+              'research',
+              'today',
+              'dossiers',
+              'feeds',
+              'sources',
+              'team',
+            ].includes(page)
             ? page
             : 'research',
         );
@@ -385,6 +403,7 @@ export default function Workspace() {
     setQuestionId(null);
     setReferenceId(null);
     setView(next);
+    setFeedId(null);
     setSelected(null);
     setError('');
     setNotice('');
@@ -440,6 +459,7 @@ export default function Workspace() {
                 ['research', 'Topics', MessagesSquare],
                 ['today', 'Review desk', CalendarClock],
                 ['dossiers', 'Dossier library', FolderOpen],
+                ['feeds', 'Feeds', Rss],
                 ['sources', 'Source library', Globe],
                 ['team', 'Team & access', Users],
               ] as NavigationItem[]
@@ -533,15 +553,17 @@ export default function Workspace() {
                 ? 'New dossier'
                 : view === 'detail'
                   ? 'Dossier'
-                  : view === 'sources'
-                    ? 'Source library'
-                    : view === 'team'
-                      ? 'Team & access'
-                      : view === 'today'
-                        ? 'Review desk'
-                        : view === 'research'
-                          ? 'Living topics'
-                          : 'Monitoring dossiers'}
+                  : view === 'feeds'
+                    ? 'Feeds'
+                    : view === 'sources'
+                      ? 'Source library'
+                      : view === 'team'
+                        ? 'Team & access'
+                        : view === 'today'
+                          ? 'Review desk'
+                          : view === 'research'
+                            ? 'Living topics'
+                            : 'Monitoring dossiers'}
             </b>
           </div>
           <div className="header-actions">
@@ -625,7 +647,7 @@ export default function Workspace() {
             <>
               {identity && (
                 <DossierInvitationInbox
-                  key={`${identity.user.id}:${identity.organization.id}`}
+                  key={`invitations:${identity.user.id}:${identity.organization.id}`}
                   refreshToken={refreshToken}
                   onAccepted={async (id) => {
                     await refresh();
@@ -635,7 +657,7 @@ export default function Workspace() {
               )}
               {identity && (view === 'research' || view === 'dossiers') && (
                 <SharedDossiers
-                  key={`${identity.user.id}:${identity.organization.id}`}
+                  key={`shared:${identity.user.id}:${identity.organization.id}`}
                   refreshToken={refreshToken}
                   onOpen={openDossier}
                 />
@@ -667,6 +689,47 @@ export default function Workspace() {
                   }}
                 />
               )}
+              {view === 'feeds' &&
+                (identity ? (
+                  <FeedsWorkspace
+                    key={`feeds:${identity.user.id}:${identity.organization.id}`}
+                    selectedId={feedId}
+                    onSelect={(id) => {
+                      navigation.current.value++;
+                      setFeedId(id);
+                      const params = new URLSearchParams({ view: 'feeds' });
+                      if (id) params.set('feed', id);
+                      window.history.pushState({}, '', `/?${params}`);
+                    }}
+                    onCreated={async (result) => {
+                      if (result.product !== product.id) {
+                        window.location.assign(
+                          feedDossierHref(result.dossier_id, result.product),
+                        );
+                        return;
+                      }
+                      const attempt = navigation.current.value;
+                      await refresh();
+                      if (attempt === navigation.current.value)
+                        await openDossier(result.dossier_id);
+                    }}
+                  />
+                ) : (
+                  <Empty title="Sign in to your feeds">
+                    <p>
+                      Feeds and their source history belong to your Helvetic
+                      Lens workspace.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setCreating(false);
+                        setLogin(true);
+                      }}
+                    >
+                      Sign in
+                    </Button>
+                  </Empty>
+                ))}
               {view === 'today' && (
                 <Workbench
                   identity={identity}
