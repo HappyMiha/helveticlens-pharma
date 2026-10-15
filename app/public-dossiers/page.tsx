@@ -1,5 +1,5 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,13 +35,13 @@ export default async function PublicDossiers({
   return (
     <main className="public-shell">
       <header className="public-header">
-        <Link href="/">
+        <a href="/">
           HelveticLens <b>{product.name}</b>
-        </Link>
+        </a>
         <nav aria-label="Product navigation">
-          <Link href="/following">Followed dossiers</Link>
-          <Link href="/guide">Guide</Link>
-          <Link href="/">Open workspace</Link>
+          <a href="/following">Followed dossiers</a>
+          <a href="/guide">Guide</a>
+          <a href="/">Open workspace</a>
         </nav>
       </header>
       <div className="public-intro">
@@ -93,9 +93,9 @@ export default async function PublicDossiers({
                 {data.items.map((item) => (
                   <article key={item.id}>
                     <h2>
-                      <Link href={publicHref(item.slug || item.id)}>
+                      <a href={publicHref(item.slug || item.id)}>
                         {item.title}
-                      </Link>
+                      </a>
                     </h2>
                     <p>{item.summary}</p>
                     <div className="public-meta">
@@ -126,9 +126,9 @@ export default async function PublicDossiers({
                     : 'Authors can publish a reviewed version from the Public version tab in their workspace.'}
                 </p>
                 {(offset > 0 || query) && (
-                  <Link href="/public-dossiers">
+                  <a href="/public-dossiers">
                     Browse all public dossiers
-                  </Link>
+                  </a>
                 )}
               </div>
             )}
@@ -137,18 +137,18 @@ export default async function PublicDossiers({
                 <PaginationContent>
                   {offset > 0 && (
                     <PaginationItem>
-                      <Link
+                      <a
                         href={publicSearch(query, Math.max(0, offset - 20))}
                       >
                         Previous page
-                      </Link>
+                      </a>
                     </PaginationItem>
                   )}
                   {offset + 20 < data.total && (
                     <PaginationItem>
-                      <Link href={publicSearch(query, offset + 20)}>
+                      <a href={publicSearch(query, offset + 20)}>
                         Next page
-                      </Link>
+                      </a>
                     </PaginationItem>
                   )}
                 </PaginationContent>

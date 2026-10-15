@@ -1,6 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { askBoundary, isAskShortcut } from '@/lib/ask-interaction';
 import {
@@ -565,15 +565,15 @@ function AskDialog({
           )}
           <ProductDestinations current={product.id} />
           <div className="ask-navigation">
-            <Link href="/" onClick={close}>
+            <a href="/" onClick={close}>
               Workspace
-            </Link>
-            <Link href="/public-dossiers" onClick={close}>
+            </a>
+            <a href="/public-dossiers" onClick={close}>
               Public dossiers
-            </Link>
-            <Link href="/guide" onClick={close}>
+            </a>
+            <a href="/guide" onClick={close}>
               Guide
-            </Link>
+            </a>
             <small>
               ↑ ↓ to choose · Enter to run · Esc keeps your question
             </small>

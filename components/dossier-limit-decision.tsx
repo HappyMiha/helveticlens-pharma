@@ -1,6 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { product } from '@/lib/product';
 import type { DossierAllowance, LimitRequest } from '@/lib/dossier-allowance';
@@ -71,7 +71,7 @@ export function DossierLimitDecision({ id }: { id: string }) {
   }
   return (
     <main className="limit-decision-page">
-      <Link href="/">Helvetic Lens</Link>
+      <a href="/">Helvetic Lens</a>
       <h1>Dossier limit request</h1>
       {error && <p role="alert">{error}</p>}
       {needsLogin && (

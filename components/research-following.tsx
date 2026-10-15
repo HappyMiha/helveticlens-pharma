@@ -1,7 +1,7 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 'use client';
 import { MonitoringOutcomeReader } from './monitoring-outcome';
 import { useState } from 'react';
-import Link from 'next/link';
 import { Bell, BellOff, Check, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api, date } from '@/lib/api';
@@ -370,7 +370,7 @@ export function PrivateDossierFollowing({
     >
       <div className="public-action-row">
         <h2>Stay with the evidence</h2>
-        <Link href="/following">Your research updates</Link>
+        <a href="/following">Your research updates</a>
       </div>
       <p>
         Follow this dossier for completed research and possible changes to

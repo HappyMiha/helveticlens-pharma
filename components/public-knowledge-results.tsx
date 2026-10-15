@@ -1,4 +1,4 @@
-import Link from 'next/link';
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 import { readPublicKnowledge } from '@/lib/public-reader';
 import { publicSearch } from '@/lib/publication';
 
@@ -28,7 +28,7 @@ export async function PublicKnowledgeResults({
           <article key={`${item.kind}:${item.id}`}>
             <p className="eyebrow">{item.kind}</p>
             <h2>
-              <Link href={item.href}>{item.label}</Link>
+              <a href={item.href}>{item.label}</a>
             </h2>
             <p>{item.text}</p>
             <p className="public-meta">{item.dossier_title}</p>
@@ -40,7 +40,7 @@ export async function PublicKnowledgeResults({
           <h2>No matching public evidence</h2>
           <p>
             Try fewer words or{' '}
-            <Link href="/public-dossiers">browse published dossiers</Link>.
+            <a href="/public-dossiers">browse published dossiers</a>.
           </p>
         </div>
       )}
@@ -49,12 +49,12 @@ export async function PublicKnowledgeResults({
         aria-label="Public knowledge result pages"
       >
         {offset > 0 && (
-          <Link href={publicSearch(query, Math.max(0, offset - 20))}>
+          <a href={publicSearch(query, Math.max(0, offset - 20))}>
             Previous page
-          </Link>
+          </a>
         )}
         {offset + 20 < page.total && (
-          <Link href={publicSearch(query, offset + 20)}>Next page</Link>
+          <a href={publicSearch(query, offset + 20)}>Next page</a>
         )}
       </nav>
       <p className="discussion-note">{page.method}</p>

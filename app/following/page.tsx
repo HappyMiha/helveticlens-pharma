@@ -1,5 +1,5 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { FollowedDossiers } from '@/components/public-following';
 import { product } from '@/lib/product';
 import '../public-dossiers/public.css';
@@ -12,8 +12,8 @@ export default function FollowingPage() {
   return (
     <main className="public-shell">
       <header className="public-header">
-        <Link href="/public-dossiers">← Public dossiers · {product.name}</Link>
-        <Link href="/">Open workspace</Link>
+        <a href="/public-dossiers">← Public dossiers · {product.name}</a>
+        <a href="/">Open workspace</a>
       </header>
       <div className="public-intro">
         <p className="eyebrow">Personal research</p>

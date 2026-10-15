@@ -1,6 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 'use client';
 import { useState } from 'react';
-import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthDialog } from './auth-dialog';
@@ -36,7 +36,7 @@ export function PublicDossierActions({ dossier }: { dossier: PublicDossier }) {
     <section className="public-personal" aria-label="Your research">
       <div className="public-action-row">
         <h2>Keep this research moving</h2>
-        <Link href="/following">Followed dossiers</Link>
+        <a href="/following">Followed dossiers</a>
       </div>
       <p>
         Follow publications, public discussion and completed research in your
@@ -165,9 +165,9 @@ export function FollowedDossiers() {
                       {state.publication ? (
                         <>
                           <h2>
-                            <Link href={publicHref(state.publication_id)}>
+                            <a href={publicHref(state.publication_id)}>
                               {state.publication.title}
-                            </Link>
+                            </a>
                           </h2>
                           <p>{state.publication.summary}</p>
                           <p className="public-meta">
@@ -210,7 +210,7 @@ export function FollowedDossiers() {
                       : 'No followed dossiers yet'}
                   </h2>
                   <p>Open a public dossier and choose Follow dossier.</p>
-                  <Link href="/public-dossiers">Browse public dossiers</Link>
+                  <a href="/public-dossiers">Browse public dossiers</a>
                   {offset > 0 && (
                     <Button variant="link" onClick={() => setOffset(0)}>
                       First page

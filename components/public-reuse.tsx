@@ -1,6 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 'use client';
 import { useId, useRef, useState } from 'react';
-import Link from 'next/link';
 import { Copy, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,9 +79,9 @@ export function PublicReuse({
         <div className="public-empty">
           <output>Your private draft is ready</output>
           <p>Continue the setup to choose topics, sources and delivery.</p>
-          <Link href={dossierHref({ id: saved })}>
+          <a href={dossierHref({ id: saved })}>
             Open private draft <ArrowRight size={16} />
-          </Link>
+          </a>
         </div>
       ) : (
         <form

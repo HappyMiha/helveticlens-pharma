@@ -1,5 +1,5 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight, BookOpen, Check } from 'lucide-react';
 import { product } from '@/lib/product';
 import { ProductDestinations } from '@/components/product-destinations';
@@ -39,12 +39,12 @@ export default function Guide() {
   return (
     <div className="guide-shell">
       <header className="guide-header">
-        <Link className="guide-brand" href="/">
+        <a className="guide-brand" href="/">
           HelveticLens <span>{product.name}</span>
-        </Link>
-        <Link href="/">
+        </a>
+        <a href="/">
           <ArrowLeft size={16} /> Open workspace
-        </Link>
+        </a>
       </header>
       <main id="guide-content">
         <section className="guide-hero" aria-labelledby="guide-title">
@@ -75,9 +75,9 @@ export default function Guide() {
                 </li>
               ))}
             </ol>
-            <Link href="/">
+            <a href="/">
               Start a dossier <ArrowUpRight size={15} />
-            </Link>
+            </a>
           </nav>
           <div className="guide-chapters">
             <section
@@ -542,7 +542,7 @@ export default function Guide() {
                 research revision; old derived findings are retained privately.
                 Public copies or downloads made earlier cannot be recalled.
               </p>
-              <Link href="/public-dossiers">Explore public dossiers</Link>
+              <a href="/public-dossiers">Explore public dossiers</a>
             </section>
             <section id="interface" aria-labelledby="interface-title">
               <span className="guide-step">THE WORKSPACE</span>
@@ -882,7 +882,7 @@ export default function Guide() {
                 <strong>Sharing</strong> chapter, then Public version. Write a
                 separate public title, summary, text and source links, preview
                 the exact version and confirm publication. Read published
-                versions at <Link href="/public-dossiers">Public dossiers</Link>{' '}
+                versions at <a href="/public-dossiers">Public dossiers</a>{' '}
                 without an account. Changes need a new preview; withdrawing
                 removes the public version here. Private files and discussions
                 stay in the workspace. Published dossiers also have a public
@@ -896,7 +896,7 @@ export default function Guide() {
               <p>
                 Use <strong>Follow dossier</strong> to keep publication and
                 public discussion changes in your personal{' '}
-                <Link href="/following">Followed dossiers</Link> list. Refresh
+                <a href="/following">Followed dossiers</a> list. Refresh
                 to check updates and explicitly mark an update as seen.
                 Following is private to your account and sends no email. Hidden
                 contributions do not generate visible update signals. Withdrawn

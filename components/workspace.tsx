@@ -1,3 +1,4 @@
+/* oxlint-disable next/no-html-link-for-pages -- Native navigation avoids the deployed runtime namespace failure. */
 'use client';
 import { dossierStatus } from '@/lib/dossier-status';
 import { DossierInvitationInbox } from './dossier-team';
@@ -29,7 +30,6 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import type {
   DossierRecord,
@@ -447,9 +447,10 @@ export default function Workspace() {
     <AppShell>
       <GlassSidebar>
         <SidebarHeader>
-          <Link href="/" aria-label={`HelveticLens ${product.name} home`}>
+          {/* Native page links avoid the current runtime prefetch namespace failure. */}
+          <a href="/" aria-label={`HelveticLens ${product.name} home`}>
             <Brand />
-          </Link>
+          </a>
         </SidebarHeader>
         <SidebarContent>
           <div className="nav-label">WORKSPACE</div>
@@ -482,10 +483,10 @@ export default function Workspace() {
             ))}
           </nav>
           <div className="sidebar-note">
-            <Link href="/following">Followed dossiers</Link>
-            <Link href="/public-dossiers">
+            <a href="/following">Followed dossiers</a>
+            <a href="/public-dossiers">
               Public dossiers <Globe size={14} />
-            </Link>
+            </a>
             <div className="mini-cross">+</div>
             <p>{product.description}</p>
             <a href="/guide" target="_blank" rel="noreferrer">
@@ -567,8 +568,8 @@ export default function Workspace() {
             </b>
           </div>
           <div className="header-actions">
-            <Link href="/following">Followed dossiers</Link>
-            <Link href="/public-dossiers">Public dossiers</Link>
+            <a href="/following">Followed dossiers</a>
+            <a href="/public-dossiers">Public dossiers</a>
             <span className="private-note">
               <LockKeyhole size={13} />
               Private by workspace
